@@ -2,7 +2,6 @@ package dpas.common.domain;
 
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUsernameException;
-
 import java.security.PublicKey;
 
 public class User {
