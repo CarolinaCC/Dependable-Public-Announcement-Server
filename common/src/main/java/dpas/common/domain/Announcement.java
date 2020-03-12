@@ -41,8 +41,11 @@ public class Announcement {
         if (publishTime == null) {
             throw new NullPublishTimeException();
         }
-        if (references.contains(null)) {
-            throw new NullPostException();
+
+        if (references != null) {
+            if (references.contains(null)) {
+                throw new NullPostException();
+            }
         }
     }
 
