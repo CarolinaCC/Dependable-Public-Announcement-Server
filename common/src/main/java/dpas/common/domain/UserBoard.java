@@ -25,8 +25,7 @@ public class UserBoard implements AnnouncementBoard {
         if (post == null) {
             throw new NullPostException();
         }
-        //FIXME shouldn't it be if user != owner ?
-        if (user == _owner) {
+        if (user != _owner) {
             throw new InvalidUserException();
         }
     }
