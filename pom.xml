@@ -45,5 +45,7 @@
 
     <modules>
         <module>common</module>
+        <module>server</module>
+        <module>contract</module>
     </modules>
 </project>
