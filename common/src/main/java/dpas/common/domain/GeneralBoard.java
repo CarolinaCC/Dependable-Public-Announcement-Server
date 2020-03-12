@@ -2,12 +2,12 @@ package dpas.common.domain;
 
 public class GeneralBoard implements AnnouncementBoard {
     @Override
-    public void post(User user, Post post) {
+    public void post(User user, Announcement announcement) {
 
     }
 
     @Override
-    public Post[] read(int number) {
+    public Announcement[] read(int number) {
         return null;
     }
 }
