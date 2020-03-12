@@ -8,15 +8,14 @@ import dpas.common.domain.exception.NullUserException;
 import java.util.ArrayList;
 
 public class UserBoard implements AnnouncementBoard {
-    //FIXME do we wanna keep the _ before the name like in the rest of the code (I just started doing it as a joke)
-    public ArrayList<Announcement> posts;
-    public User owner;
+    public ArrayList<Announcement> _posts;
+    public User _owner;
 
     @Override
 
     public void post(User user, Announcement announcement) throws NullPostException, NullUserException, InvalidUserException {
         checkArguments(user, announcement);
-        posts.add(announcement);
+        _posts.add(announcement);
     }
 
     public void checkArguments(User user, Announcement post) throws NullUserException, NullPostException, InvalidUserException {
@@ -27,15 +26,15 @@ public class UserBoard implements AnnouncementBoard {
             throw new NullPostException();
         }
         //FIXME shouldn't it be if user != owner ?
-        if (user == owner) {
+        if (user == _owner) {
             throw new InvalidUserException();
         }
     }
 
     @Override
-    public Announcement[] read(int number) throws InvalidNumberOfPostsException {
-        if (number <= 0 || number > posts.size())
+    public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
+        if (number <= 0 || number > _posts.size())
             throw new InvalidNumberOfPostsException();
-        return (Announcement[]) posts.subList(posts.size()-number, posts.size()).toArray();
+        return new ArrayList<Announcement>( _posts.subList(_posts.size()-number, _posts.size()));
     }
 }

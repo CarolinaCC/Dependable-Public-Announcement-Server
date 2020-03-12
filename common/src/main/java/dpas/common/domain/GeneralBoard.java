@@ -6,13 +6,13 @@ import dpas.common.domain.exception.InvalidNumberOfPostsException;
 import java.util.ArrayList;
 
 public class GeneralBoard implements AnnouncementBoard {
-    public ArrayList<Announcement> posts;
+    public ArrayList<Announcement> _posts;
 
     @Override
 
     public void post(User user, Announcement announcement) throws NullPostException, NullUserException {
          checkArguments(user, announcement);
-        posts.add(announcement);
+        _posts.add(announcement);
     }
 
     public void checkArguments(User user, Announcement post) throws NullUserException, NullPostException  {
@@ -24,11 +24,12 @@ public class GeneralBoard implements AnnouncementBoard {
         }
     }
 
-    //FIXME maybe if number > posts.size() just return all of the posts? If number is zero return all posts (from the assignment)
     @Override
-    public Announcement[] read(int number) throws InvalidNumberOfPostsException {
-        if (number <= 0 || number > posts.size())
+    public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
+        if (number < 0 || number > _posts.size())
             throw new InvalidNumberOfPostsException();
-        return (Announcement[]) posts.subList(posts.size()-number, posts.size()).toArray();
+        if (number == 0)
+            return new ArrayList<>(_posts);
+        return new ArrayList<Announcement>(_posts.subList(_posts.size()-number, _posts.size()));
     }
 }
