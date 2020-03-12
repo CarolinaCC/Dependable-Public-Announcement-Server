@@ -7,12 +7,10 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Announcement {
-    //FIXME: This could be a Signature, we will sign the message, so that is what should be passed to verify (converted to Byte[])
     private byte[] _signature;
     private User _user;
     private String _message;
     private ArrayList<Announcement> _references; // Can be null
-    //FIXME not sure if this will be useful
     private Date _publishTime; // Date and time of the post
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references, Date publishTime) throws NullSignatureException, NullMessageException,
@@ -52,19 +50,9 @@ public class Announcement {
             SignatureException {
 
         byte[] messageBytes = this._message.getBytes();
-
-        //FIXME shouldn't we verify the signature with the User's public key?
-        //Generate correct signature of the message
-        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
-        keyPairGen.initialize(2048);
-        KeyPair pair = keyPairGen.generateKeyPair();
-        PrivateKey privateKey = pair.getPrivate();
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(privateKey);
-        sign.update(messageBytes);
-
-        //Check if both signatures match
         PublicKey publicKey = user.getPublicKey();
+
+        Signature sign = Signature.getInstance("SHA256withRSA"); // Hardcoded for now
         sign.initVerify(publicKey);
         sign.update(messageBytes);
 
