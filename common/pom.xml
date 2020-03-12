@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>DPAS-common</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <parent>
         <groupId>SEC.T18</groupId>
@@ -11,13 +11,6 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <dependencies>
-    </dependencies>
-
-    <build>
-        <plugins>
-        </plugins>
-    </build>
 </project>
 
 
