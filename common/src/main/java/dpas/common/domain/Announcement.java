@@ -14,7 +14,7 @@ public class Announcement {
     private int _sequenceNumber;
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
-            NullPostException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
+            NullAnnouncementException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
             NullUserException, UnsupportedEncodingException, InvalidMessageSizeException {
 
         checkArguments(signature, user, message, references);
@@ -26,7 +26,7 @@ public class Announcement {
     }
 
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
-            NullMessageException, NullPostException, NullUserException, UnsupportedEncodingException, InvalidMessageSizeException,
+            NullMessageException, NullAnnouncementException, NullUserException, UnsupportedEncodingException, InvalidMessageSizeException,
             InvalidMessageSizeException {
 
         if (signature == null) {
@@ -46,7 +46,7 @@ public class Announcement {
 
         if (references != null) {
             if (references.contains(null)) {
-                throw new NullPostException();
+                throw new NullAnnouncementException();
             }
         }
     }

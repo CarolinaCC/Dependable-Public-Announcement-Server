@@ -2,7 +2,7 @@ package dpas.common.domain;
 
 import dpas.common.domain.exception.InvalidNumberOfPostsException;
 import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullPostException;
+import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public abstract class AnnouncementBoard {
     private ArrayList<Announcement> _posts;
 
-    public abstract void post(User user, Announcement announcement) throws NullPostException, NullUserException, InvalidUserException;
+    public abstract void post(User user, Announcement announcement) throws NullAnnouncementException, NullUserException, InvalidUserException;
 
     public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
         if (number < 0)

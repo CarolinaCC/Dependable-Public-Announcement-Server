@@ -1,8 +1,7 @@
 package dpas.common.domain;
 
-import dpas.common.domain.exception.InvalidNumberOfPostsException;
 import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullPostException;
+import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
 import java.util.ArrayList;
@@ -14,19 +13,19 @@ public class UserBoard extends AnnouncementBoard {
 
     @Override
 
-    public void post(User user, Announcement announcement) throws NullPostException, NullUserException, InvalidUserException {
+    public void post(User user, Announcement announcement) throws NullAnnouncementException, NullUserException, InvalidUserException {
         checkArguments(user, announcement);
         _posts.add(announcement);
         announcement.set_sequenceNumber(_sequenceNumber);
         _sequenceNumber++;
     }
 
-    public void checkArguments(User user, Announcement post) throws NullUserException, NullPostException, InvalidUserException {
+    public void checkArguments(User user, Announcement post) throws NullUserException, NullAnnouncementException, InvalidUserException {
         if (user == null) {
             throw new NullUserException();
         }
         if (post == null) {
-            throw new NullPostException();
+            throw new NullAnnouncementException();
         }
         if (user != _owner) {
             throw new InvalidUserException();
