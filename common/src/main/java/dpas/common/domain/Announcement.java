@@ -2,6 +2,7 @@ package dpas.common.domain;
 
 import dpas.common.domain.exception.*;
 
+import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
 
@@ -14,7 +15,7 @@ public class Announcement {
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
             NullPostException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
-            NullUserException {
+            NullUserException, UnsupportedEncodingException, InvalidMessageSizeException {
 
         checkArguments(signature, user, message, references);
         checkSignature(signature, user, message);
@@ -25,7 +26,8 @@ public class Announcement {
     }
 
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
-            NullMessageException, NullPostException, NullUserException {
+            NullMessageException, NullPostException, NullUserException, UnsupportedEncodingException, InvalidMessageSizeException,
+            InvalidMessageSizeException {
 
         if (signature == null) {
             throw new NullSignatureException();
@@ -35,6 +37,11 @@ public class Announcement {
         }
         if (message == null) {
             throw new NullMessageException();
+        }
+
+        final byte[] messageToBytes = message.getBytes("UTF-8");
+        if (messageToBytes.length > 255) {
+            throw new InvalidMessageSizeException();
         }
 
         if (references != null) {
