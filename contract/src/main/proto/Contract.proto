@@ -2,3 +2,76 @@ syntax = "proto3";
 
 package dpas.grpc.contract;
 
+service ServiceDPAS {
+    rpc register (RegisterRequest) returns (RegisterReply);
+    rpc post (PostRequest) returns (PostReply);
+    rpc postGeneral (PostRequest) returns (PostReply);
+    rpc read (ReadRequest) returns (ReadReply);
+    rpc readGeneral (ReadRequest) returns (ReadReply);
+}
+
+//
+message RegisterRequest {
+    bytes publicKey = 1;
+    string username = 2;
+}
+
+//
+enum RegisterStatus {
+    REGISTERSTATUS_OK = 0;
+}
+
+//
+message RegisterReply {
+    RegisterStatus status = 1;
+}
+
+//
+message UserBoardReference {
+    int32 sequenceNumber = 1;
+    string user = 2;
+}
+
+//
+message GeneralBoardReference {
+    int32 sequenceNumber = 1;
+}
+
+//
+message BoardReference {
+    oneof reference {
+        GeneralBoardReference generalBoardReference = 1;
+        UserBoardReference userBoardReference = 2;
+    }
+}
+
+//
+message PostRequest {
+    bytes publicKey = 1;
+    string message = 2;
+    string username = 3;
+    bytes signature = 4;
+    repeated BoardReference references = 5;
+}
+
+//
+enum PostStatus {
+    POSTSTATUS_OK = 0;
+}
+
+//
+message PostReply {
+    PostStatus status = 1;
+}
+
+//
+message ReadRequest {
+    bytes publicKey = 1;
+    int32 number = 2;
+    string username = 3;
+}
+
+//
+message ReadReply {
+    repeated string announcements = 1;
+}
