@@ -14,7 +14,6 @@ import static org.junit.Assert.assertEquals;
 public class GeneralBoardTest {
 
     private Announcement _announcement;
-    private User _userA;
     private GeneralBoard _generalBoard;
 
     @Before
@@ -23,8 +22,8 @@ public class GeneralBoardTest {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
-        PublicKey _publicKey = keyPair.getPublic();
-        _userA = new User("FIRST_USER_NAME", _publicKey);
+        PublicKey publicKey = keyPair.getPublic();
+        User userA = new User("FIRST_USER_NAME", publicKey);
 
         //Generate valid signature
         Signature sign = Signature.getInstance("SHA256withRSA");
@@ -33,7 +32,7 @@ public class GeneralBoardTest {
         byte[] signature = sign.sign();
 
         // Generate Announcement
-        _announcement = new Announcement(signature, _userA, "MESSAGE", null);
+        _announcement = new Announcement(signature, userA, "MESSAGE", null);
         // Generate Board
         _generalBoard = new GeneralBoard();
     }
@@ -44,24 +43,19 @@ public class GeneralBoardTest {
 
     @Test
     public void validPost() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
-        _generalBoard.post(_userA, _announcement);
+        _generalBoard.post(_announcement);
         assertEquals(_generalBoard.read(1).get(0), _announcement);
-    }
-
-    @Test(expected = NullUserException.class)
-    public void nullUserPost() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
-        _generalBoard.post(null, _announcement);
     }
 
     @Test(expected = NullAnnouncementException.class)
     public void nullAnnouncementPost() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
-        _generalBoard.post(_userA, null);
+        _generalBoard.post(null);
     }
 
     @Test
     public void validRead() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
-        _generalBoard.post(_userA, _announcement);
-        _generalBoard.post(_userA, _announcement);
+        _generalBoard.post( _announcement);
+        _generalBoard.post( _announcement);
         ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
         expectedAnnouncements.add(_announcement);
         expectedAnnouncements.add(_announcement);
@@ -70,7 +64,7 @@ public class GeneralBoardTest {
 
     @Test(expected = InvalidNumberOfPostsException.class)
     public void invalidNumberOfPostsRead() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
-        _generalBoard.post(_userA, _announcement);
+        _generalBoard.post(_announcement);
         _generalBoard.read(-1);
     }
 

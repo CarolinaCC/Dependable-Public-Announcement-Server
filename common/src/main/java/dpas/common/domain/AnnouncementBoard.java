@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public abstract class AnnouncementBoard {
     private ArrayList<Announcement> _posts;
 
-    public abstract void post(User user, Announcement announcement) throws NullAnnouncementException, NullUserException, InvalidUserException;
+    public abstract void post(Announcement announcement) throws NullAnnouncementException, NullUserException, InvalidUserException;
 
     public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
         if (number < 0)

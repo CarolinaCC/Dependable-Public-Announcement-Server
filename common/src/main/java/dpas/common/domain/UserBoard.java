@@ -1,9 +1,8 @@
 package dpas.common.domain;
 
-import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullAnnouncementException;
-import dpas.common.domain.exception.NullUserException;
+import dpas.common.domain.exception.*;
 
+import java.security.PublicKey;
 import java.util.ArrayList;
 
 public class UserBoard extends AnnouncementBoard {
@@ -11,23 +10,24 @@ public class UserBoard extends AnnouncementBoard {
     private User _owner;
     private int _sequenceNumber = 0;
 
-    @Override
+    public UserBoard (User user) throws NullUserException  {
+        if (user == null) throw new NullUserException();
+        _owner = user;
+    }
 
-    public void post(User user, Announcement announcement) throws NullAnnouncementException, NullUserException, InvalidUserException {
-        checkArguments(user, announcement);
+    @Override
+    public void post(Announcement announcement) throws NullAnnouncementException, InvalidUserException {
+        checkArguments(announcement);
         _posts.add(announcement);
         announcement.set_sequenceNumber(_sequenceNumber);
         _sequenceNumber++;
     }
 
-    public void checkArguments(User user, Announcement post) throws NullUserException, NullAnnouncementException, InvalidUserException {
-        if (user == null) {
-            throw new NullUserException();
-        }
+    private void checkArguments( Announcement post) throws NullAnnouncementException, InvalidUserException {
         if (post == null) {
             throw new NullAnnouncementException();
         }
-        if (user != _owner) {
+        if (post.getUser() != _owner) {
             throw new InvalidUserException();
         }
     }
