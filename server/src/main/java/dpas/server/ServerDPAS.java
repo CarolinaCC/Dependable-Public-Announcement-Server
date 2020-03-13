@@ -17,13 +17,14 @@ public class ServerDPAS {
         }
 
         final int port = Integer.parseInt(args[0]);
-        final BindableService impl = (BindableService) new ServiceDPASImpl();
+        final BindableService impl =  new ServiceDPASImpl();
 
         //Start server
         final Server server = NettyServerBuilder
                 .forPort(port)
                 .addService(impl)
                 .build();
+
         server.start();
 
         // Do not exit the main thread. Wait until server is terminated.

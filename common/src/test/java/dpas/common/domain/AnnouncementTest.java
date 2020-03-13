@@ -21,6 +21,8 @@ public class AnnouncementTest {
     private static final String MESSAGE = "Hello World";
     private static final String OTHER_MESSAGE = "This is another announcement";
     private static final byte[] MESSAGE_BYTES = MESSAGE.getBytes();
+    private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
+            "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
 
     private static final String USERNAME = "Einstein";
     private static final String OTHER_USERNAME = "Marie Curie";
@@ -31,7 +33,7 @@ public class AnnouncementTest {
 
     @Before
     public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NullPublicKeyException, NullUsernameException, NullMessageException,
-            NullSignatureException, NullUserException, NullPostException, InvalidSignatureException {
+            NullSignatureException, NullUserException, NullPostException, InvalidSignatureException, UnsupportedEncodingException, InvalidMessageSizeException {
 
         //Generate public key
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
