@@ -26,9 +26,9 @@ public class GeneralBoard implements AnnouncementBoard {
 
     @Override
     public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
-        if (number < 0 || number > _posts.size())
+        if (number < 0 )
             throw new InvalidNumberOfPostsException();
-        if (number == 0)
+        if (number == 0|| number > _posts.size())
             return new ArrayList<>(_posts);
         return new ArrayList<Announcement>(_posts.subList(_posts.size()-number, _posts.size()));
     }
