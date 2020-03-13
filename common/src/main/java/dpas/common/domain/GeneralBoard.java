@@ -6,7 +6,7 @@ import dpas.common.domain.exception.NullUserException;
 import java.util.ArrayList;
 
 public class GeneralBoard extends AnnouncementBoard {
-    private ArrayList<Announcement> _posts;
+    private ArrayList<Announcement> _posts = new ArrayList<>();
     private int _sequenceNumber = 0;
 
     @Override

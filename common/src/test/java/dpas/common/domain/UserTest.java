@@ -4,6 +4,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import dpas.common.domain.exception.NullPublicKeyException;
+import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
 import org.junit.After;
 import org.junit.Before;
@@ -38,19 +39,19 @@ public class UserTest {
     }
 
     @Test
-    public void validUser() throws NullPublicKeyException, NullUsernameException {
+    public void validUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
         User user = new User(FIRST_USER_NAME, _publicKey);
         assertEquals(user.getUsername(), FIRST_USER_NAME);
         assertArrayEquals(user.getPublicKey().getEncoded(), _publicKey.getEncoded());
     }
 
     @Test(expected = NullPublicKeyException.class)
-    public void nullPublicKeyUser() throws NullPublicKeyException, NullUsernameException {
+    public void nullPublicKeyUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
         User user = new User(FIRST_USER_NAME, null);
     }
 
     @Test(expected = NullUsernameException.class)
-    public void nullUsernameUser() throws NullPublicKeyException, NullUsernameException {
+    public void nullUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
         User user = new User(null, _publicKey);
     }
 }

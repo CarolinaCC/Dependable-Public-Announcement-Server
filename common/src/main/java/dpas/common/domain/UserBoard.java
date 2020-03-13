@@ -6,7 +6,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 
 public class UserBoard extends AnnouncementBoard {
-    private ArrayList<Announcement> _posts;
+    private ArrayList<Announcement> _posts = new ArrayList<>();
     private User _owner;
     private int _sequenceNumber = 0;
 
