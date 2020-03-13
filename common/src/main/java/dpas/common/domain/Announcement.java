@@ -11,8 +11,11 @@ public class Announcement {
     private String _message;
     private ArrayList<Announcement> _references; // Can be null
 
+
+    private int _sequenceNumber;
+
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
-             NullPostException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
+            NullPostException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
             NullUserException {
 
         checkArguments(signature, user, message, references);
@@ -80,4 +83,11 @@ public class Announcement {
         return this._user.getUsername();
     }
 
+    public int get_sequenceNumber() {
+        return _sequenceNumber;
+    }
+
+    public void set_sequenceNumber(int _sequenceNumber) {
+        this._sequenceNumber = _sequenceNumber;
+    }
 }

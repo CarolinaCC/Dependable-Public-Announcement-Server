@@ -8,8 +8,7 @@ import dpas.common.domain.exception.NullUserException;
 import java.util.ArrayList;
 
 public abstract class AnnouncementBoard {
-
-    public ArrayList<Announcement> _posts;
+    private ArrayList<Announcement> _posts;
 
     public abstract void post(User user, Announcement announcement) throws NullPostException, NullUserException, InvalidUserException;
 

@@ -8,14 +8,17 @@ import dpas.common.domain.exception.NullUserException;
 import java.util.ArrayList;
 
 public class UserBoard extends AnnouncementBoard {
-    public ArrayList<Announcement> _posts;
-    public User _owner;
+    private ArrayList<Announcement> _posts;
+    private User _owner;
+    private int _sequenceNumber = 0;
 
     @Override
 
     public void post(User user, Announcement announcement) throws NullPostException, NullUserException, InvalidUserException {
         checkArguments(user, announcement);
         _posts.add(announcement);
+        announcement.set_sequenceNumber(_sequenceNumber);
+        _sequenceNumber++;
     }
 
     public void checkArguments(User user, Announcement post) throws NullUserException, NullPostException, InvalidUserException {
