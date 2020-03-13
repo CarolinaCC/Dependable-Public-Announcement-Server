@@ -5,6 +5,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.sql.Array;
 import java.sql.Ref;
@@ -19,6 +20,10 @@ public class AnnouncementTest {
 
     private static final String MESSAGE = "Hello World";
     private static final String OTHER_MESSAGE = "This is another announcement";
+
+    private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
+            "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
+
     private static final byte[] MESSAGE_BYTES = MESSAGE.getBytes();
 
     private static final String USERNAME = "Einstein";
@@ -30,7 +35,7 @@ public class AnnouncementTest {
 
     @Before
     public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NullPublicKeyException, NullUsernameException, NullMessageException,
-            NullSignatureException, NullUserException, NullPostException, InvalidSignatureException {
+            NullSignatureException, NullUserException, NullPostException, InvalidSignatureException, UnsupportedEncodingException, InvalidMessageSizeException {
 
         //Generate public key
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
@@ -73,7 +78,8 @@ public class AnnouncementTest {
 
     @Test
     public void validAnnouncement() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException,
+            UnsupportedEncodingException, InvalidMessageSizeException {
 
         Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references);
         assertEquals(announcement.getSignature(), _signature);
@@ -84,7 +90,8 @@ public class AnnouncementTest {
 
     @Test
     public void validAnnouncementNullReference() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException,
+            UnsupportedEncodingException, InvalidMessageSizeException {
 
         Announcement announcement = new Announcement(_signature, _user, MESSAGE, null);
         assertEquals(announcement.getSignature(), _signature);
@@ -95,7 +102,8 @@ public class AnnouncementTest {
 
     @Test(expected = NullSignatureException.class)
     public void nullSignature() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException,
+            NullPostException, UnsupportedEncodingException, InvalidMessageSizeException {
 
         Announcement announcement = new Announcement(null, _user, MESSAGE, _references);
     }
@@ -103,21 +111,24 @@ public class AnnouncementTest {
 
     @Test(expected = NullUserException.class)
     public void nullUser() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException,
+            UnsupportedEncodingException, InvalidMessageSizeException {
 
         Announcement announcement = new Announcement(_signature, null, MESSAGE, _references);
     }
 
     @Test(expected = NullMessageException.class)
     public void nullMessage() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException,
+            UnsupportedEncodingException, InvalidMessageSizeException {
 
         Announcement announcement = new Announcement(_signature, _user, null, _references);
     }
 
     @Test(expected = NullPostException.class)
     public void nullReferences() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException,
+            UnsupportedEncodingException, InvalidMessageSizeException {
 
         ArrayList<Announcement> refNullElement = new ArrayList<>();
         refNullElement.add(null);
@@ -127,10 +138,20 @@ public class AnnouncementTest {
 
     @Test(expected = InvalidSignatureException.class)
     public void invalidSignature() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException,
+            UnsupportedEncodingException, InvalidMessageSizeException {
 
         byte[] invalidSig = "InvalidSignature".getBytes();
         Announcement announcement = new Announcement(invalidSig, _user, MESSAGE, _references);
     }
+
+    @Test(expected = InvalidMessageSizeException.class)
+    public void invalidMessage() throws InvalidKeyException, NoSuchAlgorithmException, UnsupportedEncodingException,
+            NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException,
+            NullUserException, NullPostException, InvalidMessageSizeException {
+
+        Announcement announcement = new Announcement(_signature, _user, INVALID_MESSAGE, _references);
+    }
+
 
 }
