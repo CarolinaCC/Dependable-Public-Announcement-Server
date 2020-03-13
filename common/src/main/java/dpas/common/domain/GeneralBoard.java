@@ -5,7 +5,7 @@ import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.InvalidNumberOfPostsException;
 import java.util.ArrayList;
 
-public class GeneralBoard implements AnnouncementBoard {
+public class GeneralBoard extends AnnouncementBoard {
     public ArrayList<Announcement> _posts;
 
     @Override
@@ -24,12 +24,4 @@ public class GeneralBoard implements AnnouncementBoard {
         }
     }
 
-    @Override
-    public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
-        if (number < 0 )
-            throw new InvalidNumberOfPostsException();
-        if (number == 0|| number > _posts.size())
-            return new ArrayList<>(_posts);
-        return new ArrayList<Announcement>(_posts.subList(_posts.size()-number, _posts.size()));
-    }
 }

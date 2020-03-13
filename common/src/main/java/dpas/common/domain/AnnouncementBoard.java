@@ -7,10 +7,18 @@ import dpas.common.domain.exception.NullUserException;
 
 import java.util.ArrayList;
 
-public interface AnnouncementBoard {
+public abstract class AnnouncementBoard {
 
-    public void post(User user, Announcement announcement) throws NullPostException, NullUserException, InvalidUserException;
+    public ArrayList<Announcement> _posts;
 
-    public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException;
+    public abstract void post(User user, Announcement announcement) throws NullPostException, NullUserException, InvalidUserException;
+
+    public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
+        if (number < 0 )
+            throw new InvalidNumberOfPostsException();
+        if (number == 0 || number >= _posts.size())
+            return new ArrayList<>(_posts);
+        return new ArrayList<Announcement>( _posts.subList(_posts.size()-number, _posts.size()));
+    }
 
 }
