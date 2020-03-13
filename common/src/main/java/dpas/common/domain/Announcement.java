@@ -10,8 +10,6 @@ public class Announcement {
     private User _user;
     private String _message;
     private ArrayList<Announcement> _references; // Can be null
-
-
     private int _sequenceNumber;
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
