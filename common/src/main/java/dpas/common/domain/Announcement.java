@@ -3,6 +3,7 @@ package dpas.common.domain;
 import dpas.common.domain.exception.*;
 
 import java.security.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -11,23 +12,23 @@ public class Announcement {
     private User _user;
     private String _message;
     private ArrayList<Announcement> _references; // Can be null
-    private Date _publishTime; // Date and time of the post
+    private LocalDate _publishTime; // Date and time of the post
 
-    public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references, Date publishTime) throws NullSignatureException, NullMessageException,
-            NullPublishTimeException, NullPublicKeyException, NullPostException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
+    public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references, LocalDate publishTime) throws NullSignatureException, NullMessageException,
+            NullPublishTimeException, NullPostException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
             NullUserException {
 
         checkArguments(signature, user, message, publishTime, references);
-        checkSignature(signature, user);
+        checkSignature(signature, user, message);
+        this._message = message;
         this._signature = signature;
         this._user = user;
-        this._message = message;
         this._references = references;
         this._publishTime = publishTime;
     }
 
-    public void checkArguments(byte[] signature, User user, String message, Date publishTime, ArrayList<Announcement> references) throws NullSignatureException,
-            NullMessageException, NullPublishTimeException, NullPublicKeyException, NullPostException, NullUserException {
+    public void checkArguments(byte[] signature, User user, String message, LocalDate publishTime, ArrayList<Announcement> references) throws NullSignatureException,
+            NullMessageException, NullPublishTimeException, NullPostException, NullUserException {
 
         if (signature == null) {
             throw new NullSignatureException();
@@ -49,17 +50,19 @@ public class Announcement {
         }
     }
 
-    public void checkSignature(byte[] signature, User user) throws InvalidSignatureException, InvalidKeyException, NoSuchAlgorithmException,
-            SignatureException {
+    public void checkSignature(byte[] signature, User user, String message) throws InvalidSignatureException, InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, NullMessageException {
 
-        byte[] messageBytes = this._message.getBytes();
+        byte[] messageBytes = message.getBytes();
         PublicKey publicKey = user.getPublicKey();
 
         Signature sign = Signature.getInstance("SHA256withRSA"); // Hardcoded for now
         sign.initVerify(publicKey);
         sign.update(messageBytes);
 
-        if (!sign.verify(signature)) {
+        try {
+            sign.verify(signature);
+        } catch (SignatureException e) {
             throw new InvalidSignatureException();
         }
     }
@@ -76,12 +79,13 @@ public class Announcement {
         return this._references;
     }
 
-    //public Date getPublishTime() { return this._publishTime; }
-    public String printPublishTime() {
-        return this._publishTime.toString();
-    }
+    public LocalDate getPublishTime() { return this._publishTime; }
 
-    public String getPostUser() {
+    //public String printPublishTime() { return this._publishTime.toString(); }
+
+    public User getUser() { return this._user; }
+
+    public String getPostUsername() {
         return this._user.getUsername();
     }
 
