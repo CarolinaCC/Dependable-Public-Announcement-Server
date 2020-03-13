@@ -58,11 +58,12 @@ public class UserBoardTest {
     @Test
     public void validPost() throws InvalidNumberOfPostsException, InvalidUserException, NullAnnouncementException {
         _userBoard.post(_announcementValid);
-        assertEquals(_userBoard.read(1).get(0), _announcementValid);
+        ArrayList<Announcement> announcements = _userBoard.read(1);
+        assertEquals(announcements.get(0), _announcementValid);
     }
 
 
-    @Test(expected = NullUserException.class)
+    @Test(expected = NullAnnouncementException.class)
     public void nullAnnouncementPost() throws InvalidUserException, NullAnnouncementException {
         _userBoard.post(null);
     }
