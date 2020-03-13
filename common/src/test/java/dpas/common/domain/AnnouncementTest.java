@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class AnnouncementTest {
 
@@ -79,6 +80,17 @@ public class AnnouncementTest {
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
         assertEquals(announcement.getReferences(), _references);
+    }
+
+    @Test
+    public void validAnnouncementNullReference() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
+            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullPostException {
+
+        Announcement announcement = new Announcement(_signature, _user, MESSAGE, null);
+        assertEquals(announcement.getSignature(), _signature);
+        assertEquals(announcement.getUser(), _user);
+        assertEquals(announcement.getMessage(), MESSAGE);
+        assertNull(announcement.getReferences());
     }
 
     @Test(expected = NullSignatureException.class)
