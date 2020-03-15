@@ -16,6 +16,8 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.Contract.RegisterReply;
 import io.grpc.stub.StreamObserver;
+
+import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -26,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static dpas.grpc.contract.Contract.RegisterStatus.*;
+import static dpas.grpc.contract.Contract.PostStatus.*;
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
@@ -38,7 +41,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         try {
             //Get Public Key From byte[]
             PublicKey key = KeyFactory.getInstance("RSA")
-                            .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+                    .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             String username = request.getUsername();
             User user = new User(username, key);
 
@@ -47,8 +50,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 //User with public key already exists
                 replyStatus = REGISTERSTATUS_REPEATED_USER;
             }
-        }
-        catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
+        } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
             replyStatus = REGISTERSTATUS_NULL_PUBLICKEY;
         } catch (NullUsernameException e) {
             replyStatus = REGISTERSTATUS_NULL_USERNAME;
@@ -63,6 +65,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void post(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
+        Contract.PostStatus replyStatus = POSTSTATUS_OK;
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = _users.get(key);
@@ -73,76 +76,57 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             // post announcement
             user.getUserBoard().post(announcement);
 
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_OK)
-                    .build());
-
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE)
-                    .build());
-        } catch (NullAnnouncementException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_NULL_ANNOUNCEMENT)
-                    .build());
+            replyStatus = POSTSTATUS_INVALID_SIGNATURE;
+        } catch (NullPublicKeyException | InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
+            replyStatus = POSTSTATUS_NULL_PUBLIC_KEY;
         } catch (InvalidMessageSizeException | NullMessageException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_INVALID_MESSAGE_SIZE)
-                    .build());
+            replyStatus = POSTSTATUS_INVALID_MESSAGE_SIZE;
         } catch (NullUserException | InvalidUserException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_NULL_USER)
-                    .build());
+            replyStatus = POSTSTATUS_NULL_USER;
         } catch (InvalidReferenceException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE)
-                    .build());
-        } catch (Exception e) {
+            replyStatus = POSTSATATUS_INVALID_REFERENCE;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (NullAnnouncementException e) {
             e.printStackTrace();
         }
+        responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(replyStatus).build());
         responseObserver.onCompleted();
     }
 
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
+        Contract.PostStatus replyStatus = POSTSTATUS_OK;
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             byte[] signature = request.getSignature().toByteArray();
             String message = request.getMessage().toString();
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
-
             synchronized (this) {
                 _generalBoard.post(announcement);
             }
-
             responseObserver.onNext(Contract.PostReply.newBuilder()
                     .setStatus(Contract.PostStatus.POSTSTATUS_OK)
                     .build());
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE)
-                    .build());
-        } catch (NullAnnouncementException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_NULL_ANNOUNCEMENT)
-                    .build());
+            replyStatus = POSTSTATUS_INVALID_SIGNATURE;
+        } catch (NullPublicKeyException | InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
+            replyStatus = POSTSTATUS_NULL_PUBLIC_KEY;
         } catch (InvalidMessageSizeException | NullMessageException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_INVALID_MESSAGE_SIZE)
-                    .build());
+            replyStatus = POSTSTATUS_INVALID_MESSAGE_SIZE;
         } catch (NullUserException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_NULL_USER)
-                    .build());
+            replyStatus = POSTSTATUS_NULL_USER;
         } catch (InvalidReferenceException e) {
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE)
-                    .build());
-        } catch (Exception e) {
+            replyStatus = POSTSATATUS_INVALID_REFERENCE;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (NullAnnouncementException e) {
             e.printStackTrace();
         }
-
+        responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(replyStatus).build());
+        responseObserver.onCompleted();
     }
 
     @Override
@@ -164,7 +148,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                     .setStatus(Contract.readStatus.READ_OK)
                     .build();
 
-        }  catch (InvalidNumberOfPostsException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+        } catch (InvalidNumberOfPostsException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             Contract.ReadReply.newBuilder()
                     .setStatus(Contract.readStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION)
                     .build();

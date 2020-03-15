@@ -26,7 +26,7 @@ public class Announcement {
     }
 
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
-            NullMessageException, NullAnnouncementException, NullUserException, UnsupportedEncodingException, InvalidMessageSizeException,
+            NullMessageException, NullAnnouncementException, NullUserException, UnsupportedEncodingException,
             InvalidMessageSizeException {
 
         if (signature == null) {
