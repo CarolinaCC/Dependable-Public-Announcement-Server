@@ -84,7 +84,7 @@ public class UserBoardTest {
         _userBoard.post(_announcementValid2);
         ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
         expectedAnnouncements.add(_announcementValid);
-        expectedAnnouncements.add(_announcementValid);
+        expectedAnnouncements.add(_announcementValid2);
         assertEquals(_userBoard.read(2), expectedAnnouncements);
     }
 
