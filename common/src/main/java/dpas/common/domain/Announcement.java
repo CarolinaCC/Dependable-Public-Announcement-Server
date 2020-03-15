@@ -61,7 +61,8 @@ public class Announcement {
         sign.update(messageBytes);
 
         try {
-            sign.verify(signature);
+            if (!sign.verify(signature))
+                throw new InvalidSignatureException();
         } catch (SignatureException e) {
             throw new InvalidSignatureException();
         }

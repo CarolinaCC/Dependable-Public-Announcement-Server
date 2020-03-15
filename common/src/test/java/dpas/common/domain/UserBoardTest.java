@@ -20,6 +20,9 @@ public class UserBoardTest {
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
 
+    private static final String FIRST_MESSAGE = "Message";
+    private static final String SECOND_MESSAGE = "Second Message";
+
     @Before
     public void setup() throws NullPublicKeyException, NullUsernameException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, NullMessageException, UnsupportedEncodingException, NullSignatureException, NullUserException, InvalidMessageSizeException, NullAnnouncementException, InvalidSignatureException {
         // generate user A
@@ -28,14 +31,23 @@ public class UserBoardTest {
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         User user = new User("FIRST_USER_NAME", publicKey);
-        //Generate valid signature
+
+        //Generate valid signature for first message
         Signature sign = Signature.getInstance("SHA256withRSA");
         sign.initSign(keyPair.getPrivate());
-        sign.update("MESSAGE".getBytes());
+        sign.update(FIRST_MESSAGE.getBytes());
         byte[] signature = sign.sign();
+
         // Generate Announcement A
-        _announcementValid = new Announcement(signature, user, "MESSAGE", null);
-        _announcementValid2 = new Announcement(signature, user, "MESSAGE2", new ArrayList<Announcement>(Collections.singletonList(_announcementValid)));
+        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null);
+
+        //Generate valid signature for second message
+        sign = Signature.getInstance("SHA256withRSA");
+        sign.initSign(keyPair.getPrivate());
+        sign.update(SECOND_MESSAGE.getBytes());
+        signature = sign.sign();
+
+        _announcementValid2 = new Announcement(signature, user, SECOND_MESSAGE, new ArrayList<Announcement>(Collections.singletonList(_announcementValid)));
 
 
         // Get UserBoard
@@ -50,10 +62,10 @@ public class UserBoardTest {
         //Generate valid signature
         sign = Signature.getInstance("SHA256withRSA");
         sign.initSign(keyPair.getPrivate());
-        sign.update("MESSAGE".getBytes());
+        sign.update(FIRST_MESSAGE.getBytes());
         signature = sign.sign();
         // Generate Announcement B
-        _announcementInvalid = new Announcement(signature, user, "MESSAGE", null);
+        _announcementInvalid = new Announcement(signature, user, FIRST_MESSAGE, null);
     }
 
     @After

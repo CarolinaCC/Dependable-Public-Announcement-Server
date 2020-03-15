@@ -26,6 +26,7 @@ public class PostTest {
     private PublicKey _secondPublicKey;
     private byte[] _firstSignature;
     private byte[] _secondSignature;
+    private byte[] _bigMessageSignature;
 
 
     private ManagedChannel _channel;
@@ -34,6 +35,7 @@ public class PostTest {
     private final static String SECOND_USER_NAME = "USER2";
 
     private static final String MESSAGE = "Message";
+    private static final String SECOND_MESSAGE = "Second Message";
     private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
             "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
 
@@ -49,7 +51,7 @@ public class PostTest {
         // generate first signature
         Signature sign = Signature.getInstance("SHA256withRSA");
         sign.initSign(keyPair.getPrivate());
-        sign.update("MESSAGE".getBytes());
+        sign.update(MESSAGE.getBytes());
         _firstSignature = sign.sign();
 
         // second key pair
@@ -61,8 +63,14 @@ public class PostTest {
         // Generate second signature
         sign = Signature.getInstance("SHA256withRSA");
         sign.initSign(keyPair.getPrivate());
-        sign.update("MESSAGE".getBytes());
+        sign.update(SECOND_MESSAGE.getBytes());
         _secondSignature = sign.sign();
+
+        // Generate signature for too big message
+        sign = Signature.getInstance("SHA256withRSA");
+        sign.initSign(keyPair.getPrivate());
+        sign.update(INVALID_MESSAGE.getBytes());
+        _bigMessageSignature = sign.sign();
 
         final BindableService impl =  new ServiceDPASImpl();
 
@@ -122,7 +130,7 @@ public class PostTest {
         reply = _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
-                .setMessage(MESSAGE)
+                .setMessage(SECOND_MESSAGE)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
@@ -135,7 +143,7 @@ public class PostTest {
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_NULL_USER);
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_NULL_PUBLIC_KEY);
     }
 
     @Test
@@ -144,7 +152,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(INVALID_MESSAGE)
-                .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSignature(ByteString.copyFrom(_bigMessageSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_INVALID_MESSAGE_SIZE);
     }

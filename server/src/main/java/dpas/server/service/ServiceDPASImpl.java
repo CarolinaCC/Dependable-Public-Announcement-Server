@@ -70,10 +70,8 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = _users.get(key);
             byte[] signature = request.getSignature().toByteArray();
-            String message = request.getMessage().toString();
+            String message = request.getMessage();
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
-
-            if (key == null) replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
 
             // post announcement
             user.getUserBoard().post(announcement);
@@ -101,14 +99,12 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             byte[] signature = request.getSignature().toByteArray();
-            String message = request.getMessage().toString();
+            String message = request.getMessage();
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
 
             synchronized (this) {
                 _generalBoard.post(announcement);
             }
-
-            if (key == null) replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
             replyStatus = POSTSTATUS_INVALID_SIGNATURE;
