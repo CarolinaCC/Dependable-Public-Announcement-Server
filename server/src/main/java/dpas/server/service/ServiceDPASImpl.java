@@ -39,10 +39,11 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
             User user = new User(username, key);
 
+
             User curr = _users.putIfAbsent(key, user);
 
-            //User with public key already exists
             if (curr != null) {
+                //User with public key already exists
                 replyObserver.onNext(RegisterReply.newBuilder()
                         .setStatus(Contract.RegisterStatus.REGISTERSTATUS_REPEATED_USER)
                         .build());
@@ -51,17 +52,18 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                         .setStatus(Contract.RegisterStatus.REGISTERSTATUS_OK)
                         .build());
             }
-        } catch (NullPublicKeyException e) {
+        } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
             replyObserver.onNext(RegisterReply.newBuilder()
                     .setStatus(Contract.RegisterStatus.REGISTERSTATUS_NULL_PUBLICKEY)
                     .build());
+
         } catch (NullUsernameException e) {
             replyObserver.onNext(RegisterReply.newBuilder()
                     .setStatus(Contract.RegisterStatus.REGISTERSTATUS_NULL_USERNAME)
                     .build());
 
-        } catch (InvalidKeySpecException | NoSuchAlgorithmException |
-                NullUserException e) {
+        } catch (NullUserException e) {
+            e.printStackTrace();
             //Should Never Happen
         }
         replyObserver.onCompleted();

@@ -20,7 +20,7 @@ public class User {
     }
 
     public void checkArguments(String username, PublicKey publicKey) throws NullPublicKeyException, NullUsernameException {
-        if (username == null) {
+        if (username == null || username.isBlank()) {
             throw new NullUsernameException();
         }
 

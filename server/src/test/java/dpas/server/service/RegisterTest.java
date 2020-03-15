@@ -67,4 +67,19 @@ public class RegisterTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
     }
+
+    @Test
+    public void registerNullUsername() {
+        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
+        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_USERNAME);
+    }
+    @Test
+    public void registerNullKey() {
+        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+                .setUsername(USER_NAME)
+                .build());
+        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_PUBLICKEY);
+    }
 }
