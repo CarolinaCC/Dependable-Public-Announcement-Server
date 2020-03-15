@@ -27,7 +27,7 @@ public class Announcement implements Serializable {
     }
 
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
-            NullMessageException, NullAnnouncementException, NullUserException, UnsupportedEncodingException, InvalidMessageSizeException,
+            NullMessageException, NullAnnouncementException, NullUserException, UnsupportedEncodingException,
             InvalidMessageSizeException {
 
         if (signature == null) {
@@ -40,8 +40,7 @@ public class Announcement implements Serializable {
             throw new NullMessageException();
         }
 
-        final byte[] messageToBytes = message.getBytes("UTF-8");
-        if (messageToBytes.length > 255) {
+        if (message.length() > 255) {
             throw new InvalidMessageSizeException();
         }
 
@@ -63,7 +62,8 @@ public class Announcement implements Serializable {
         sign.update(messageBytes);
 
         try {
-            sign.verify(signature);
+            if (!sign.verify(signature))
+                throw new InvalidSignatureException();
         } catch (SignatureException e) {
             throw new InvalidSignatureException();
         }

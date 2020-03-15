@@ -32,7 +32,7 @@ message RegisterReply {
 //
 message UserBoardReference {
     int32 sequenceNumber = 1;
-    string user = 2;
+    bytes publicKey = 2;
 }
 
 //
@@ -60,6 +60,12 @@ message PostRequest {
 //
 enum PostStatus {
     POSTSTATUS_OK = 0;
+    POSTSTATUS_INVALID_MESSAGE_SIZE = 1;
+    POSTSTATUS_NULL_USER = 2;
+    POSTSTATUS_INVALID_SIGNATURE = 3;
+    POSTSATATUS_INVALID_REFERENCE = 4;
+    POSTSATATUS_NULL_PUBLIC_KEY = 5;
+
 }
 
 //
