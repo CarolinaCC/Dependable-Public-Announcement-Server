@@ -1,11 +1,17 @@
 package dpas.server.service;
 
+import com.google.protobuf.ByteString;
+import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
+<<<<<<< HEAD
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
 import dpas.common.domain.exception.UserAlreadyExistsException;
+=======
+import dpas.common.domain.UserBoard;
+>>>>>>> 36c6028539828f745370862cf70ebf842b03e2fd
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.grpc.contract.Contract.RegisterRequest;
@@ -17,6 +23,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
@@ -65,6 +73,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void post(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
+
 
     }
 
