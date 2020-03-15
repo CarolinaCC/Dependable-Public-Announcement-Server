@@ -97,7 +97,6 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .build());
-
     }
 
     @After
@@ -177,11 +176,6 @@ public class PostTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE);
     }
-
-
-
-
-
 
 
 
