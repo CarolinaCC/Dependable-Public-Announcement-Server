@@ -54,4 +54,19 @@ public class UserTest {
     public void nullUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
         User user = new User(null, _publicKey);
     }
+
+    @Test(expected = NullUsernameException.class)
+    public void emptyUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
+        User user = new User("", _publicKey);
+    }
+
+    @Test(expected = NullUsernameException.class)
+    public void tabUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
+        User user = new User("\t", _publicKey);
+    }
+
+    @Test(expected = NullUsernameException.class)
+    public void newlineUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
+        User user = new User("\n", _publicKey);
+    }
 }
