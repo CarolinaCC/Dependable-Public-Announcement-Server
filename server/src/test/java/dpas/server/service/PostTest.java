@@ -24,7 +24,6 @@ public class PostTest {
     private Server _server;
     private PublicKey _firstPublicKey;
     private PublicKey _secondPublicKey;
-    private PublicKey _thirdPublicKey;
     private byte[] _firstSignature;
     private byte[] _secondSignature;
     private byte[] _bigMessageSignature;
@@ -78,7 +77,7 @@ public class PostTest {
         keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         keyPair = keygen.generateKeyPair();
-        _thirdPublicKey = keyPair.getPublic();
+        PublicKey _thirdPublicKey = keyPair.getPublic();
 
         // Generate signature for too big message
         sign = Signature.getInstance("SHA256withRSA");
