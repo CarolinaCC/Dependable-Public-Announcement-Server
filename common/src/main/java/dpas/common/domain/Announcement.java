@@ -39,8 +39,7 @@ public class Announcement {
             throw new NullMessageException();
         }
 
-        final byte[] messageToBytes = message.getBytes("UTF-8");
-        if (messageToBytes.length > 255) {
+        if (message.length() > 255) {
             throw new InvalidMessageSizeException();
         }
 
