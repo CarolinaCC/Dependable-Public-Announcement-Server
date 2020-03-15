@@ -152,7 +152,7 @@ public class RegisterTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_REPEATED_USER);
     }
-    
+
     @Test
     public void registerRepeatedPublicKeyUser() {
         Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
