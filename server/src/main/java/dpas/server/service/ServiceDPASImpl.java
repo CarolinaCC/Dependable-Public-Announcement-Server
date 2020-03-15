@@ -73,6 +73,10 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             // post announcement
             user.getUserBoard().post(announcement);
 
+            responseObserver.onNext(Contract.PostReply.newBuilder()
+                    .setStatus(Contract.PostStatus.POSTSTATUS_OK)
+                    .build());
+
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
             responseObserver.onNext(Contract.PostReply.newBuilder()
                     .setStatus(Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE)
@@ -110,6 +114,10 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             synchronized (this) {
                 _generalBoard.post(announcement);
             }
+
+            responseObserver.onNext(Contract.PostReply.newBuilder()
+                    .setStatus(Contract.PostStatus.POSTSTATUS_OK)
+                    .build());
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
             responseObserver.onNext(Contract.PostReply.newBuilder()
