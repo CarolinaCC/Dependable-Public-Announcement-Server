@@ -10,10 +10,13 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 public class UserBoardTest {
 
     private Announcement _announcementValid;
+    private Announcement _announcementValid2;
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
 
@@ -32,6 +35,8 @@ public class UserBoardTest {
         byte[] signature = sign.sign();
         // Generate Announcement A
         _announcementValid = new Announcement(signature, user, "MESSAGE", null);
+        _announcementValid2 = new Announcement(signature, user, "MESSAGE2", new ArrayList<Announcement>(Collections.singletonList(_announcementValid)));
+
 
         // Get UserBoard
         _userBoard = user.getUserBoard();
@@ -76,11 +81,40 @@ public class UserBoardTest {
     @Test
     public void validRead() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
         _userBoard.post(_announcementValid);
-        _userBoard.post(_announcementValid);
+        _userBoard.post(_announcementValid2);
         ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
         expectedAnnouncements.add(_announcementValid);
         expectedAnnouncements.add(_announcementValid);
         assertEquals(_userBoard.read(2), expectedAnnouncements);
+    }
+
+    @Test
+    public void valueZeroRead() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
+        _userBoard.post(_announcementValid);
+        _userBoard.post(_announcementValid2);
+        ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
+        expectedAnnouncements.add(_announcementValid);
+        expectedAnnouncements.add(_announcementValid2);
+        assertEquals(_userBoard.read(0), expectedAnnouncements);
+    }
+
+    @Test
+    public void valueHigherThanPostsRead() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
+        _userBoard.post(_announcementValid);
+        _userBoard.post(_announcementValid2);
+        ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
+        expectedAnnouncements.add(_announcementValid);
+        expectedAnnouncements.add(_announcementValid2);
+        assertEquals(_userBoard.read(7), expectedAnnouncements);
+    }
+
+    @Test
+    public void readSubsetOfPosts() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
+        _userBoard.post(_announcementValid);
+        _userBoard.post(_announcementValid2);
+        ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
+        expectedAnnouncements.add(_announcementValid2);
+        assertEquals(_userBoard.read(1), expectedAnnouncements);
     }
 
     @Test(expected = InvalidNumberOfPostsException.class)

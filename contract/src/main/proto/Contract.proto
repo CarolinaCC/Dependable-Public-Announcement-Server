@@ -19,6 +19,9 @@ message RegisterRequest {
 //
 enum RegisterStatus {
     REGISTERSTATUS_OK = 0;
+    REGISTERSTATUS_NULL_USERNAME = 1;
+    REGISTERSTATUS_NULL_PUBLICKEY = 2;
+    REGISTERSTATUS_REPEATED_USER = 3;
 }
 
 //
@@ -78,7 +81,13 @@ message ReadRequest {
     string username = 3;
 }
 
+enum readStatus {
+     READ_OK = 0;
+     INVALID_NUMBER_OF_POSTS_EXCEPTION = 3;
+}
+
 //
 message ReadReply {
     repeated string announcements = 1;
+    readStatus status = 2;
 }
