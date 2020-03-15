@@ -73,22 +73,22 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             String message = request.getMessage().toString();
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
 
+            if (key == null) replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
+
             // post announcement
             user.getUserBoard().post(announcement);
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
             replyStatus = POSTSTATUS_INVALID_SIGNATURE;
-        } catch (NullPublicKeyException | InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            replyStatus = POSTSTATUS_NULL_PUBLIC_KEY;
+        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
+            replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
         } catch (InvalidMessageSizeException | NullMessageException e) {
             replyStatus = POSTSTATUS_INVALID_MESSAGE_SIZE;
         } catch (NullUserException | InvalidUserException e) {
             replyStatus = POSTSTATUS_NULL_USER;
         } catch (InvalidReferenceException e) {
             replyStatus = POSTSATATUS_INVALID_REFERENCE;
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (NullAnnouncementException e) {
+        } catch (UnsupportedEncodingException | NullAnnouncementException e) {
             e.printStackTrace();
         }
         responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(replyStatus).build());
@@ -103,26 +103,24 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             byte[] signature = request.getSignature().toByteArray();
             String message = request.getMessage().toString();
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
+
             synchronized (this) {
                 _generalBoard.post(announcement);
             }
-            responseObserver.onNext(Contract.PostReply.newBuilder()
-                    .setStatus(Contract.PostStatus.POSTSTATUS_OK)
-                    .build());
+
+            if (key == null) replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
             replyStatus = POSTSTATUS_INVALID_SIGNATURE;
-        } catch (NullPublicKeyException | InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            replyStatus = POSTSTATUS_NULL_PUBLIC_KEY;
+        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
+            replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
         } catch (InvalidMessageSizeException | NullMessageException e) {
             replyStatus = POSTSTATUS_INVALID_MESSAGE_SIZE;
         } catch (NullUserException e) {
             replyStatus = POSTSTATUS_NULL_USER;
         } catch (InvalidReferenceException e) {
             replyStatus = POSTSATATUS_INVALID_REFERENCE;
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (NullAnnouncementException e) {
+        } catch (UnsupportedEncodingException | NullAnnouncementException e) {
             e.printStackTrace();
         }
         responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(replyStatus).build());
