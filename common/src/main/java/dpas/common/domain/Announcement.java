@@ -2,11 +2,12 @@ package dpas.common.domain;
 
 import dpas.common.domain.exception.*;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
 
-public class Announcement {
+public class Announcement implements Serializable {
     private byte[] _signature;
     private User _user;
     private String _message;

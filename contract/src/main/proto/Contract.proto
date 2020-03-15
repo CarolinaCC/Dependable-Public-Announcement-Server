@@ -74,13 +74,16 @@ message ReadRequest {
     string username = 3;
 }
 
-enum readStatus {
+enum ReadStatus {
      READ_OK = 0;
-     INVALID_NUMBER_OF_POSTS_EXCEPTION = 3;
+     INVALID_NUMBER_OF_POSTS_EXCEPTION = 1;
+     NULL_PUBLIC_KEY_EXCEPTION = 2;
+     USER_NOT_REGISTERED = 3;
 }
+
 
 //
 message ReadReply {
-    repeated string announcements = 1;
-    readStatus status = 2;
+    bytes announcements = 1;
+    ReadStatus status = 2;
 }

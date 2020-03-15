@@ -23,6 +23,7 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.Contract.RegisterReply;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -84,25 +85,48 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
 
         try {
+            Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
+
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
-            User user = _users.get(key);
-            int numberToRead = request.getNumber();
-            UserBoard userBoard = user.getUserBoard();
-            ArrayList<Announcement> announcements = userBoard.read(numberToRead);
+            if (key == null) {
 
-            String announcementsString = announcements.stream().map(Announcement::toString)
-                    .collect(Collectors.joining("|| "));
+                replyStatus = Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION;
+                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                        .setStatus(replyStatus)
+                        .build());
+            }
 
-            Contract.ReadReply.newBuilder().setAnnouncements(0, announcementsString)
-                    .setStatus(Contract.readStatus.READ_OK)
-                    .build();
+            else if(!(_users.containsKey(key))){
 
-        }  catch (InvalidNumberOfPostsException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-            Contract.ReadReply.newBuilder()
-                    .setStatus(Contract.readStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION)
-                    .build();
+                replyStatus = Contract.ReadStatus.USER_NOT_REGISTERED;
+                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                        .setStatus(replyStatus)
+                        .build());
+            }
+
+            else {
+                User user = _users.get(key);
+                int numberToRead = request.getNumber();
+                UserBoard userBoard = user.getUserBoard();
+                ArrayList<Announcement> announcements = userBoard.read(numberToRead);
+                byte[] announcementsBytes = SerializationUtils.serialize(announcements);
+
+                responseObserver.onNext(Contract.ReadReply.newBuilder().setAnnouncements(ByteString.copyFrom(announcementsBytes))
+                        .setStatus(replyStatus)
+                        .build());
+            }
+
+        }  catch (InvalidNumberOfPostsException | NoSuchAlgorithmException e) {
+                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                    .setStatus(Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION)
+                    .build());
+
+        } catch (InvalidKeySpecException e) {
+            responseObserver.onNext(Contract.ReadReply.newBuilder()
+                    .setStatus(Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION)
+                    .build());
         }
 
         responseObserver.onCompleted();
@@ -112,14 +136,18 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
 
         try {
+            Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
+
             int numberToRead = request.getNumber();
             ArrayList<Announcement> announcements = _generalBoard.read(numberToRead);
-            String announcementsString = announcements.stream().map(Announcement::toString).collect(Collectors.joining("|| "));
+            byte[] announcementsBytes = SerializationUtils.serialize(announcements);
 
-            Contract.ReadReply.newBuilder().setAnnouncements(0, announcementsString).setStatus(Contract.readStatus.READ_OK).build();
+            responseObserver.onNext(Contract.ReadReply.newBuilder().setAnnouncements(ByteString.copyFrom(announcementsBytes))
+                    .setStatus(replyStatus)
+                    .build());
 
         } catch (InvalidNumberOfPostsException e) {
-            Contract.ReadReply.newBuilder().setStatus(Contract.readStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION).build();
+            Contract.ReadReply.newBuilder().setStatus(Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION).build();
         }
 
         responseObserver.onCompleted();
