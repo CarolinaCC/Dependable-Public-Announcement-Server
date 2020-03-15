@@ -20,7 +20,7 @@ public class User {
     }
 
     public void checkArguments(String username, PublicKey publicKey) throws NullPublicKeyException, NullUsernameException {
-        if (username == null) {
+        if (username == null || username.isBlank()) {
             throw new NullUsernameException();
         }
 
@@ -39,6 +39,11 @@ public class User {
 
     public UserBoard getUserBoard() {
         return _userBoard;
+    }
+
+    //Comparing two users
+    public boolean equals(User other) {
+        return this._publicKey.equals(other._publicKey) && this._username.equals(other._username);
     }
 
 }

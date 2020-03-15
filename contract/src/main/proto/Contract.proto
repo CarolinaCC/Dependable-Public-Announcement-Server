@@ -19,6 +19,9 @@ message RegisterRequest {
 //
 enum RegisterStatus {
     REGISTERSTATUS_OK = 0;
+    REGISTERSTATUS_NULL_USERNAME = 1;
+    REGISTERSTATUS_NULL_PUBLICKEY = 2;
+    REGISTERSTATUS_REPEATED_USER = 3;
 }
 
 //
