@@ -4,14 +4,11 @@ import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
-<<<<<<< HEAD
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
 import dpas.common.domain.exception.UserAlreadyExistsException;
-=======
 import dpas.common.domain.UserBoard;
->>>>>>> 36c6028539828f745370862cf70ebf842b03e2fd
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.grpc.contract.Contract.RegisterRequest;
