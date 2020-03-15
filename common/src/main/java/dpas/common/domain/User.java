@@ -40,10 +40,4 @@ public class User {
     public UserBoard getUserBoard() {
         return _userBoard;
     }
-
-    //Comparing two users
-    public boolean equals(User other) {
-        return this._publicKey.equals(other._publicKey) && this._username.equals(other._username);
-    }
-
 }
