@@ -169,20 +169,27 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
 
-    private ArrayList<Announcement> getListOfReferences(List<Contract.BoardReference> requestReferencesList) throws InvalidReferenceException, NoSuchAlgorithmException, InvalidKeySpecException {
+    private ArrayList<Announcement> getListOfReferences(List<Contract.BoardReference> requestReferencesList) throws InvalidReferenceException {
         // add all references to lists of references
-        ArrayList<Announcement> references = new ArrayList<Announcement>();
-        for (Contract.BoardReference ref : requestReferencesList) {
-            if (ref.hasGeneralBoardReference()) {
-                // find announcement in general board
-                references.add(_generalBoard.getAnnouncementFromReference(ref.getGeneralBoardReference().getSequenceNumber()));
-            } else {
-                // find author of reference and get announcement
-                User refUser = _users.get(KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(ref.getUserBoardReference().getPublicKey().toByteArray())));
-                references.add(refUser.getUserBoard().getAnnouncementFromReference(ref.getUserBoardReference().getSequenceNumber()));
+        try {
+            ArrayList<Announcement> references = new ArrayList<Announcement>();
+            for (Contract.BoardReference ref : requestReferencesList) {
+                if (ref.hasGeneralBoardReference()) {
+                    // find announcement in general board
+                    references.add(_generalBoard.getAnnouncementFromReference(ref.getGeneralBoardReference().getSequenceNumber()));
+                } else {
+                    // find author of reference and get announcement
+                    User refUser = _users.get(KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(ref.getUserBoardReference().getPublicKey().toByteArray())));
+                    if (refUser == null) {
+                        throw new InvalidReferenceException();
+                    }
+                    references.add(refUser.getUserBoard().getAnnouncementFromReference(ref.getUserBoardReference().getSequenceNumber()));
+                }
             }
+            return references;
+        }catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new InvalidReferenceException();
         }
-        return references;
     }
 
 }

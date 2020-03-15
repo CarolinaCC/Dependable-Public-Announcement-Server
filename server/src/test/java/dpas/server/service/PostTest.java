@@ -24,9 +24,16 @@ public class PostTest {
     private Server _server;
     private PublicKey _firstPublicKey;
     private PublicKey _secondPublicKey;
+    private PublicKey _thirdPublicKey;
     private byte[] _firstSignature;
     private byte[] _secondSignature;
     private byte[] _bigMessageSignature;
+
+    private Contract.BoardReference _validReference;
+    private Contract.BoardReference _invalidReference;
+    private Contract.BoardReference _invalidReference2;
+    private Contract.BoardReference _invalidReference3;
+
 
 
     private ManagedChannel _channel;
@@ -66,11 +73,50 @@ public class PostTest {
         sign.update(SECOND_MESSAGE.getBytes());
         _secondSignature = sign.sign();
 
+
+        // third key pair
+        keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
+        keyPair = keygen.generateKeyPair();
+        _thirdPublicKey = keyPair.getPublic();
+
         // Generate signature for too big message
         sign = Signature.getInstance("SHA256withRSA");
         sign.initSign(keyPair.getPrivate());
         sign.update(INVALID_MESSAGE.getBytes());
         _bigMessageSignature = sign.sign();
+
+        //Valid Reference
+        _validReference = Contract.BoardReference.newBuilder()
+                .setUserBoardReference(Contract.UserBoardReference
+                        .newBuilder()
+                        .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                        .setSequenceNumber(0)
+                        .build()).build();
+        //Invalid Reference sequenceNumber too high
+        _invalidReference = Contract.BoardReference.newBuilder()
+                .setUserBoardReference(Contract.UserBoardReference
+                        .newBuilder()
+                        .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                        .setSequenceNumber(3)
+                        .build()).build();
+
+        _invalidReference2 = Contract.BoardReference.newBuilder()
+                .setUserBoardReference(Contract.UserBoardReference
+                        .newBuilder()
+                        .setPublicKey(ByteString.copyFrom(_thirdPublicKey.getEncoded()))
+                        .setSequenceNumber(3)
+                        .build()).build();
+
+
+        _invalidReference3 = Contract.BoardReference.newBuilder()
+                .setUserBoardReference(Contract.UserBoardReference
+                        .newBuilder()
+                        .setPublicKey(ByteString.copyFrom(new byte[] {12, 2, 25}))
+                        .setSequenceNumber(3)
+                        .build()).build();
+
+
 
         final BindableService impl =  new ServiceDPASImpl();
 
@@ -133,6 +179,86 @@ public class PostTest {
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
+    }
+
+    @Test
+    public void twoPostsValidReference() {
+        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .setUsername(FIRST_USER_NAME)
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_firstSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
+
+        reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+                .setUsername(SECOND_USER_NAME)
+                .setMessage(SECOND_MESSAGE)
+                .addReferences( _validReference)
+                .setSignature(ByteString.copyFrom(_secondSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
+    }
+
+    @Test
+    public void twoPostsInvalidReference() {
+        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .setUsername(FIRST_USER_NAME)
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_firstSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
+
+        reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+                .setUsername(SECOND_USER_NAME)
+                .setMessage(SECOND_MESSAGE)
+                .addReferences( _invalidReference)
+                .setSignature(ByteString.copyFrom(_secondSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
+    }
+
+    @Test
+    public void twoPostsInvalidUserReference() {
+        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .setUsername(FIRST_USER_NAME)
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_firstSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
+
+        reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+                .setUsername(SECOND_USER_NAME)
+                .setMessage(SECOND_MESSAGE)
+                .addReferences( _invalidReference2)
+                .setSignature(ByteString.copyFrom(_secondSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
+    }
+
+    @Test
+    public void twoPostsInvalidReferenceKey() {
+        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .setUsername(FIRST_USER_NAME)
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_firstSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
+
+        reply = _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+                .setUsername(SECOND_USER_NAME)
+                .setMessage(SECOND_MESSAGE)
+                .addReferences( _invalidReference3)
+                .setSignature(ByteString.copyFrom(_secondSignature))
+                .build());
+        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
     }
 
     @Test
