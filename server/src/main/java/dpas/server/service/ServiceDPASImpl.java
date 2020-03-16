@@ -127,22 +127,15 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+        Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
 
         try {
-            Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
 
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
-            if (key == null) {
 
-                replyStatus = Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION;
-                responseObserver.onNext(Contract.ReadReply.newBuilder()
-                        .setStatus(replyStatus)
-                        .build());
-            }
-
-            else if(!(_users.containsKey(key))){
+            if(!(_users.containsKey(key))){
 
                 replyStatus = Contract.ReadStatus.USER_NOT_REGISTERED;
                 responseObserver.onNext(Contract.ReadReply.newBuilder()
@@ -164,13 +157,19 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             }
 
         }  catch (InvalidNumberOfPostsException | NoSuchAlgorithmException e) {
-                responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .setStatus(Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION)
-                    .build());
+
+            replyStatus = Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION;
+
+            responseObserver.onNext(Contract.ReadReply.newBuilder()
+                .setStatus(replyStatus)
+                .build());
 
         } catch (InvalidKeySpecException e) {
+
+            replyStatus = Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION;
+
             responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .setStatus(Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION)
+                    .setStatus(replyStatus)
                     .build());
         }
 

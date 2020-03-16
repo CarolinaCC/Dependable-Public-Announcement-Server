@@ -29,6 +29,7 @@ public class ReadTest {
     private ManagedChannel _channel;
 
     private final static String USER_NAME = "USER";
+    private final static String NON_REGISTERED_USER = "USER2";
 
     private PublicKey _publicKey;
     private User _user;
@@ -188,6 +189,23 @@ public class ReadTest {
                 .setNumber(_numberToRead)
                 .build());
         assertEquals(reply.getStatus(), Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION);
+    }
+
+    @Test
+    public void readUserNotRegistered() throws NoSuchAlgorithmException {
+
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
+        KeyPair keyPair = keygen.generateKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+
+        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                .setUsername(NON_REGISTERED_USER)
+                .setNumber(_numberToRead)
+                .build());
+
+        assertEquals(reply.getStatus(), Contract.ReadStatus.USER_NOT_REGISTERED);
     }
 
 }
