@@ -151,6 +151,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             }
 
             else {
+
                 User user = _users.get(key);
                 int numberToRead = request.getNumber();
                 UserBoard userBoard = user.getUserBoard();
@@ -178,20 +179,24 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+        Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
 
         try {
-            Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
 
             int numberToRead = request.getNumber();
             ArrayList<Announcement> announcements = _generalBoard.read(numberToRead);
             byte[] announcementsBytes = SerializationUtils.serialize(announcements);
 
-            responseObserver.onNext(Contract.ReadReply.newBuilder().setAnnouncements(ByteString.copyFrom(announcementsBytes))
+            responseObserver.onNext(Contract.ReadReply.newBuilder()
+                    .setAnnouncements(ByteString.copyFrom(announcementsBytes))
                     .setStatus(replyStatus)
                     .build());
 
         } catch (InvalidNumberOfPostsException e) {
-            Contract.ReadReply.newBuilder().setStatus(Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION).build();
+            replyStatus = Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION;
+            responseObserver.onNext(Contract.ReadReply.newBuilder()
+                    .setStatus(replyStatus)
+                    .build());
         }
 
         responseObserver.onCompleted();

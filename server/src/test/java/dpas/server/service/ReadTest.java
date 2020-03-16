@@ -55,7 +55,6 @@ public class ReadTest {
         _signature = sign.sign();
 
         _user = new User(USER_NAME, _publicKey);
-        _numberToRead = 0;
 
         Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references);
         _user.getUserBoard().post(announcement);
@@ -88,7 +87,23 @@ public class ReadTest {
     }
 
     @Test
+    public void readSuccessAllWith0() {
+
+        _numberToRead = 0;
+
+        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
+                .setUsername(_user.getUsername())
+                .setNumber(_numberToRead)
+                .build());
+
+        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
+    }
+
+    @Test
     public void readSuccessAll() {
+
+        _numberToRead = 2;
 
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
@@ -102,28 +117,34 @@ public class ReadTest {
    @Test
     public void readSuccess() {
 
-        int numberToRead = 1;
+        _numberToRead = 1;
 
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
                 .setUsername(USER_NAME)
-                .setNumber(numberToRead)
+                .setNumber(_numberToRead)
                 .build());
         assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
     }
 
     @Test
     public void readInvalidNumberOfPosts() {
+
+        _numberToRead = -1;
+
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
                 .setUsername(USER_NAME)
-                .setNumber(-1)
+                .setNumber(_numberToRead)
                 .build());
         assertEquals(reply.getStatus(), Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION);
     }
 
     @Test
     public void readNullKey() {
+
+        _numberToRead = 0;
+
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setUsername(USER_NAME)
                 .setNumber(_numberToRead)
@@ -133,6 +154,7 @@ public class ReadTest {
 
     @Test
     public void readEmptyKey() {
+
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[0]))
                 .setUsername(USER_NAME)
@@ -143,6 +165,7 @@ public class ReadTest {
 
     @Test
     public void readArbitraryKey() {
+
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[] {12, 2, 12, 5}))
                 .setUsername(USER_NAME)
@@ -153,6 +176,7 @@ public class ReadTest {
 
     @Test
     public void readWrongAlgorithmKey() throws NoSuchAlgorithmException {
+
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("DSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
