@@ -8,7 +8,7 @@ public class UserBoard extends AnnouncementBoard {
     private User _owner;
     private int _sequenceNumber = 0;
 
-    public UserBoard (User user) throws NullUserException  {
+    public UserBoard(User user) throws NullUserException {
         if (user == null) throw new NullUserException();
         _owner = user;
     }
@@ -21,7 +21,7 @@ public class UserBoard extends AnnouncementBoard {
         _sequenceNumber++;
     }
 
-    private void checkArguments( Announcement post) throws NullAnnouncementException, InvalidUserException {
+    private void checkArguments(Announcement post) throws NullAnnouncementException, InvalidUserException {
         if (post == null) {
             throw new NullAnnouncementException();
         }

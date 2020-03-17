@@ -17,7 +17,7 @@ public abstract class AnnouncementBoard {
         return new ArrayList<Announcement>(_posts.subList(_posts.size() - number, _posts.size()));
     }
 
-    public Announcement getAnnouncementFromReference (int reference) throws InvalidReferenceException {
+    public Announcement getAnnouncementFromReference(int reference) throws InvalidReferenceException {
         if (reference < 0 || _posts.size() <= reference) {
             throw new InvalidReferenceException();
         }

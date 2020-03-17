@@ -45,7 +45,7 @@ public class RegisterTest {
         keyPair = keygen.generateKeyPair();
         _secondPublicKey = keyPair.getPublic();
 
-        final BindableService impl =  new ServiceDPASImpl();
+        final BindableService impl = new ServiceDPASImpl();
 
         //Start server
         _server = NettyServerBuilder
@@ -98,6 +98,7 @@ public class RegisterTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_USERNAME);
     }
+
     @Test
     public void registerNullKey() {
         Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
@@ -118,7 +119,7 @@ public class RegisterTest {
     @Test
     public void registerArbitraryKey() {
         Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(new byte[] {12, 2, 12, 5}))
+                .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
                 .setUsername(FIRST_USER_NAME)
                 .build());
         assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_PUBLICKEY);

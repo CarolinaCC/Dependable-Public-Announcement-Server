@@ -34,7 +34,6 @@ public class PostTest {
     private Contract.BoardReference _invalidReference3;
 
 
-
     private ManagedChannel _channel;
 
     private final static String FIRST_USER_NAME = "USER";
@@ -44,7 +43,6 @@ public class PostTest {
     private static final String SECOND_MESSAGE = "Second Message";
     private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
             "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
-
 
 
     @Before
@@ -111,13 +109,12 @@ public class PostTest {
         _invalidReference3 = Contract.BoardReference.newBuilder()
                 .setUserBoardReference(Contract.UserBoardReference
                         .newBuilder()
-                        .setPublicKey(ByteString.copyFrom(new byte[] {12, 2, 25}))
+                        .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 25}))
                         .setSequenceNumber(3)
                         .build()).build();
 
 
-
-        final BindableService impl =  new ServiceDPASImpl();
+        final BindableService impl = new ServiceDPASImpl();
 
         //Start server
         _server = NettyServerBuilder
@@ -194,7 +191,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
-                .addReferences( _validReference)
+                .addReferences(_validReference)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
@@ -214,7 +211,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
-                .addReferences( _invalidReference)
+                .addReferences(_invalidReference)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
@@ -234,7 +231,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
-                .addReferences( _invalidReference2)
+                .addReferences(_invalidReference2)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
@@ -254,7 +251,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
-                .addReferences( _invalidReference3)
+                .addReferences(_invalidReference3)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
@@ -291,6 +288,7 @@ public class PostTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE);
     }
+
     @Test
     public void postInvalidSignature() {
         Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()

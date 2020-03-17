@@ -59,7 +59,7 @@ public class ReadTest {
         Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references);
         _user.getUserBoard().post(announcement);
 
-        final BindableService impl =  new ServiceDPASImpl();
+        final BindableService impl = new ServiceDPASImpl();
 
         //Start server
         _server = NettyServerBuilder
@@ -71,7 +71,7 @@ public class ReadTest {
         final String host = "localhost";
         final int port = 8091;
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
-        _stub = ServiceDPASGrpc.newBlockingStub(_channel).withMaxInboundMessageSize(1024*1024*1024).withMaxOutboundMessageSize(1024 * 1024 * 1024);
+        _stub = ServiceDPASGrpc.newBlockingStub(_channel).withMaxInboundMessageSize(1024 * 1024 * 1024).withMaxOutboundMessageSize(1024 * 1024 * 1024);
 
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
@@ -114,7 +114,7 @@ public class ReadTest {
         assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
     }
 
-   @Test
+    @Test
     public void readSuccess() {
 
         _numberToRead = 1;
@@ -167,7 +167,7 @@ public class ReadTest {
     public void readArbitraryKey() {
 
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(new byte[] {12, 2, 12, 5}))
+                .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
                 .setUsername(USER_NAME)
                 .setNumber(_numberToRead)
                 .build());

@@ -1,4 +1,5 @@
 package dpas.server.service;
+
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -87,7 +88,7 @@ public class PostGeneralTest {
                         .build()).build();
 
 
-        final BindableService impl =  new ServiceDPASImpl();
+        final BindableService impl = new ServiceDPASImpl();
 
         //Start server
         _server = NettyServerBuilder
@@ -222,6 +223,7 @@ public class PostGeneralTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE);
     }
+
     @Test
     public void postInvalidSignature() {
         Contract.PostReply reply = _stub.postGeneral(Contract.PostRequest.newBuilder()

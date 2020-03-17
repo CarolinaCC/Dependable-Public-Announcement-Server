@@ -96,11 +96,9 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             byte[] signature = request.getSignature().toByteArray();
             String message = request.getMessage();
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
-
             synchronized (this) {
                 _generalBoard.post(announcement);
             }
-
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
             replyStatus = POSTSTATUS_INVALID_SIGNATURE;
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
@@ -123,21 +121,15 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
 
         try {
-
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
-
-            if(!(_users.containsKey(key))){
-
+            if (!(_users.containsKey(key))) {
                 replyStatus = Contract.ReadStatus.USER_NOT_REGISTERED;
                 responseObserver.onNext(Contract.ReadReply.newBuilder()
                         .setStatus(replyStatus)
                         .build());
-            }
-
-            else {
-
+            } else {
                 User user = _users.get(key);
                 int numberToRead = request.getNumber();
                 UserBoard userBoard = user.getUserBoard();
@@ -148,24 +140,17 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                         .setStatus(replyStatus)
                         .build());
             }
-
-        }  catch (InvalidNumberOfPostsException | NoSuchAlgorithmException e) {
-
+        } catch (InvalidNumberOfPostsException | NoSuchAlgorithmException e) {
             replyStatus = Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION;
-
             responseObserver.onNext(Contract.ReadReply.newBuilder()
-                .setStatus(replyStatus)
-                .build());
-
+                    .setStatus(replyStatus)
+                    .build());
         } catch (InvalidKeySpecException e) {
-
             replyStatus = Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION;
-
             responseObserver.onNext(Contract.ReadReply.newBuilder()
                     .setStatus(replyStatus)
                     .build());
         }
-
         responseObserver.onCompleted();
     }
 
@@ -183,14 +168,12 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                     .setAnnouncements(ByteString.copyFrom(announcementsBytes))
                     .setStatus(replyStatus)
                     .build());
-
         } catch (InvalidNumberOfPostsException e) {
             replyStatus = Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION;
             responseObserver.onNext(Contract.ReadReply.newBuilder()
                     .setStatus(replyStatus)
                     .build());
         }
-
         responseObserver.onCompleted();
     }
 
@@ -213,7 +196,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 }
             }
             return references;
-        }catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new InvalidReferenceException();
         }
     }
