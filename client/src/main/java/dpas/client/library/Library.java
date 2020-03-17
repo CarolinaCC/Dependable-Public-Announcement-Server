@@ -1,8 +1,6 @@
 package dpas.client.library;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
-import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -81,7 +79,7 @@ public class Library {
 
     public Announcement[] read(PublicKey publicKey, String username, int number) {
         try {
-            Contract.ReadReply reply =_stub.read(Contract.ReadRequest.newBuilder()
+            Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                     .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                     .setUsername(username)
                     .setNumber(number).build());
@@ -92,9 +90,9 @@ public class Library {
         }
     }
 
-    public Announcement[] readGeneral (int number) {
+    public Announcement[] readGeneral(int number) {
         try {
-            Contract.ReadReply reply =_stub.readGeneral(Contract.ReadRequest.newBuilder()
+            Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder()
                     .setNumber(number).build());
             return (Announcement[]) reply.getAnnouncementsList().toArray();
         } catch (StatusRuntimeException e) {
