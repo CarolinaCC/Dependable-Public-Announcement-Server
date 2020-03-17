@@ -2,7 +2,6 @@ package dpas.client.library;
 
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
-import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -27,7 +26,7 @@ public class Library {
                     .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                     .setUsername(username).build());
         } catch (StatusRuntimeException e) {
-            System.out.println("An errror ocurred: " + e.getMessage());
+            System.out.println("An error ocurred: " + e.getMessage());
         }
 
     }
@@ -96,7 +95,7 @@ public class Library {
                     .setNumber(number).build());
             return (Announcement[]) reply.getAnnouncementsList().toArray();
         } catch (StatusRuntimeException e) {
-            System.out.println("An errror ocurred: " + e.getMessage());
+            System.out.println("An error ocurred: " + e.getMessage());
             return null;
         }
     }
