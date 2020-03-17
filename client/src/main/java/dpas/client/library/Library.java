@@ -1,7 +1,10 @@
 package dpas.client.library;
 
+import com.google.protobuf.ByteString;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
 import java.security.PublicKey;
@@ -16,6 +19,13 @@ public class Library {
     }
 
     public void register(PublicKey publicKey, String username) {
+        try {
+            _stub.register(Contract.RegisterRequest.newBuilder()
+                    .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                    .setUsername(username).build());
+        } catch (StatusRuntimeException e) {
+            System.out.println("An errror ocurred: " + e.getMessage());
+        }
 
     }
 
