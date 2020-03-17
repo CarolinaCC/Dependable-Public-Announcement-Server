@@ -3,7 +3,10 @@ package dpas.client.library;
 import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
 import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
 import java.security.PublicKey;
@@ -21,50 +24,82 @@ public class Library {
     }
 
     public void register(PublicKey publicKey, String username) {
+        try {
+            _stub.register(Contract.RegisterRequest.newBuilder()
+                    .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                    .setUsername(username).build());
+        } catch (StatusRuntimeException e) {
+            System.out.println("An errror ocurred: " + e.getMessage());
+        }
 
     }
 
     public void post(PublicKey key, byte[] signature, char[] message, String username, Announcement[] a) {
 
-        List<String> identifiers = new ArrayList<String>();
-        for(Announcement announcement: a){
-            identifiers.add(announcement.getIdentifier());
+        try {
+            List<String> identifiers = new ArrayList<String>();
+            for (Announcement announcement : a) {
+                identifiers.add(announcement.getIdentifier());
+            }
+
+            Contract.PostRequest postRequest = Contract.PostRequest.newBuilder()
+                    .setPublicKey(ByteString.copyFrom(key.getEncoded()))
+                    .setMessage(String.valueOf(message))
+                    .setSignature(ByteString.copyFrom(signature))
+                    .setUsername(username)
+                    .addAllReferences(identifiers)
+                    .build();
+
+            _stub.post(postRequest);
+        } catch (StatusRuntimeException e) {
+            System.out.println("An error ocurred: " + e.getMessage());
         }
-
-        Contract.PostRequest postRequest = Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(key.getEncoded()))
-                .setMessage(String.valueOf(message))
-                .setSignature(ByteString.copyFrom(signature))
-                .setUsername(username)
-                .addAllReferences(identifiers)
-                .build();
-
-        _stub.post(postRequest);
     }
 
     public void postGeneral(PublicKey key, byte[] signature, char[] message, String username, Announcement[] a) {
 
-        List<String> identifiers = new ArrayList<String>();
-        for(Announcement announcement: a){
-            identifiers.add(announcement.getIdentifier());
+        try {
+            List<String> identifiers = new ArrayList<String>();
+            for (Announcement announcement : a) {
+                identifiers.add(announcement.getIdentifier());
+            }
+
+            Contract.PostRequest postRequest = Contract.PostRequest.newBuilder()
+                    .setPublicKey(ByteString.copyFrom(key.getEncoded()))
+                    .setMessage(String.valueOf(message))
+                    .setSignature(ByteString.copyFrom(signature))
+                    .setUsername(username)
+                    .addAllReferences(identifiers)
+                    .build();
+
+            _stub.postGeneral(postRequest);
+        } catch (StatusRuntimeException e) {
+            System.out.println("An error ocurred: " + e.getMessage());
         }
-
-        Contract.PostRequest postRequest = Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(key.getEncoded()))
-                .setMessage(String.valueOf(message))
-                .setSignature(ByteString.copyFrom(signature))
-                .setUsername(username)
-                .addAllReferences(identifiers)
-                .build();
-
-        _stub.post(postRequest);
     }
 
-    public Announcement[] read(PublicKey publicKey) {
-        return null;
+
+    public Announcement[] read(PublicKey publicKey, String username, int number) {
+        try {
+            Contract.ReadReply reply =_stub.read(Contract.ReadRequest.newBuilder()
+                    .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                    .setUsername(username)
+                    .setNumber(number).build());
+            return (Announcement[]) reply.getAnnouncementsList().toArray();
+        } catch (StatusRuntimeException e) {
+            System.out.println("An error ocurred: " + e.getMessage());
+            return null;
+        }
     }
 
-    public Announcement[] readGeneral(int number) {
-        return null;
+    public Announcement[] readGeneral (int number) {
+        try {
+            Contract.ReadReply reply =_stub.readGeneral(Contract.ReadRequest.newBuilder()
+                    .setNumber(number).build());
+            return (Announcement[]) reply.getAnnouncementsList().toArray();
+        } catch (StatusRuntimeException e) {
+            System.out.println("An errror ocurred: " + e.getMessage());
+            return null;
+        }
     }
 }
