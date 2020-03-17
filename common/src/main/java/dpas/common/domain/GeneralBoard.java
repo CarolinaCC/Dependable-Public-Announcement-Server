@@ -3,8 +3,6 @@ package dpas.common.domain;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
-import java.util.ArrayList;
-
 public class GeneralBoard extends AnnouncementBoard {
     private int _sequenceNumber = 0;
 

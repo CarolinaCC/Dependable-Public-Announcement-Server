@@ -6,16 +6,11 @@ import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.UserBoard;
-import dpas.common.domain.exception.InvalidNumberOfPostsException;
-
-import dpas.common.domain.exception.NullPublicKeyException;
-import dpas.common.domain.exception.NullUserException;
-import dpas.common.domain.exception.NullUsernameException;
 import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
-import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.Contract.RegisterReply;
+import dpas.grpc.contract.Contract.RegisterRequest;
+import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.SerializationUtils;
 
@@ -24,13 +19,11 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
-import static dpas.grpc.contract.Contract.RegisterStatus.*;
 import static dpas.grpc.contract.Contract.PostStatus.*;
+import static dpas.grpc.contract.Contract.RegisterStatus.*;
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 

@@ -1,9 +1,8 @@
 package dpas.common.domain;
 
-import dpas.common.domain.exception.*;
-
-import java.security.PublicKey;
-import java.util.ArrayList;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullAnnouncementException;
+import dpas.common.domain.exception.NullUserException;
 
 public class UserBoard extends AnnouncementBoard {
     private User _owner;

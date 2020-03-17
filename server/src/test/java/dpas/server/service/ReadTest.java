@@ -1,10 +1,9 @@
 package dpas.server.service;
 
+import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.*;
-
-import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;

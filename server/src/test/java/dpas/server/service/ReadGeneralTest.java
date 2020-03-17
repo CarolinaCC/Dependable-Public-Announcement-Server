@@ -1,7 +1,5 @@
 package dpas.server.service;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.GeneratedMessage;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
