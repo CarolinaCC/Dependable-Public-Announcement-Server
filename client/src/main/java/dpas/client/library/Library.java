@@ -18,11 +18,11 @@ public class Library {
 
     }
 
-    public void read(PublicKey publicKey) {
+    public Announcement[] read(PublicKey publicKey) {
 
     }
 
-    public void readGeneral(int number) {
+    public Announcement[] readGeneral(int number) {
 
     }
 }
