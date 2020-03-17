@@ -1,6 +1,6 @@
 package dpas.client.library;
 
-import dpas.common.domain.Announcement;
+import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
