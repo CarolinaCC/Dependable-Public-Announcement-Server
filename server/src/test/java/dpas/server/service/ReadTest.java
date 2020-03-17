@@ -12,6 +12,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.apache.commons.lang3.SerializationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class ReadTest {
@@ -38,9 +40,12 @@ public class ReadTest {
 
     private PublicKey _publicKey;
     private User _user;
-    private int _numberToRead;
+
     private byte[] _signature;
+    private byte[] _signature2;
+
     private final String MESSAGE = "Message to sign";
+    private final String SECOND_MESSAGE = "Second message to sign";
     private ArrayList<Announcement> _references = null;
 
     @Before
@@ -59,6 +64,12 @@ public class ReadTest {
         sign.initSign(privateKey);
         sign.update(MESSAGE.getBytes());
         _signature = sign.sign();
+
+        Signature sign2 = Signature.getInstance("SHA256withRSA");
+        sign2.initSign(privateKey);
+        sign.update(SECOND_MESSAGE.getBytes());
+        _signature2 = sign.sign();
+
 
         _user = new User(USER_NAME, _publicKey);
 
@@ -83,6 +94,23 @@ public class ReadTest {
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
                 .setUsername(_user.getUsername())
                 .build());
+
+        _stub.post(Contract.PostRequest.newBuilder()
+                .setUsername(USER_NAME)
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_signature))
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
+
+
+        _stub.post(Contract.PostRequest.newBuilder()
+                .setUsername(USER_NAME)
+                .setMessage(SECOND_MESSAGE)
+                .setSignature(ByteString.copyFrom(_signature2))
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
+
+
     }
 
     @After
@@ -95,42 +123,78 @@ public class ReadTest {
     @Test
     public void readSuccessAllWith0() {
 
-        _numberToRead = 0;
-
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setUsername(_user.getUsername())
-                .setNumber(_numberToRead)
+                .setNumber(0)
                 .build());
 
         assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
+        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
+        assertEquals(announcements.get(0).getMessage(), MESSAGE);
+        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
+        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
+        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
+        assertArrayEquals(announcements.get(0).getSignature(), _signature);
+        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+
+        assertEquals(announcements.get(1).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcements.get(1).getUser().getUsername(), USER_NAME);
+        assertEquals(announcements.get(1).getUser().getPublicKey(), _publicKey );
+        assertEquals(announcements.get(1).get_sequenceNumber(), 1);
+        assertArrayEquals(announcements.get(1).getSignature(), _signature2);
+        assertEquals(announcements.get(1).getReferences(), new ArrayList<>());
+
     }
 
     @Test
     public void readSuccessAll() {
 
-        _numberToRead = 2;
+
 
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setUsername(_user.getUsername())
-                .setNumber(_numberToRead)
+                .setNumber(2)
                 .build());
 
+
         assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
+        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
+        assertEquals(announcements.get(0).getMessage(), MESSAGE);
+        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
+        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
+        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
+        assertArrayEquals(announcements.get(0).getSignature(), _signature);
+        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+
+        assertEquals(announcements.get(1).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcements.get(1).getUser().getUsername(), USER_NAME);
+        assertEquals(announcements.get(1).getUser().getPublicKey(), _publicKey );
+        assertEquals(announcements.get(1).get_sequenceNumber(), 1);
+        assertArrayEquals(announcements.get(1).getSignature(), _signature2);
+        assertEquals(announcements.get(1).getReferences(), new ArrayList<>());
     }
 
     @Test
     public void readSuccess() {
 
-        _numberToRead = 1;
 
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
                 .setUsername(USER_NAME)
-                .setNumber(_numberToRead)
+                .setNumber(1)
                 .build());
+
         assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
+        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
+        assertEquals(announcements.get(0).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
+        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
+        assertEquals(announcements.get(0).get_sequenceNumber(), 1);
+        assertArrayEquals(announcements.get(0).getSignature(), _signature2);
+        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+
     }
 
     @Test
@@ -164,7 +228,7 @@ public class ReadTest {
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[0]))
                 .setUsername(USER_NAME)
-                .setNumber(_numberToRead)
+                .setNumber(0)
                 .build());
     }
 
@@ -176,7 +240,7 @@ public class ReadTest {
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
                 .setUsername(USER_NAME)
-                .setNumber(_numberToRead)
+                .setNumber(0)
                 .build());
     }
 
@@ -194,7 +258,7 @@ public class ReadTest {
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                 .setUsername(USER_NAME)
-                .setNumber(_numberToRead)
+                .setNumber(0)
                 .build());
     }
 
@@ -211,7 +275,7 @@ public class ReadTest {
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                 .setUsername(NON_REGISTERED_USER)
-                .setNumber(_numberToRead)
+                .setNumber(0)
                 .build());
 
     }
