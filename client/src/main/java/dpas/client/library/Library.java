@@ -1,10 +1,13 @@
 package dpas.client.library;
 
 import dpas.common.domain.Announcement;
+import dpas.grpc.contract.ServiceDPASGrpc;
 
 import java.security.PublicKey;
 
 public class Library {
+
+    public ServiceDPASGrpc.ServiceDPASStub _stub;
 
     public void register(PublicKey publicKey, String username) {
 
@@ -19,10 +22,10 @@ public class Library {
     }
 
     public Announcement[] read(PublicKey publicKey) {
-
+        return null;
     }
 
     public Announcement[] readGeneral(int number) {
-
+        return null;
     }
 }
