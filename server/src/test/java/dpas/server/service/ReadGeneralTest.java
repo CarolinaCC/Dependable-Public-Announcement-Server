@@ -98,7 +98,6 @@ public class ReadGeneralTest {
                 .setNumber(0)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
         ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
         assertEquals(announcements.get(0).getMessage(), MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
@@ -112,7 +111,6 @@ public class ReadGeneralTest {
                 .setNumber(3)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
         ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
         assertEquals(announcements.get(0).getMessage(), MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
@@ -127,7 +125,6 @@ public class ReadGeneralTest {
                 .setNumber(1)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
 
         ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
         assertEquals(announcements.get(0).getMessage(), MESSAGE);

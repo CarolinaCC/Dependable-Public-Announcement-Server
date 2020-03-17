@@ -127,43 +127,39 @@ public class PostTest {
 
     @Test
     public void postSuccess() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
     }
 
     @Test
     public void twoPostsSuccess() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
 
-        reply = _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
     }
 
     @Test
     public void twoPostsValidReference() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
 
         Contract.ReadReply readReply = _stub.read(Contract.ReadRequest.newBuilder()
                 .setNumber(1)
@@ -174,26 +170,23 @@ public class PostTest {
         ArrayList<Announcement> announcements = SerializationUtils.deserialize(readReply.getAnnouncements().toByteArray());
         String validReference = announcements.get(0).getIdentifier();
 
-        reply = _stub.post(Contract.PostRequest.newBuilder()
+         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(validReference)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
     }
 
     @Test
     public void twoPostsInvalidReference() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
-
 
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("INVALID_ARGUMENT: Invalid Announcement Reference");
@@ -205,7 +198,10 @@ public class PostTest {
                 .addReferences(_invalidReference)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
+
     }
+
+
 
 
     @Test
@@ -213,7 +209,7 @@ public class PostTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
 
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
