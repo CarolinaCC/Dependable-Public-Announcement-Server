@@ -90,6 +90,13 @@ enum ReadStatus {
 
 //
 message ReadReply {
-    bytes announcements = 1;
+    repeated Announcement announcements = 1;
     ReadStatus status = 2;
 }
+
+message Announcement {
+    string message = 1;
+    string username = 2;
+    int32 randomIdentifier = 3;
+}
+
