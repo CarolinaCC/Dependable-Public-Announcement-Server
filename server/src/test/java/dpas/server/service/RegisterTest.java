@@ -6,11 +6,14 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.KeyPair;
@@ -26,10 +29,15 @@ public class RegisterTest {
     private Server _server;
     private PublicKey _firstPublicKey;
     private PublicKey _secondPublicKey;
+    private PublicKey _publicDSAKey;
     private ManagedChannel _channel;
 
     private final static String FIRST_USER_NAME = "USER";
     private final static String SECOND_USER_NAME = "USER2";
+
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
 
     @Before
@@ -53,6 +61,11 @@ public class RegisterTest {
                 .addService(impl)
                 .build();
         _server.start();
+
+        keygen = KeyPairGenerator.getInstance("DSA");
+        keygen.initialize(1024);
+        keyPair = keygen.generateKeyPair();
+        _publicDSAKey = keyPair.getPublic();
 
         final String host = "localhost";
         final int port = 8090;
@@ -93,50 +106,52 @@ public class RegisterTest {
 
     @Test
     public void registerNullUsername() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Null Username");
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_USERNAME);
     }
 
     @Test
     public void registerNullKey() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_PUBLICKEY);
     }
 
     @Test
     public void registerEmptyKey() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[0]))
                 .setUsername(FIRST_USER_NAME)
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_PUBLICKEY);
     }
 
     @Test
     public void registerArbitraryKey() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
                 .setUsername(FIRST_USER_NAME)
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_PUBLICKEY);
     }
 
     @Test
     public void registerWrongAlgorithmKey() throws NoSuchAlgorithmException {
-        KeyPairGenerator keygen = KeyPairGenerator.getInstance("DSA");
-        keygen.initialize(1024);
-        KeyPair keyPair = keygen.generateKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
 
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+
+        _stub.register(Contract.RegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_publicDSAKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_NULL_PUBLICKEY);
     }
 
     @Test
@@ -147,11 +162,13 @@ public class RegisterTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
 
-        reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: User Already Exists");
+
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_REPEATED_USER);
     }
 
 
@@ -163,10 +180,12 @@ public class RegisterTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
 
-        reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: User Already Exists");
+
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(SECOND_USER_NAME)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_REPEATED_USER);
     }
 }

@@ -11,6 +11,7 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.RegisterReply;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.SerializationUtils;
 
@@ -32,30 +33,29 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void register(RegisterRequest request, StreamObserver<RegisterReply> replyObserver) {
-        Contract.RegisterStatus replyStatus = REGISTERSTATUS_OK;
         try {
-            //Get Public Key From byte[]
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+
             String username = request.getUsername();
             User user = new User(username, key);
 
             User curr = _users.putIfAbsent(key, user);
             if (curr != null) {
                 //User with public key already exists
-                replyStatus = REGISTERSTATUS_REPEATED_USER;
+                replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asException());
+            } else {
+                replyObserver.onNext(RegisterReply.newBuilder().setStatus(REGISTERSTATUS_OK).build());
+                replyObserver.onCompleted();
             }
         } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-            replyStatus = REGISTERSTATUS_NULL_PUBLICKEY;
+            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asException());
         } catch (NullUsernameException e) {
-            replyStatus = REGISTERSTATUS_NULL_USERNAME;
+            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null Username").asException());
         } catch (NullUserException e) {
             //Should Never Happen
-            e.printStackTrace();
+            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null User For Board").asException());
         }
-        replyObserver.onNext(RegisterReply.newBuilder().setStatus(replyStatus).build());
-        replyObserver.onCompleted();
-
     }
 
     @Override
