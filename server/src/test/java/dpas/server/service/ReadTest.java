@@ -9,11 +9,14 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
@@ -22,6 +25,9 @@ import java.util.ArrayList;
 import static org.junit.Assert.assertEquals;
 
 public class ReadTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
@@ -129,82 +135,85 @@ public class ReadTest {
 
     @Test
     public void readInvalidNumberOfPosts() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Number of Posts");
 
-        _numberToRead = -1;
-
-        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+        _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
                 .setUsername(USER_NAME)
-                .setNumber(_numberToRead)
+                .setNumber(-1)
                 .build());
-        assertEquals(reply.getStatus(), Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION);
     }
 
     @Test
     public void readNullKey() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
 
-        _numberToRead = 0;
-
-        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+        _stub.read(Contract.ReadRequest.newBuilder()
                 .setUsername(USER_NAME)
-                .setNumber(_numberToRead)
+                .setNumber(0)
                 .build());
-        assertEquals(reply.getStatus(), Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION);
     }
 
     @Test
     public void readEmptyKey() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
 
-        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+        _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[0]))
                 .setUsername(USER_NAME)
                 .setNumber(_numberToRead)
                 .build());
-        assertEquals(reply.getStatus(), Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION);
     }
 
     @Test
     public void readArbitraryKey() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
 
-        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+        _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
                 .setUsername(USER_NAME)
                 .setNumber(_numberToRead)
                 .build());
-        assertEquals(reply.getStatus(), Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION);
     }
 
     @Test
     public void readWrongAlgorithmKey() throws NoSuchAlgorithmException {
+
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("DSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
 
-        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+        _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                 .setUsername(USER_NAME)
                 .setNumber(_numberToRead)
                 .build());
-        assertEquals(reply.getStatus(), Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION);
     }
 
     @Test
     public void readUserNotRegistered() throws NoSuchAlgorithmException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: User with public key does not exist");
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
 
-        Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
+        _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                 .setUsername(NON_REGISTERED_USER)
                 .setNumber(_numberToRead)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.USER_NOT_REGISTERED);
     }
 
 }

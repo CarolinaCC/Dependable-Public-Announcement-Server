@@ -4,7 +4,9 @@ import dpas.common.domain.exception.InvalidUserException;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
-public class UserBoard extends AnnouncementBoard {
+import java.io.Serializable;
+
+public class UserBoard extends AnnouncementBoard implements Serializable {
     private User _owner;
     private int _sequenceNumber = 0;
 

@@ -3,7 +3,9 @@ package dpas.common.domain;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
-public class GeneralBoard extends AnnouncementBoard {
+import java.io.Serializable;
+
+public class GeneralBoard extends AnnouncementBoard implements Serializable {
     private int _sequenceNumber = 0;
 
     @Override

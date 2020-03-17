@@ -4,9 +4,10 @@ import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
 
+import java.io.Serializable;
 import java.security.PublicKey;
 
-public class User {
+public class User implements Serializable {
 
     private String _username;
     private PublicKey _publicKey;

@@ -6,11 +6,14 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
@@ -18,6 +21,9 @@ import java.security.*;
 import static org.junit.Assert.assertEquals;
 
 public class PostTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
@@ -43,6 +49,7 @@ public class PostTest {
     private static final String SECOND_MESSAGE = "Second Message";
     private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
             "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
+
 
 
     @Before
@@ -207,14 +214,17 @@ public class PostTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
 
-        reply = _stub.post(Contract.PostRequest.newBuilder()
+
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Announcement Reference");
+
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(_invalidReference)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
     }
 
     @Test
@@ -227,14 +237,16 @@ public class PostTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
 
-        reply = _stub.post(Contract.PostRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Announcement Reference");
+
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(_invalidReference2)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
     }
 
     @Test
@@ -247,57 +259,68 @@ public class PostTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
 
-        reply = _stub.post(Contract.PostRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Announcement Reference");
+
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(_invalidReference3)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_INVALID_REFERENCE);
     }
 
     @Test
     public void postNullPublicKey() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+
         Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSATATUS_NULL_PUBLIC_KEY);
     }
 
     @Test
     public void postInvalidMessageSize() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Message");
+
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(INVALID_MESSAGE)
                 .setSignature(ByteString.copyFrom(_bigMessageSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_INVALID_MESSAGE_SIZE);
     }
 
 
     @Test
     public void postNullSignature() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
+
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE);
+
     }
 
     @Test
     public void postInvalidSignature() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
+
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_INVALID_SIGNATURE);
     }
 
 }

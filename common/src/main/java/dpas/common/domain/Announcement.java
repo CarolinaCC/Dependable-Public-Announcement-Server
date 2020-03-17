@@ -16,7 +16,7 @@ public class Announcement implements Serializable {
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
             NullAnnouncementException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
-            NullUserException, UnsupportedEncodingException, InvalidMessageSizeException {
+            NullUserException, InvalidMessageSizeException {
 
         checkArguments(signature, user, message, references);
         checkSignature(signature, user, message);
@@ -27,8 +27,7 @@ public class Announcement implements Serializable {
     }
 
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
-            NullMessageException, NullAnnouncementException, NullUserException, UnsupportedEncodingException,
-            InvalidMessageSizeException {
+            NullMessageException, NullAnnouncementException, NullUserException, InvalidMessageSizeException {
 
         if (signature == null) {
             throw new NullSignatureException();

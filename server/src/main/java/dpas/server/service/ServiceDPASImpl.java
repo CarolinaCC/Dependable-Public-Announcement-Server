@@ -60,75 +60,79 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void post(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
-        Contract.PostStatus replyStatus = POSTSTATUS_OK;
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = _users.get(key);
             byte[] signature = request.getSignature().toByteArray();
             String message = request.getMessage();
+
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
 
             // post announcement
             user.getUserBoard().post(announcement);
 
+            responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
+            responseObserver.onCompleted();
+
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            replyStatus = POSTSTATUS_INVALID_SIGNATURE;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Signature").asRuntimeException());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
         } catch (InvalidMessageSizeException | NullMessageException e) {
-            replyStatus = POSTSTATUS_INVALID_MESSAGE_SIZE;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Message").asRuntimeException());
         } catch (NullUserException | InvalidUserException e) {
-            replyStatus = POSTSTATUS_NULL_USER;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
         } catch (InvalidReferenceException e) {
-            replyStatus = POSTSATATUS_INVALID_REFERENCE;
-        } catch (UnsupportedEncodingException | NullAnnouncementException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
+        } catch (NullAnnouncementException e) {
+            //Should never happen
             e.printStackTrace();
         }
-        responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(replyStatus).build());
-        responseObserver.onCompleted();
+
     }
 
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
-        Contract.PostStatus replyStatus = POSTSTATUS_OK;
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             byte[] signature = request.getSignature().toByteArray();
             String message = request.getMessage();
-            Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
+
+            Announcement announcement = new Announcement(signature, _users.get(key), message,
+                    getListOfReferences(request.getReferencesList()));
+
             synchronized (this) {
                 _generalBoard.post(announcement);
             }
+
+            responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
+            responseObserver.onCompleted();
+
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            replyStatus = POSTSTATUS_INVALID_SIGNATURE;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Signature").asRuntimeException());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            replyStatus = POSTSATATUS_NULL_PUBLIC_KEY;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
         } catch (InvalidMessageSizeException | NullMessageException e) {
-            replyStatus = POSTSTATUS_INVALID_MESSAGE_SIZE;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Message").asRuntimeException());
         } catch (NullUserException e) {
-            replyStatus = POSTSTATUS_NULL_USER;
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
         } catch (InvalidReferenceException e) {
-            replyStatus = POSTSATATUS_INVALID_REFERENCE;
-        } catch (UnsupportedEncodingException | NullAnnouncementException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
+        } catch (NullAnnouncementException e) {
+            //Should never happen
             e.printStackTrace();
         }
-        responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(replyStatus).build());
-        responseObserver.onCompleted();
     }
 
     @Override
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-        Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
-
         try {
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(_users.containsKey(key))) {
-                replyStatus = Contract.ReadStatus.USER_NOT_REGISTERED;
-                responseObserver.onNext(Contract.ReadReply.newBuilder()
-                        .setStatus(replyStatus)
-                        .build());
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User with public key does not exist")
+                        .asRuntimeException());
             } else {
                 User user = _users.get(key);
                 int numberToRead = request.getNumber();
@@ -137,21 +141,24 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 byte[] announcementsBytes = SerializationUtils.serialize(announcements);
 
                 responseObserver.onNext(Contract.ReadReply.newBuilder().setAnnouncements(ByteString.copyFrom(announcementsBytes))
-                        .setStatus(replyStatus)
+                        .setStatus(Contract.ReadStatus.READ_OK)
                         .build());
+
+                responseObserver.onCompleted();
             }
-        } catch (InvalidNumberOfPostsException | NoSuchAlgorithmException e) {
-            replyStatus = Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION;
-            responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .setStatus(replyStatus)
-                    .build());
+
+        } catch (InvalidNumberOfPostsException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Invalid Number of Posts")
+                    .asRuntimeException());
         } catch (InvalidKeySpecException e) {
-            replyStatus = Contract.ReadStatus.NULL_PUBLIC_KEY_EXCEPTION;
-            responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .setStatus(replyStatus)
-                    .build());
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Invalid Public Key Provided")
+                    .asRuntimeException());
+        } catch (NoSuchAlgorithmException e) {
+            //Should never happen
+            e.printStackTrace();
         }
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -168,13 +175,12 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                     .setAnnouncements(ByteString.copyFrom(announcementsBytes))
                     .setStatus(replyStatus)
                     .build());
+            responseObserver.onCompleted();
         } catch (InvalidNumberOfPostsException e) {
-            replyStatus = Contract.ReadStatus.INVALID_NUMBER_OF_POSTS_EXCEPTION;
-            responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .setStatus(replyStatus)
-                    .build());
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Invalid Number of Posts")
+                    .asRuntimeException());
         }
-        responseObserver.onCompleted();
     }
 
 
