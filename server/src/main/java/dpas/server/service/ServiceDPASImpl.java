@@ -43,18 +43,18 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             User curr = _users.putIfAbsent(key, user);
             if (curr != null) {
                 //User with public key already exists
-                replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asException());
+                replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 replyObserver.onNext(RegisterReply.newBuilder().setStatus(REGISTERSTATUS_OK).build());
                 replyObserver.onCompleted();
             }
         } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asException());
+            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
         } catch (NullUsernameException e) {
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null Username").asException());
+            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null Username").asRuntimeException());
         } catch (NullUserException e) {
             //Should Never Happen
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null User For Board").asException());
+            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null User For Board").asRuntimeException());
         }
     }
 
