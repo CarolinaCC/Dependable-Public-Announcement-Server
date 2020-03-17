@@ -16,6 +16,7 @@ import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -138,9 +139,13 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 int numberToRead = request.getNumber();
                 UserBoard userBoard = user.getUserBoard();
                 ArrayList<Announcement> announcements = userBoard.read(numberToRead);
-                byte[] announcementsBytes = SerializationUtils.serialize(announcements);
+                ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
 
-                responseObserver.onNext(Contract.ReadReply.newBuilder().setAnnouncements(ByteString.copyFrom(announcementsBytes))
+                for (Announcement announcement: announcements){
+                    announcementsGRPC.add(announcement.announcementToGRPCObject());
+                }
+
+                responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC)
                         .setStatus(Contract.ReadStatus.READ_OK)
                         .build());
 
@@ -169,13 +174,18 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
             int numberToRead = request.getNumber();
             ArrayList<Announcement> announcements = _generalBoard.read(numberToRead);
-            byte[] announcementsBytes = SerializationUtils.serialize(announcements);
+            ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
+
+            for (Announcement announcement: announcements){
+                announcementsGRPC.add(announcement.announcementToGRPCObject());
+            }
 
             responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .setAnnouncements(ByteString.copyFrom(announcementsBytes))
+                    .addAllAnnouncements(announcementsGRPC)
                     .setStatus(replyStatus)
                     .build());
             responseObserver.onCompleted();
+
         } catch (InvalidNumberOfPostsException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT
                     .withDescription("Invalid Number of Posts")

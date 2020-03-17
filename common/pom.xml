@@ -3,6 +3,20 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>DPAS-common</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <dependencies>
+        <dependency>
+            <groupId>SEC.T18</groupId>
+            <artifactId>DPAS-contract</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>SEC.T18</groupId>
+            <artifactId>DPAS-contract</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <parent>

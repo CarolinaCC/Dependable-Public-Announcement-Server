@@ -1,6 +1,7 @@
 package dpas.common.domain;
 
 import dpas.common.domain.exception.*;
+import dpas.grpc.contract.Contract;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -94,5 +95,11 @@ public class Announcement implements Serializable {
 
     public void set_sequenceNumber(int _sequenceNumber) {
         this._sequenceNumber = _sequenceNumber;
+    }
+
+    //TODO
+    //Add setRandomIdentifier
+    public Contract.Announcement announcementToGRPCObject() {
+        return  Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername()).build();
     }
 }
