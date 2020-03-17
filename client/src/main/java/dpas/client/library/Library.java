@@ -30,18 +30,33 @@ public class Library {
     }
 
     public void post(PublicKey key, char[] message, Announcement[] a) {
-
     }
 
     public void postGeneral(PublicKey key, char[] message, Announcement[] a) {
 
     }
 
-    public Announcement[] read(PublicKey publicKey) {
-        return null;
+    public Announcement[] read(PublicKey publicKey, String username, int number) {
+        try {
+            Contract.ReadReply reply =_stub.read(Contract.ReadRequest.newBuilder()
+                    .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                    .setUsername(username)
+                    .setNumber(number).build());
+            return (Announcement[]) reply.getAnnouncementsList().toArray();
+        } catch (StatusRuntimeException e) {
+            System.out.println("An errror ocurred: " + e.getMessage());
+            return null;
+        }
     }
 
-    public Announcement[] readGeneral(int number) {
-        return null;
+    public Announcement[] readGeneral (int number) {
+        try {
+            Contract.ReadReply reply =_stub.readGeneral(Contract.ReadRequest.newBuilder()
+                    .setNumber(number).build());
+            return (Announcement[]) reply.getAnnouncementsList().toArray();
+        } catch (StatusRuntimeException e) {
+            System.out.println("An errror ocurred: " + e.getMessage());
+            return null;
+        }
     }
 }
