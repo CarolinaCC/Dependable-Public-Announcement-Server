@@ -1,6 +1,5 @@
 package dpas.server.service;
 
-
 import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
@@ -8,14 +7,12 @@ import dpas.common.domain.User;
 import dpas.common.domain.UserBoard;
 import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
-import dpas.grpc.contract.Contract.RegisterReply;
+import com.google.protobuf.Empty;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.SerializationUtils;
-
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -23,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static dpas.grpc.contract.Contract.PostStatus.*;
-import static dpas.grpc.contract.Contract.RegisterStatus.*;
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
@@ -32,7 +27,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     private GeneralBoard _generalBoard = new GeneralBoard();
 
     @Override
-    public void register(RegisterRequest request, StreamObserver<RegisterReply> replyObserver) {
+    public void register(RegisterRequest request, StreamObserver<Empty> replyObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -45,7 +40,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 //User with public key already exists
                 replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
-                replyObserver.onNext(RegisterReply.newBuilder().setStatus(REGISTERSTATUS_OK).build());
+                replyObserver.onNext(Empty.newBuilder().build());
                 replyObserver.onCompleted();
             }
         } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
@@ -59,7 +54,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void post(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
+    public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = _users.get(key);
@@ -71,7 +66,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             // post announcement
             user.getUserBoard().post(announcement);
 
-            responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
+            responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
@@ -92,7 +87,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void postGeneral(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
+    public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             byte[] signature = request.getSignature().toByteArray();
@@ -105,7 +100,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 _generalBoard.post(announcement);
             }
 
-            responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
+            responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
@@ -141,7 +136,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 byte[] announcementsBytes = SerializationUtils.serialize(announcements);
 
                 responseObserver.onNext(Contract.ReadReply.newBuilder().setAnnouncements(ByteString.copyFrom(announcementsBytes))
-                        .setStatus(Contract.ReadStatus.READ_OK)
                         .build());
 
                 responseObserver.onCompleted();
@@ -163,7 +157,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-        Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
 
         try {
 
@@ -173,7 +166,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
             responseObserver.onNext(Contract.ReadReply.newBuilder()
                     .setAnnouncements(ByteString.copyFrom(announcementsBytes))
-                    .setStatus(replyStatus)
                     .build());
             responseObserver.onCompleted();
         } catch (InvalidNumberOfPostsException e) {

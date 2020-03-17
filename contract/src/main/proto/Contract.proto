@@ -1,11 +1,11 @@
 syntax = "proto3";
-
+import "google/protobuf/empty.proto";
 package dpas.grpc.contract;
 
 service ServiceDPAS {
-    rpc register (RegisterRequest) returns (RegisterReply);
-    rpc post (PostRequest) returns (PostReply);
-    rpc postGeneral (PostRequest) returns (PostReply);
+    rpc register (RegisterRequest) returns (google.protobuf.Empty);
+    rpc post (PostRequest) returns (google.protobuf.Empty);
+    rpc postGeneral (PostRequest) returns (google.protobuf.Empty);
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
 }
@@ -16,18 +16,6 @@ message RegisterRequest {
     string username = 2;
 }
 
-//
-enum RegisterStatus {
-    REGISTERSTATUS_OK = 0;
-    REGISTERSTATUS_NULL_USERNAME = 1;
-    REGISTERSTATUS_NULL_PUBLICKEY = 2;
-    REGISTERSTATUS_REPEATED_USER = 3;
-}
-
-//
-message RegisterReply {
-    RegisterStatus status = 1;
-}
 
 //
 message UserBoardReference {
@@ -57,21 +45,6 @@ message PostRequest {
     repeated BoardReference references = 5;
 }
 
-//
-enum PostStatus {
-    POSTSTATUS_OK = 0;
-    POSTSTATUS_INVALID_MESSAGE_SIZE = 1;
-    POSTSTATUS_NULL_USER = 2;
-    POSTSTATUS_INVALID_SIGNATURE = 3;
-    POSTSATATUS_INVALID_REFERENCE = 4;
-    POSTSATATUS_NULL_PUBLIC_KEY = 5;
-
-}
-
-//
-message PostReply {
-    PostStatus status = 1;
-}
 
 //
 message ReadRequest {
@@ -80,16 +53,9 @@ message ReadRequest {
     string username = 3;
 }
 
-enum ReadStatus {
-     READ_OK = 0;
-     INVALID_NUMBER_OF_POSTS_EXCEPTION = 1;
-     NULL_PUBLIC_KEY_EXCEPTION = 2;
-     USER_NOT_REGISTERED = 3;
-}
 
 
 //
 message ReadReply {
     bytes announcements = 1;
-    ReadStatus status = 2;
 }
