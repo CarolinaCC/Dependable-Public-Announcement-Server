@@ -23,6 +23,7 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -98,13 +99,11 @@ public class ReadGeneralTest {
                 .setNumber(0)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
-        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
-        assertEquals(announcements.get(0).getMessage(), MESSAGE);
-        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
-        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
     }
 
     @Test
@@ -113,13 +112,11 @@ public class ReadGeneralTest {
                 .setNumber(3)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
-        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
-        assertEquals(announcements.get(0).getMessage(), MESSAGE);
-        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
-        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
     }
 
     @Test
@@ -129,14 +126,13 @@ public class ReadGeneralTest {
                 .setNumber(1)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
 
-        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
-        assertEquals(announcements.get(0).getMessage(), MESSAGE);
-        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
-        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+
     }
 
 

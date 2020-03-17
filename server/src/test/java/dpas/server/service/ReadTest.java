@@ -22,6 +22,7 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -128,22 +129,15 @@ public class ReadTest {
                 .setUsername(_user.getUsername())
                 .setNumber(0)
                 .build());
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
-        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
-        assertEquals(announcements.get(0).getMessage(), MESSAGE);
-        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
-        assertArrayEquals(announcements.get(0).getSignature(), _signature);
-        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
 
-        assertEquals(announcements.get(1).getMessage(), SECOND_MESSAGE);
-        assertEquals(announcements.get(1).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(1).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(1).get_sequenceNumber(), 1);
-        assertArrayEquals(announcements.get(1).getSignature(), _signature2);
-        assertEquals(announcements.get(1).getReferences(), new ArrayList<>());
+        assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcementsGRPC.get(1).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(1).getReferencesList().size(),0);
 
     }
 
@@ -158,22 +152,16 @@ public class ReadTest {
                 .setNumber(2)
                 .build());
 
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
-        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
-        assertEquals(announcements.get(0).getMessage(), MESSAGE);
-        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
-        assertArrayEquals(announcements.get(0).getSignature(), _signature);
-        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
 
-        assertEquals(announcements.get(1).getMessage(), SECOND_MESSAGE);
-        assertEquals(announcements.get(1).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(1).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(1).get_sequenceNumber(), 1);
-        assertArrayEquals(announcements.get(1).getSignature(), _signature2);
-        assertEquals(announcements.get(1).getReferences(), new ArrayList<>());
+        assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcementsGRPC.get(1).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(1).getReferencesList().size(),0);
+
     }
 
     @Test
@@ -186,14 +174,11 @@ public class ReadTest {
                 .setNumber(1)
                 .build());
 
-        assertEquals(reply.getStatus(), Contract.ReadStatus.READ_OK);
-        ArrayList<Announcement> announcements = SerializationUtils.deserialize(reply.getAnnouncements().toByteArray());
-        assertEquals(announcements.get(0).getMessage(), SECOND_MESSAGE);
-        assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
-        assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 1);
-        assertArrayEquals(announcements.get(0).getSignature(), _signature2);
-        assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+
+        assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
 
     }
 

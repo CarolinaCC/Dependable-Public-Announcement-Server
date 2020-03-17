@@ -1,14 +1,14 @@
 package dpas.server.service;
 
-
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ProtocolStringList;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.UserBoard;
 import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
-import dpas.grpc.contract.Contract.RegisterReply;
+import com.google.protobuf.Empty;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
@@ -17,6 +17,7 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -24,16 +25,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static dpas.grpc.contract.Contract.PostStatus.*;
-import static dpas.grpc.contract.Contract.RegisterStatus.*;
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
+    private ConcurrentHashMap<String, Announcement> _announcements = new ConcurrentHashMap<>();
     private ConcurrentHashMap<PublicKey, User> _users = new ConcurrentHashMap<>();
     private GeneralBoard _generalBoard = new GeneralBoard();
 
     @Override
-    public void register(RegisterRequest request, StreamObserver<RegisterReply> replyObserver) {
+    public void register(RegisterRequest request, StreamObserver<Empty> replyObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -46,7 +46,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 //User with public key already exists
                 replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
-                replyObserver.onNext(RegisterReply.newBuilder().setStatus(REGISTERSTATUS_OK).build());
+                replyObserver.onNext(Empty.newBuilder().build());
                 replyObserver.onCompleted();
             }
         } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
@@ -60,7 +60,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void post(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
+    public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = _users.get(key);
@@ -68,11 +68,11 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             String message = request.getMessage();
 
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
-
             // post announcement
             user.getUserBoard().post(announcement);
+            _announcements.put(announcement.getIdentifier(), announcement);
 
-            responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
+            responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
@@ -93,7 +93,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void postGeneral(Contract.PostRequest request, StreamObserver<Contract.PostReply> responseObserver) {
+    public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             byte[] signature = request.getSignature().toByteArray();
@@ -106,7 +106,9 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 _generalBoard.post(announcement);
             }
 
-            responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
+            _announcements.put(announcement.getIdentifier(), announcement);
+
+            responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
         } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
@@ -139,6 +141,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 int numberToRead = request.getNumber();
                 UserBoard userBoard = user.getUserBoard();
                 ArrayList<Announcement> announcements = userBoard.read(numberToRead);
+
                 ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
 
                 for (Announcement announcement: announcements){
@@ -146,7 +149,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 }
 
                 responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC)
-                        .setStatus(Contract.ReadStatus.READ_OK)
                         .build());
 
                 responseObserver.onCompleted();
@@ -168,7 +170,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     @Override
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-        Contract.ReadStatus replyStatus = Contract.ReadStatus.READ_OK;
 
         try {
 
@@ -182,7 +183,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
             responseObserver.onNext(Contract.ReadReply.newBuilder()
                     .addAllAnnouncements(announcementsGRPC)
-                    .setStatus(replyStatus)
                     .build());
             responseObserver.onCompleted();
 
@@ -194,27 +194,15 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
 
-    private ArrayList<Announcement> getListOfReferences(List<Contract.BoardReference> requestReferencesList) throws InvalidReferenceException {
+    private ArrayList<Announcement> getListOfReferences(ProtocolStringList referenceIDs) throws InvalidReferenceException {
         // add all references to lists of references
-        try {
-            ArrayList<Announcement> references = new ArrayList<Announcement>();
-            for (Contract.BoardReference ref : requestReferencesList) {
-                if (ref.hasGeneralBoardReference()) {
-                    // find announcement in general board
-                    references.add(_generalBoard.getAnnouncementFromReference(ref.getGeneralBoardReference().getSequenceNumber()));
-                } else {
-                    // find author of reference and get announcement
-                    User refUser = _users.get(KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(ref.getUserBoardReference().getPublicKey().toByteArray())));
-                    if (refUser == null) {
-                        throw new InvalidReferenceException();
-                    }
-                    references.add(refUser.getUserBoard().getAnnouncementFromReference(ref.getUserBoardReference().getSequenceNumber()));
-                }
+        var references = new ArrayList<Announcement>();
+        for (var reference : referenceIDs) {
+            var announcement = _announcements.get(reference);
+            if (announcement == null) {
+                throw new InvalidReferenceException();
             }
-            return references;
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new InvalidReferenceException();
         }
+        return references;
     }
-
 }

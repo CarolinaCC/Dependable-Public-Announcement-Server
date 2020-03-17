@@ -82,26 +82,23 @@ public class RegisterTest {
 
     @Test
     public void registerSuccess() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setUsername(FIRST_USER_NAME)
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
     }
 
     @Test
     public void registerTwoUsers() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
 
-        reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
     }
 
     @Test
@@ -156,12 +153,10 @@ public class RegisterTest {
 
     @Test
     public void registerRepeatedUser() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
-
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("INVALID_ARGUMENT: User Already Exists");
 
@@ -174,11 +169,10 @@ public class RegisterTest {
 
     @Test
     public void registerRepeatedPublicKeyUser() {
-        Contract.RegisterReply reply = _stub.register(Contract.RegisterRequest.newBuilder()
+        _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build());
-        assertEquals(reply.getStatus(), Contract.RegisterStatus.REGISTERSTATUS_OK);
 
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("INVALID_ARGUMENT: User Already Exists");

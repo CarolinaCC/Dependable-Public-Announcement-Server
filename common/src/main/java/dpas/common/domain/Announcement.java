@@ -4,16 +4,20 @@ import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
 
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Announcement implements Serializable {
     private byte[] _signature;
     private User _user;
     private String _message;
     private ArrayList<Announcement> _references; // Can be null
-    private int _sequenceNumber;
+
+    private String _identifier;
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
             NullAnnouncementException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
@@ -25,6 +29,7 @@ public class Announcement implements Serializable {
         this._signature = signature;
         this._user = user;
         this._references = references;
+        this._identifier = UUID.randomUUID().toString();
     }
 
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
@@ -89,17 +94,17 @@ public class Announcement implements Serializable {
         return this._user.getUsername();
     }
 
-    public int get_sequenceNumber() {
-        return _sequenceNumber;
-    }
-
-    public void set_sequenceNumber(int _sequenceNumber) {
-        this._sequenceNumber = _sequenceNumber;
+    public String getIdentifier() {
+        return _identifier;
     }
 
     //TODO
     //Add setRandomIdentifier
     public Contract.Announcement announcementToGRPCObject() {
-        return  Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername()).build();
+
+        Stream<Announcement> myStream = _references.stream();
+        List<String> announcementToIdentifier = myStream.map(Announcement::getIdentifier).collect(Collectors.toList());
+
+        return  Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername()).addAllReferences(announcementToIdentifier).setIdentifier(_identifier).build();
     }
 }
