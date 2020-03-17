@@ -41,20 +41,12 @@ message GeneralBoardReference {
 }
 
 //
-message BoardReference {
-    oneof reference {
-        GeneralBoardReference generalBoardReference = 1;
-        UserBoardReference userBoardReference = 2;
-    }
-}
-
-//
 message PostRequest {
     bytes publicKey = 1;
     string message = 2;
     string username = 3;
     bytes signature = 4;
-    repeated BoardReference references = 5;
+    repeated string references = 5;
 }
 
 //

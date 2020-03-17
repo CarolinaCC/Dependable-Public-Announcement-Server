@@ -2,6 +2,7 @@ package dpas.server.service;
 
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ProtocolStringList;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
@@ -15,7 +16,6 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.SerializationUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -28,6 +28,7 @@ import static dpas.grpc.contract.Contract.RegisterStatus.*;
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
+    private ConcurrentHashMap<String, Announcement> _announcements = new ConcurrentHashMap<>();
     private ConcurrentHashMap<PublicKey, User> _users = new ConcurrentHashMap<>();
     private GeneralBoard _generalBoard = new GeneralBoard();
 
@@ -67,9 +68,9 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             String message = request.getMessage();
 
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
-
             // post announcement
             user.getUserBoard().post(announcement);
+            _announcements.put(announcement.getIdentifier(), announcement);
 
             responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
             responseObserver.onCompleted();
@@ -104,6 +105,8 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             synchronized (this) {
                 _generalBoard.post(announcement);
             }
+
+            _announcements.put(announcement.getIdentifier(), announcement);
 
             responseObserver.onNext(Contract.PostReply.newBuilder().setStatus(POSTSTATUS_OK).build());
             responseObserver.onCompleted();
@@ -184,27 +187,15 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
 
-    private ArrayList<Announcement> getListOfReferences(List<Contract.BoardReference> requestReferencesList) throws InvalidReferenceException {
+    private ArrayList<Announcement> getListOfReferences(ProtocolStringList referenceIDs) throws InvalidReferenceException {
         // add all references to lists of references
-        try {
-            ArrayList<Announcement> references = new ArrayList<Announcement>();
-            for (Contract.BoardReference ref : requestReferencesList) {
-                if (ref.hasGeneralBoardReference()) {
-                    // find announcement in general board
-                    references.add(_generalBoard.getAnnouncementFromReference(ref.getGeneralBoardReference().getSequenceNumber()));
-                } else {
-                    // find author of reference and get announcement
-                    User refUser = _users.get(KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(ref.getUserBoardReference().getPublicKey().toByteArray())));
-                    if (refUser == null) {
-                        throw new InvalidReferenceException();
-                    }
-                    references.add(refUser.getUserBoard().getAnnouncementFromReference(ref.getUserBoardReference().getSequenceNumber()));
-                }
+        var references = new ArrayList<Announcement>();
+        for (var reference : referenceIDs) {
+            var announcement = _announcements.get(reference);
+            if (announcement == null) {
+                throw new InvalidReferenceException();
             }
-            return references;
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new InvalidReferenceException();
         }
+        return references;
     }
-
 }

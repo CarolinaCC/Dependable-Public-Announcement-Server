@@ -103,7 +103,6 @@ public class ReadGeneralTest {
         assertEquals(announcements.get(0).getMessage(), MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
         assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
     }
 
@@ -118,7 +117,6 @@ public class ReadGeneralTest {
         assertEquals(announcements.get(0).getMessage(), MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
         assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
     }
 
@@ -135,7 +133,6 @@ public class ReadGeneralTest {
         assertEquals(announcements.get(0).getMessage(), MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
         assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
     }
 

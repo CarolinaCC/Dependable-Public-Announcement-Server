@@ -134,14 +134,12 @@ public class ReadTest {
         assertEquals(announcements.get(0).getMessage(), MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
         assertArrayEquals(announcements.get(0).getSignature(), _signature);
         assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
 
         assertEquals(announcements.get(1).getMessage(), SECOND_MESSAGE);
         assertEquals(announcements.get(1).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(1).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(1).get_sequenceNumber(), 1);
         assertArrayEquals(announcements.get(1).getSignature(), _signature2);
         assertEquals(announcements.get(1).getReferences(), new ArrayList<>());
 
@@ -164,14 +162,12 @@ public class ReadTest {
         assertEquals(announcements.get(0).getMessage(), MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 0);
         assertArrayEquals(announcements.get(0).getSignature(), _signature);
         assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
 
         assertEquals(announcements.get(1).getMessage(), SECOND_MESSAGE);
         assertEquals(announcements.get(1).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(1).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(1).get_sequenceNumber(), 1);
         assertArrayEquals(announcements.get(1).getSignature(), _signature2);
         assertEquals(announcements.get(1).getReferences(), new ArrayList<>());
     }
@@ -191,7 +187,6 @@ public class ReadTest {
         assertEquals(announcements.get(0).getMessage(), SECOND_MESSAGE);
         assertEquals(announcements.get(0).getUser().getUsername(), USER_NAME);
         assertEquals(announcements.get(0).getUser().getPublicKey(), _publicKey );
-        assertEquals(announcements.get(0).get_sequenceNumber(), 1);
         assertArrayEquals(announcements.get(0).getSignature(), _signature2);
         assertEquals(announcements.get(0).getReferences(), new ArrayList<>());
 

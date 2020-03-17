@@ -1,6 +1,7 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.Announcement;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -9,6 +10,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.apache.commons.lang3.SerializationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -17,6 +19,7 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
+import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,10 +37,7 @@ public class PostTest {
     private byte[] _secondSignature;
     private byte[] _bigMessageSignature;
 
-    private Contract.BoardReference _validReference;
-    private Contract.BoardReference _invalidReference;
-    private Contract.BoardReference _invalidReference2;
-    private Contract.BoardReference _invalidReference3;
+    private String _invalidReference;
 
 
     private ManagedChannel _channel;
@@ -49,7 +49,6 @@ public class PostTest {
     private static final String SECOND_MESSAGE = "Second Message";
     private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
             "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
-
 
 
     @Before
@@ -90,36 +89,8 @@ public class PostTest {
         sign.update(INVALID_MESSAGE.getBytes());
         _bigMessageSignature = sign.sign();
 
-        //Valid Reference
-        _validReference = Contract.BoardReference.newBuilder()
-                .setUserBoardReference(Contract.UserBoardReference
-                        .newBuilder()
-                        .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                        .setSequenceNumber(0)
-                        .build()).build();
-        //Invalid Reference sequenceNumber too high
-        _invalidReference = Contract.BoardReference.newBuilder()
-                .setUserBoardReference(Contract.UserBoardReference
-                        .newBuilder()
-                        .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                        .setSequenceNumber(3)
-                        .build()).build();
 
-        _invalidReference2 = Contract.BoardReference.newBuilder()
-                .setUserBoardReference(Contract.UserBoardReference
-                        .newBuilder()
-                        .setPublicKey(ByteString.copyFrom(_thirdPublicKey.getEncoded()))
-                        .setSequenceNumber(3)
-                        .build()).build();
-
-
-        _invalidReference3 = Contract.BoardReference.newBuilder()
-                .setUserBoardReference(Contract.UserBoardReference
-                        .newBuilder()
-                        .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 25}))
-                        .setSequenceNumber(3)
-                        .build()).build();
-
+        _invalidReference = "";
 
         final BindableService impl = new ServiceDPASImpl();
 
@@ -194,11 +165,20 @@ public class PostTest {
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
 
+        Contract.ReadReply readReply = _stub.read(Contract.ReadRequest.newBuilder()
+                .setNumber(1)
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .setUsername(FIRST_USER_NAME)
+                .build());
+
+        ArrayList<Announcement> announcements = SerializationUtils.deserialize(readReply.getAnnouncements().toByteArray());
+        String validReference = announcements.get(0).getIdentifier();
+
         reply = _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
-                .addReferences(_validReference)
+                .addReferences(validReference)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
         assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
@@ -227,49 +207,6 @@ public class PostTest {
                 .build());
     }
 
-    @Test
-    public void twoPostsInvalidUserReference() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_firstSignature))
-                .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
-
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Announcement Reference");
-
-        _stub.post(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-                .setUsername(SECOND_USER_NAME)
-                .setMessage(SECOND_MESSAGE)
-                .addReferences(_invalidReference2)
-                .setSignature(ByteString.copyFrom(_secondSignature))
-                .build());
-    }
-
-    @Test
-    public void twoPostsInvalidReferenceKey() {
-        Contract.PostReply reply = _stub.post(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_firstSignature))
-                .build());
-        assertEquals(reply.getStatus(), Contract.PostStatus.POSTSTATUS_OK);
-
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Announcement Reference");
-
-        _stub.post(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-                .setUsername(SECOND_USER_NAME)
-                .setMessage(SECOND_MESSAGE)
-                .addReferences(_invalidReference3)
-                .setSignature(ByteString.copyFrom(_secondSignature))
-                .build());
-    }
 
     @Test
     public void postNullPublicKey() {

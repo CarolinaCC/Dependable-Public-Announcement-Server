@@ -3,16 +3,17 @@ package dpas.common.domain;
 import dpas.common.domain.exception.*;
 
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class Announcement implements Serializable {
     private byte[] _signature;
     private User _user;
     private String _message;
     private ArrayList<Announcement> _references; // Can be null
-    private int _sequenceNumber;
+
+    private String _identifier;
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
             NullAnnouncementException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
@@ -24,6 +25,7 @@ public class Announcement implements Serializable {
         this._signature = signature;
         this._user = user;
         this._references = references;
+        this._identifier = UUID.randomUUID().toString();
     }
 
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
@@ -88,11 +90,7 @@ public class Announcement implements Serializable {
         return this._user.getUsername();
     }
 
-    public int get_sequenceNumber() {
-        return _sequenceNumber;
-    }
-
-    public void set_sequenceNumber(int _sequenceNumber) {
-        this._sequenceNumber = _sequenceNumber;
+    public String getIdentifier() {
+        return _identifier;
     }
 }
