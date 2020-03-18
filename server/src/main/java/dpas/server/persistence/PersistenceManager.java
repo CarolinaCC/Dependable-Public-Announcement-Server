@@ -18,7 +18,6 @@ import java.util.Base64;
 import java.util.List;
 
 
-
 public class PersistenceManager {
     private File _file;
 
@@ -44,15 +43,16 @@ public class PersistenceManager {
 
         InputStream fis = new FileInputStream(json_swap);
         JsonReader reader = Json.createReader(fis);
-        JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap));) {
+        try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap))) {
 
-        JsonArray jsonArray = reader.readObject().asJsonArray();
-        jsonArray.add(operation);
+            JsonArray jsonArray = reader.readObject().asJsonArray();
+            jsonArray.add(operation);
 
-        JsonObjectBuilder obj = new Json.createObjectBuilder();
+            final JsonObjectBuilder builder = Json.createObjectBuilder();
 
-        obj.add("Operations", jsonArray);
-        jsonWriter.writeObject(obj.build());
+            builder.add("Operations", jsonArray);
+            jsonWriter.writeObject(builder.build());
+        }
 
         Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
 
@@ -92,7 +92,7 @@ public class PersistenceManager {
         return service;
     }
 
-    public JsonValue RegisterStringToJSON(PublicKey key, String user) {
+    public JsonValue registerToJSON(PublicKey key, String user) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
@@ -105,14 +105,14 @@ public class PersistenceManager {
     }
 
 
-    public JsonValue PostStringToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
+    public JsonValue postToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
         String sign = Base64.getEncoder().encodeToString(signature);
         final JsonArrayBuilder builder = Json.createArrayBuilder();
 
-        for(String reference: references) {
+        for (String reference : references) {
             builder.add(reference);
         }
 
@@ -126,14 +126,14 @@ public class PersistenceManager {
         return jsonBuilder.build();
     }
 
-    public JsonValue PostGeneralStringToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
+    public JsonValue postGeneralToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
         String sign = Base64.getEncoder().encodeToString(signature);
         final JsonArrayBuilder builder = Json.createArrayBuilder();
 
-        for(String reference: references) {
+        for (String reference : references) {
             builder.add(reference);
         }
 
@@ -146,8 +146,6 @@ public class PersistenceManager {
 
         return jsonBuilder.build();
     }
-
-
 
 
 }

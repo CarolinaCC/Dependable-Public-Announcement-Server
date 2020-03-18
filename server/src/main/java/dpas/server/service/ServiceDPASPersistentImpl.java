@@ -39,7 +39,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                 //User with public key already exists
                 replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
-                _manager.save(registerToJSON(key, username));
+                _manager.save(_manager.registerToJSON(key, username));
                 replyObserver.onNext(Empty.newBuilder().build());
                 replyObserver.onCompleted();
             }
@@ -68,7 +68,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             // post announcement
             user.getUserBoard().post(announcement);
             _announcements.put(announcement.getIdentifier(), announcement);
-            _manager.save(postToJSON(key, user.getUsername(), signature, message, announcement.getIdentifier(),
+            _manager.save(_manager.postToJSon(key, user.getUsername(), signature, message, announcement.getIdentifier(),
                     request.getReferencesList()));
 
             responseObserver.onNext(Empty.newBuilder().build());
@@ -108,7 +108,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
             _announcements.put(announcement.getIdentifier(), announcement);
 
-            _manager.save(postGeneralToJSON(key, user.getUsername(), signature, message, announcement.getIdentifier(),
+            _manager.save(_manager.postGeneralToJSon(key, user.getUsername(), signature, message, announcement.getIdentifier(),
                     request.getReferencesList()));
 
             responseObserver.onNext(Empty.newBuilder().build());
