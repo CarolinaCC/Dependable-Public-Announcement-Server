@@ -27,7 +27,7 @@ public class PersistenceManager {
 
 
         if (Files.isDirectory(Paths.get(path))) {
-            //Do something like throwing an exception
+            throw new RuntimeException();
         }
 
         _file = new File(path);
