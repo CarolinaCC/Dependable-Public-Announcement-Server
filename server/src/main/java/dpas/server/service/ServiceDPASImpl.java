@@ -13,6 +13,7 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
+import java.io.File;
 import java.io.Serializable;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -51,6 +52,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase impleme
                 + "\n\"User\" : " + "\"" + user + "\"" + "\n\"Signature\" : " + "\"" + signature + "\"" + "\n\"Message\" : " + "\"" + String.valueOf(message)
                 + "\""  + "\n\"Identifier\" : " + "\"" + identifier + "\"" + "\n\"References\" :" + "\"" + references + "\"" + "\n}";
     }
+
 
     public void addUser (String username, PublicKey key) throws NullUserException, NullPublicKeyException, NullUsernameException {
         User user = new User(username, key);
