@@ -8,14 +8,20 @@ import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
 import dpas.server.service.ServiceDPASImpl;
 import org.apache.commons.io.FileUtils;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -35,6 +41,7 @@ public class PersistenceManager {
     private ConcurrentHashMap<PublicKey, User> _users;
     private GeneralBoard _generalBoard;
     private File _file;
+
     public PersistenceManager(String path) throws IOException {
         _announcements = new ConcurrentHashMap<>();
         _users = new ConcurrentHashMap<>();
@@ -52,8 +59,18 @@ public class PersistenceManager {
         }
     }
 
-    public void save() {
+    public void save(String operation) throws IOException {
 
+
+        File json_swap = new File(_file.getPath() + ".swap");
+        FileUtils.copyFile(_file, json_swap);
+
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
+        writer.write(operation);
+        writer.close();
+
+        Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
     }
 
     public ServiceDPASImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException {

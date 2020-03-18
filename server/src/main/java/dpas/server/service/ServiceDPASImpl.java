@@ -12,8 +12,13 @@ import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.io.FileUtils;
+import java.nio.file.Files;
 
-import java.io.Serializable;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -21,11 +26,12 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase implements Serializable {
+public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
-    private ConcurrentHashMap<String, Announcement> _announcements;
-    private ConcurrentHashMap<PublicKey, User> _users;
-    private GeneralBoard _generalBoard;
+    protected ConcurrentHashMap<String, Announcement> _announcements;
+    protected ConcurrentHashMap<PublicKey, User> _users;
+    protected GeneralBoard _generalBoard;
+    private File _json = new File("/json.json");
 
 
     public ServiceDPASImpl()  {
@@ -35,26 +41,23 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase impleme
         this._generalBoard = new GeneralBoard();
     }
 
-    public String registerToJSON(PublicKey key, User user) {
-        return "{\n " + "Type : Register,\n" + "PublicKey : " + key + "\n"
-                + "User : " + user + "\n},";
+
+    public void save(String operation) throws IOException {
+
+        Path path_json_swap = Paths.get("/json_swap.json");
+        Path path_json = Paths.get("/json.json");
+
+        File json_swap = new File("/json_swap.json");
+        FileUtils.copyFile(_json, json_swap);
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
+        writer.write(operation);
+        writer.close();
+
+        Files.move(path_json_swap, path_json, StandardCopyOption.ATOMIC_MOVE);
+
     }
 
-
-    public String postToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
-        return "{\n " + "Type : Post,\n" + "PublicKey : " + key
-                + "\nUser : " + user + "\nSignature : " + signature + "\nMessage : " + String.valueOf(message)
-                + "\nIdentifier : " + identifier
-                + "\nReferences :" + references + "\n},";
-    }
-
-
-    public String postGeneralToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
-        return "{\n " + "Type : PostGeneral,\n" + "PublicKey : " + key
-                + "\nUser : " + user + "\nSignature : " + signature + "\nMessage : " + String.valueOf(message)
-                + "\nIdentifier : " + identifier
-                + "\nReferences :" + references + "\n}";
-    }
 
     public void addUser (String username, PublicKey key) throws NullUserException, NullPublicKeyException, NullUsernameException {
         User user = new User(username, key);
@@ -239,7 +242,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase impleme
     }
 
 
-    private ArrayList<Announcement> getListOfReferences(ProtocolStringList referenceIDs) throws InvalidReferenceException {
+    protected ArrayList<Announcement> getListOfReferences(ProtocolStringList referenceIDs) throws InvalidReferenceException {
         // add all references to lists of references
         var references = new ArrayList<Announcement>();
         for (var reference : referenceIDs) {
