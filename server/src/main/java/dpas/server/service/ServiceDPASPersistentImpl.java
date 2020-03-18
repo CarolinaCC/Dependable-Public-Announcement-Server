@@ -8,7 +8,9 @@ import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import org.json.simple.parser.ParseException;
 
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -49,6 +51,8 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         } catch (NullUserException e) {
             //Should Never Happen
             replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null User For Board").asRuntimeException());
+        } catch (ParseException | IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -81,7 +85,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
         } catch (InvalidReferenceException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException e) {
+        } catch (NullAnnouncementException | ParseException | IOException e) {
             //Should never happen
             e.printStackTrace();
         }
@@ -121,7 +125,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
         } catch (InvalidReferenceException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException e) {
+        } catch (NullAnnouncementException | IOException | ParseException e) {
             //Should never happen
             e.printStackTrace();
         }
