@@ -23,6 +23,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -65,16 +66,16 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     public void addAnnouncement (String message, PublicKey key, byte[] signature,
-                                 ArrayList <Announcement> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException, InvalidUserException {
-        Announcement announcement = new Announcement(signature, _users.get(key), message, references);
+                                 ArrayList <String> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException, InvalidUserException, InvalidReferenceException {
+        Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references));
         // post announcement
         _users.get(key).getUserBoard().post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public void addGeneralAnnouncement (String message, PublicKey key, byte[] signature,
-                                        ArrayList <Announcement> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException {
-        Announcement announcement = new Announcement(signature, _users.get(key), message, references);
+                                        ArrayList <String> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException, InvalidReferenceException {
+        Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references));
         // post announcement
         _generalBoard.post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);
@@ -242,7 +243,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
 
-    protected ArrayList<Announcement> getListOfReferences(ProtocolStringList referenceIDs) throws InvalidReferenceException {
+    protected ArrayList<Announcement> getListOfReferences(List<String> referenceIDs) throws InvalidReferenceException {
         // add all references to lists of references
         var references = new ArrayList<Announcement>();
         for (var reference : referenceIDs) {
