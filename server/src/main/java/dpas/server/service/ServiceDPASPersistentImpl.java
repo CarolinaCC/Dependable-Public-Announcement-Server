@@ -24,7 +24,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void register(Contract.RegisterRequest request, StreamObserver<Empty> replyObserver) {
+    public void register(Contract.RegisterRequest request, StreamObserver<Empty> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -35,21 +35,19 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             User curr = _users.putIfAbsent(key, user);
             if (curr != null) {
                 //User with public key already exists
-                replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 _manager.save(user.toJson());
-                replyObserver.onNext(Empty.newBuilder().build());
-                replyObserver.onCompleted();
+                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onCompleted();
             }
         } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
-        } catch (NullUsernameException e) {
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null Username").asRuntimeException());
-        } catch (NullUserException e) {
-            //Should Never Happen
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null User For Board").asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
+        } catch (CommonDomainException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException e) {
-            e.printStackTrace();
+            //Should never happen
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
         }
     }
 
@@ -73,19 +71,13 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
-        } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Signature").asRuntimeException());
-        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
-        } catch (InvalidMessageSizeException | NullMessageException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Message").asRuntimeException());
-        } catch (NullUserException | InvalidUserException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
-        } catch (InvalidReferenceException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException | IOException e) {
+        } catch (CommonDomainException | SignatureException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (IOException e) {
             //Should never happen
-            e.printStackTrace();
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
+        } catch (NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
         }
 
     }
@@ -108,23 +100,16 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                 _generalBoard.post(announcement);
             }
 
-
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
-        } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Signature").asRuntimeException());
-        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
-        } catch (InvalidMessageSizeException | NullMessageException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Message").asRuntimeException());
-        } catch (NullUserException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
-        } catch (InvalidReferenceException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException | IOException e) {
+        } catch (CommonDomainException | SignatureException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (IOException e) {
             //Should never happen
-            e.printStackTrace();
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
+        } catch (NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
         }
     }
 

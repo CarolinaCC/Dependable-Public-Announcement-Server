@@ -1,6 +1,6 @@
 package dpas.common.domain.exception;
 
-public class NullSignatureException extends Exception {
+public class NullSignatureException extends CommonDomainException {
     public NullSignatureException(String description) {
         super(description);
     }

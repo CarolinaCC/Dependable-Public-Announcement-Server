@@ -1,5 +1,6 @@
 package dpas.common.domain.exception;
-public class NullAnnouncementException extends Exception {
+
+public class NullAnnouncementException extends CommonDomainException {
     public NullAnnouncementException(String description) {
         super(description);
     }
