@@ -47,7 +47,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
 
     public String postGeneralToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
-        return "{\n " + "Type : PostGenera,\n" + "PublicKey : " + key
+        return "{\n " + "Type : PostGeneral,\n" + "PublicKey : " + key
                 + "\nUser : " + user + "\nSignature : " + signature + "\nMessage : " + String.valueOf(message)
                 + "\nIdentifier : " + identifier
                 + "\nReferences :" + references + "\n}";
