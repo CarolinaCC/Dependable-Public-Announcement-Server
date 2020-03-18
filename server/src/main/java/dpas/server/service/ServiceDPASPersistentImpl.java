@@ -8,7 +8,6 @@ import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.security.*;
@@ -51,7 +50,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         } catch (NullUserException e) {
             //Should Never Happen
             replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null User For Board").asRuntimeException());
-        } catch (ParseException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -85,7 +84,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
         } catch (InvalidReferenceException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException | ParseException | IOException e) {
+        } catch (NullAnnouncementException | IOException e) {
             //Should never happen
             e.printStackTrace();
         }
@@ -125,7 +124,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
         } catch (InvalidReferenceException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException | IOException | ParseException e) {
+        } catch (NullAnnouncementException | IOException e) {
             //Should never happen
             e.printStackTrace();
         }
@@ -175,22 +174,22 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                 + "\"References\" : [" + builder.toString() + "]\n}";
     }
 
-    public void addUser(String username, PublicKey key) throws NullUserException, NullPublicKeyException, NullUsernameException {
+    public void addUser (String username, PublicKey key) throws NullUserException, NullPublicKeyException, NullUsernameException {
         User user = new User(username, key);
         _users.put(key, user);
     }
 
-    public void addAnnouncement(String message, PublicKey key, byte[] signature,
-                                ArrayList<Announcement> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException, InvalidUserException {
-        Announcement announcement = new Announcement(signature, _users.get(key), message, references);
+    public void addAnnouncement (String message, PublicKey key, byte[] signature,
+                                 ArrayList <String> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException, InvalidUserException, InvalidReferenceException {
+        Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references));
         // post announcement
         _users.get(key).getUserBoard().post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);
     }
 
-    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature,
-                                       ArrayList<Announcement> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException {
-        Announcement announcement = new Announcement(signature, _users.get(key), message, references);
+    public void addGeneralAnnouncement (String message, PublicKey key, byte[] signature,
+                                        ArrayList <String> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException, InvalidReferenceException {
+        Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references));
         // post announcement
         _generalBoard.post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);

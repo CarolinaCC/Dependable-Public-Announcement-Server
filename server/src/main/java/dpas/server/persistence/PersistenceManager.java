@@ -1,61 +1,35 @@
 package dpas.server.persistence;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-import dpas.common.domain.Announcement;
-import dpas.common.domain.GeneralBoard;
-import dpas.common.domain.User;
-import dpas.common.domain.exception.NullPublicKeyException;
-import dpas.common.domain.exception.NullUserException;
-import dpas.common.domain.exception.NullUsernameException;
-import dpas.server.service.ServiceDPASImpl;
+import dpas.common.domain.exception.*;
+import dpas.server.service.ServiceDPASPersistentImpl;
 import org.apache.commons.io.FileUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.io.BufferedWriter;
+import javax.json.*;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.json.*;
-import javax.json.stream.JsonParser;
+
 
 
 public class PersistenceManager {
-
-    private ConcurrentHashMap<String, Announcement> _announcements;
-    private ConcurrentHashMap<PublicKey, User> _users;
-    private GeneralBoard _generalBoard;
     private File _file;
 
     public PersistenceManager(String path) throws IOException {
-        _announcements = new ConcurrentHashMap<>();
-        _users = new ConcurrentHashMap<>();
-        _generalBoard = new GeneralBoard();
+
 
         if (Files.isDirectory(Paths.get(path))) {
-            //Do something like throwing an exception
+            throw new RuntimeException();
         }
 
         _file = new File(path);
@@ -72,6 +46,9 @@ public class PersistenceManager {
         FileUtils.copyFile(_file, json_swap);
 
         /*BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
+        File json_swap = new File(_file.getPath() + ".swap");
+        FileUtils.copyFile(_file, json_swap);
+        BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
         writer.write(operation);
         writer.close();*/
 
@@ -79,50 +56,53 @@ public class PersistenceManager {
         JsonReader reader = Json.createReader(fis);
         JsonArray jsonArray = reader.readObject().asJsonArray();
 
-        for(int i = 0; i < jsonArray.size(); i++) {
+      /*  for(int i = 0; i < jsonArray.size(); i++) {
             if (i == jsonArray.size() - 1) jsonArray.set(i, operation);
-        }
+        }*/
 
         Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
 
     }
 
-    public ServiceDPASImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException {
+    public ServiceDPASPersistentImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
         InputStream fis = new FileInputStream(_file);
         JsonReader reader = Json.createReader(fis);
-        JsonArray jsonArray = reader.readObject().getJsonArray("operation");
+        JsonArray jsonArray = reader.readObject().getJsonArray("Operations");
 
-        if (jsonArray.isEmpty())
-            return new ServiceDPASImpl();
-
-        ServiceDPASImpl service = new ServiceDPASImpl();
+        ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
 
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
+            PublicKey key = KeyFactory.getInstance("RSA")
+                    .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(operation.getString("Public Key"))));
+
             if (operation.getString("Type").equals("Register")) {
-                PublicKey key = KeyFactory.getInstance("RSA")
-                        .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(operation.getString("Public Key"))));
                 service.addUser(operation.getString("User"), key);
-            }
-            else if (operation.getString("Type").equals("Register")) {
-                PublicKey key = KeyFactory.getInstance("RSA")
-                        .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(operation.getString("Public Key"))));
-                service.addUser(operation.getString("User"), key);
+            } else {
+                byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
+                JsonArray refsJson = operation.getJsonArray("References");
+
+                // creating new array list of references
+                ArrayList<String> refs = new ArrayList<String>();
+                for (int j = 0; j < refsJson.size(); j++) {
+                    refs.add(refsJson.getString(j));
+                }
+
+                if (operation.getString("Type").equals("Post"))
+                    service.addAnnouncement(operation.getString("Message"), key, signature, refs);
+                else
+                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, refs);
             }
 
         }
-
-        return null;
-
+        return service;
     }
 
     public JsonValue PostStringTOJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
-
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
         String sign = Base64.getEncoder().encodeToString(signature);
-        new Json.createArrayBuilder();
 
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("User", user);
