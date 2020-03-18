@@ -5,10 +5,7 @@ import dpas.server.service.ServiceDPASPersistentImpl;
 import org.apache.commons.io.FileUtils;
 
 import javax.json.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -40,25 +37,22 @@ public class PersistenceManager {
         }
     }
 
-    public void save(String operation) throws IOException {
+    public void save(JsonValue operation) throws IOException {
 
         File json_swap = new File(_file.getPath() + ".swap");
         FileUtils.copyFile(_file, json_swap);
-
-        /*BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
-        File json_swap = new File(_file.getPath() + ".swap");
-        FileUtils.copyFile(_file, json_swap);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
-        writer.write(operation);
-        writer.close();*/
 
         InputStream fis = new FileInputStream(json_swap);
         JsonReader reader = Json.createReader(fis);
-        JsonArray jsonArray = reader.readObject().asJsonArray();
+        JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap));) {
 
-      /*  for(int i = 0; i < jsonArray.size(); i++) {
-            if (i == jsonArray.size() - 1) jsonArray.set(i, operation);
-        }*/
+        JsonArray jsonArray = reader.readObject().asJsonArray();
+        jsonArray.add(operation);
+
+        JsonObjectBuilder obj = new Json.createObjectBuilder();
+
+        obj.add("Operations", jsonArray);
+        jsonWriter.writeObject(obj.build());
 
         Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
 
@@ -98,19 +92,62 @@ public class PersistenceManager {
         return service;
     }
 
-    public JsonValue PostStringTOJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
+    public JsonValue RegisterStringToJSON(PublicKey key, String user) {
+
+        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
+        String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
+
+        jsonBuilder.add("Type", "Register");
+        jsonBuilder.add("Public Key", pubKey);
+        jsonBuilder.add("User", user);
+
+        return jsonBuilder.build();
+    }
+
+
+    public JsonValue PostStringToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
         String sign = Base64.getEncoder().encodeToString(signature);
         final JsonArrayBuilder builder = Json.createArrayBuilder();
+
+        for(String reference: references) {
+            builder.add(reference);
+        }
+
+        jsonBuilder.add("Type", "Post");
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("User", user);
         jsonBuilder.add("Signature", sign);
         jsonBuilder.add("Identifier", identifier);
         jsonBuilder.add("References", builder.build());
-        return null;
+
+        return jsonBuilder.build();
     }
+
+    public JsonValue PostGeneralStringToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
+
+        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
+        String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
+        String sign = Base64.getEncoder().encodeToString(signature);
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+
+        for(String reference: references) {
+            builder.add(reference);
+        }
+
+        jsonBuilder.add("Type", "PostGeneral");
+        jsonBuilder.add("Public Key", pubKey);
+        jsonBuilder.add("User", user);
+        jsonBuilder.add("Signature", sign);
+        jsonBuilder.add("Identifier", identifier);
+        jsonBuilder.add("References", builder.build());
+
+        return jsonBuilder.build();
+    }
+
+
 
 
 }
