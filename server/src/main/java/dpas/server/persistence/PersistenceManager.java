@@ -5,15 +5,15 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
 import dpas.server.service.ServiceDPASImpl;
 import org.apache.commons.io.FileUtils;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.PublicKey;
@@ -25,6 +25,9 @@ public class PersistenceManager {
     private ConcurrentHashMap<PublicKey, User> _users;
     private GeneralBoard _generalBoard;
     private File _file;
+
+    JSONParser _parser = new JSONParser();
+
     public PersistenceManager(String path) throws IOException {
         _announcements = new ConcurrentHashMap<>();
         _users = new ConcurrentHashMap<>();
@@ -42,11 +45,12 @@ public class PersistenceManager {
         }
     }
 
-    public void save(String operation) throws IOException {
+    public void save(String operation) throws IOException, ParseException {
 
 
         File json_swap = new File(_file.getPath() + ".swap");
         FileUtils.copyFile(_file, json_swap);
+
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
         writer.write(operation);
