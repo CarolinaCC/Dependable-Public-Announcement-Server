@@ -51,7 +51,7 @@ public class PersistenceManager {
     public ServiceDPASPersistentImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
         InputStream fis = new FileInputStream(_file);
         JsonReader reader = Json.createReader(fis);
-        JsonArray jsonArray = reader.readObject().getJsonArray("operation");
+        JsonArray jsonArray = reader.readObject().getJsonArray("Operations");
 
         ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
 

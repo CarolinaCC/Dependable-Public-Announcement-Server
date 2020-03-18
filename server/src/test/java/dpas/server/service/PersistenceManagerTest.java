@@ -38,4 +38,12 @@ public class PersistenceManagerTest {
         manager.load();
     }
 
+    @Test
+    public void loadNoOperationsFile() throws IOException, SignatureException, NullUserException, NullAnnouncementException, InvalidUserException, InvalidKeySpecException, NullMessageException, NoSuchAlgorithmException, InvalidMessageSizeException, NullPublicKeyException, InvalidKeyException, NullUsernameException, InvalidSignatureException, NullSignatureException, InvalidReferenceException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("no_operations.json").getPath();;
+        PersistenceManager manager = new PersistenceManager(path);
+        manager.load();
+    }
+
 }
