@@ -33,6 +33,19 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         this._generalBoard = new GeneralBoard();
     }
 
+    public String registerToJSON() {
+        return "";
+    }
+
+    public String postToJSON() {
+        return "";
+    }
+
+
+    public String postGeneralToJSON() {
+        return "";
+    }
+
     @Override
     public void register(RegisterRequest request, StreamObserver<Empty> replyObserver) {
         try {
