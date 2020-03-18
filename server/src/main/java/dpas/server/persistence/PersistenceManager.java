@@ -39,12 +39,8 @@ public class PersistenceManager {
     }
 
     public void save(String operation) throws IOException {
-
-
         File json_swap = new File(_file.getPath() + ".swap");
         FileUtils.copyFile(_file, json_swap);
-
-
         BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
         writer.write(operation);
         writer.close();
@@ -55,7 +51,6 @@ public class PersistenceManager {
     public ServiceDPASPersistentImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
         InputStream fis = new FileInputStream(_file);
         JsonReader reader = Json.createReader(fis);
-
         JsonArray jsonArray = reader.readObject().getJsonArray("operation");
 
         ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
@@ -69,12 +64,14 @@ public class PersistenceManager {
                 service.addUser(operation.getString("User"), key);
             } else {
                 byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
-
                 JsonArray refsJson = operation.getJsonArray("References");
+
+                // creating new array list of references
                 ArrayList<String> refs = new ArrayList<String>();
                 for (int j = 0; j < refsJson.size(); j++) {
                     refs.add(refsJson.getString(j));
                 }
+
                 if (operation.getString("Type").equals("Post"))
                     service.addAnnouncement(operation.getString("Message"), key, signature, refs);
                 else
