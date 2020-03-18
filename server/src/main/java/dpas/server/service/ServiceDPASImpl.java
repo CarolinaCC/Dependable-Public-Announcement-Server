@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase implements Serializable {
+public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     private ConcurrentHashMap<String, Announcement> _announcements;
     private ConcurrentHashMap<PublicKey, User> _users;

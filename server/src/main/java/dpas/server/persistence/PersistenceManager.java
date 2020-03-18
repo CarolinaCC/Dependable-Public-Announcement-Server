@@ -38,7 +38,7 @@ public class PersistenceManager {
         }
     }
 
-    public void save() {
+    public void save(String operation) {
 
     }
 
