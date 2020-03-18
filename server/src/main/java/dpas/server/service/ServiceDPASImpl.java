@@ -36,24 +36,20 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase impleme
     }
 
     public String registerToJSON(PublicKey key, User user) {
-        return "{\n " + "Type : Register,\n" + "PublicKey : " + key + "\n"
-                + "User : " + user + "\n},";
+        return "{\n \"Type\" : \"Register\",\n\"PublicKey : \"" + "\"" + key + "\"" + "\n\"User\" : " + user + "\n},";
     }
 
-
     public String postToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
-        return "{\n " + "Type : Post,\n" + "PublicKey : " + key
-                + "\nUser : " + user + "\nSignature : " + signature + "\nMessage : " + String.valueOf(message)
-                + "\nIdentifier : " + identifier
-                + "\nReferences :" + references + "\n},";
+        return "{\n " + "\"Type\" : \"Post\",\n" + "\"PublicKey\" : " + "\"" + key + "\""
+                + "\n\"User\" : " + "\"" + user + "\"" + "\n\"Signature\" : " + "\"" + signature + "\"" + "\n\"Message\" : " + "\"" + String.valueOf(message)
+                + "\"" + "\n\"Identifier\" : " + "\"" + identifier + "\"" + "\n\"References\" :" + "\"" + references + "\"" + "\n},";
     }
 
 
     public String postGeneralToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
-        return "{\n " + "Type : PostGeneral,\n" + "PublicKey : " + key
-                + "\nUser : " + user + "\nSignature : " + signature + "\nMessage : " + String.valueOf(message)
-                + "\nIdentifier : " + identifier
-                + "\nReferences :" + references + "\n}";
+        return "{\n " + "\"Type\" : \"PostGeneral\",\n" + "\"PublicKey\" : " + "\"" + key + "\""
+                + "\n\"User\" : " + "\"" + user + "\"" + "\n\"Signature\" : " + "\"" + signature + "\"" + "\n\"Message\" : " + "\"" + String.valueOf(message)
+                + "\""  + "\n\"Identifier\" : " + "\"" + identifier + "\"" + "\n\"References\" :" + "\"" + references + "\"" + "\n}";
     }
 
     public void addUser (String username, PublicKey key) throws NullUserException, NullPublicKeyException, NullUsernameException {
