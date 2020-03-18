@@ -11,10 +11,9 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>SEC.T18</groupId>
-            <artifactId>DPAS-contract</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>1.1.4</version>
         </dependency>
     </dependencies>
     <packaging>jar</packaging>

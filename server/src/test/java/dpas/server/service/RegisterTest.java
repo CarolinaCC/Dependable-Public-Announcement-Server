@@ -102,7 +102,7 @@ public class RegisterTest {
     @Test
     public void registerNullUsername() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Null Username");
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Username: Cannot be null or blank");
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build());
@@ -111,7 +111,7 @@ public class RegisterTest {
     @Test
     public void registerNullKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
                 .build());
@@ -120,7 +120,7 @@ public class RegisterTest {
     @Test
     public void registerEmptyKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[0]))
                 .setUsername(FIRST_USER_NAME)
@@ -130,7 +130,7 @@ public class RegisterTest {
     @Test
     public void registerArbitraryKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: invalid key format");
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
                 .setUsername(FIRST_USER_NAME)
@@ -141,7 +141,7 @@ public class RegisterTest {
     public void registerWrongAlgorithmKey() throws NoSuchAlgorithmException {
 
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Invalid RSA public key");
 
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_publicDSAKey.getEncoded()))

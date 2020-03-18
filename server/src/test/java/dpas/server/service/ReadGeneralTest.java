@@ -133,7 +133,7 @@ public class ReadGeneralTest {
     public void readInvalidNumberOfPosts() {
 
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Number of Posts");
+        exception.expectMessage("INVALID_ARGUMENT: Invalid number of posts to read: number cannot be negative");
 
         _stub.readGeneral(Contract.ReadRequest.newBuilder()
                 .setNumber(-1)

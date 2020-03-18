@@ -15,13 +15,12 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 
 
 public class PersistenceManager {
     private String _path;
     private File _swapFile;
-    private FileInputStream _fileStream;
+    private BufferedInputStream _fileStream;
 
 
     public PersistenceManager(String path) throws IOException {
@@ -37,7 +36,7 @@ public class PersistenceManager {
         }
         _path = path;
         _swapFile = new File(file.getPath() + ".swap");
-        _fileStream = new FileInputStream(file);
+        _fileStream = new BufferedInputStream(new FileInputStream(file));
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
@@ -59,7 +58,7 @@ public class PersistenceManager {
 
     }
 
-    public ServiceDPASPersistentImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
+    public ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
 
         JsonArray jsonArray = readSaveFile();
 
@@ -95,69 +94,9 @@ public class PersistenceManager {
         return service;
     }
 
-    private JsonArray readSaveFile() throws IOException {
-        _fileStream.reset();
+    private JsonArray readSaveFile(){
         try (JsonReader reader = Json.createReader(_fileStream)) {
-            return reader.readObject().getJsonArray("Operations");
+             return reader.readObject().getJsonArray("Operations");
         }
     }
-
-    public JsonValue registerToJson(PublicKey key, String user) {
-
-        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
-        String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
-
-        jsonBuilder.add("Type", "Register");
-        jsonBuilder.add("Public Key", pubKey);
-        jsonBuilder.add("User", user);
-
-        return jsonBuilder.build();
-    }
-
-
-    public JsonValue postToJson(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
-
-        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
-        String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
-        String sign = Base64.getEncoder().encodeToString(signature);
-        final JsonArrayBuilder builder = Json.createArrayBuilder();
-
-        for (String reference : references) {
-            builder.add(reference);
-        }
-
-        jsonBuilder.add("Type", "Post");
-        jsonBuilder.add("Public Key", pubKey);
-        jsonBuilder.add("User", user);
-        jsonBuilder.add("Message", message);
-        jsonBuilder.add("Signature", sign);
-        jsonBuilder.add("Identifier", identifier);
-        jsonBuilder.add("References", builder.build());
-
-        return jsonBuilder.build();
-    }
-
-    public JsonValue postGeneralToJson(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
-
-        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
-        String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
-        String sign = Base64.getEncoder().encodeToString(signature);
-        final JsonArrayBuilder builder = Json.createArrayBuilder();
-
-        for (String reference : references) {
-            builder.add(reference);
-        }
-
-        jsonBuilder.add("Type", "PostGeneral");
-        jsonBuilder.add("Public Key", pubKey);
-        jsonBuilder.add("User", user);
-        jsonBuilder.add("Message", message);
-        jsonBuilder.add("Signature", sign);
-        jsonBuilder.add("Identifier", identifier);
-        jsonBuilder.add("References", builder.build());
-
-        return jsonBuilder.build();
-    }
-
-
 }

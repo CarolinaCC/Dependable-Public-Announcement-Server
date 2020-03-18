@@ -182,7 +182,7 @@ public class ReadTest {
     @Test
     public void readInvalidNumberOfPosts() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Number of Posts");
+        exception.expectMessage("INVALID_ARGUMENT: Invalid number of posts to read: number cannot be negative");
 
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
@@ -194,7 +194,7 @@ public class ReadTest {
     @Test
     public void readNullKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setUsername(USER_NAME)
@@ -205,7 +205,7 @@ public class ReadTest {
     @Test
     public void readEmptyKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[0]))
@@ -217,7 +217,7 @@ public class ReadTest {
     @Test
     public void readArbitraryKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: invalid key format");
 
         _stub.read(Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
@@ -230,7 +230,7 @@ public class ReadTest {
     public void readWrongAlgorithmKey() throws NoSuchAlgorithmException {
 
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key Provided");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Invalid RSA public key");
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("DSA");
         keygen.initialize(1024);

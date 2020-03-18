@@ -186,7 +186,7 @@ public class PostTest {
                 .build());
 
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Announcement Reference");
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Reference: reference provided does not exist");
 
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
@@ -202,7 +202,7 @@ public class PostTest {
     @Test
     public void postNullPublicKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
         _stub.post(Contract.PostRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)

@@ -4,8 +4,12 @@ import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import java.io.Serializable;
 import java.security.PublicKey;
+import java.util.Base64;
 
 public class User implements Serializable {
 
@@ -40,5 +44,17 @@ public class User implements Serializable {
 
     public UserBoard getUserBoard() {
         return _userBoard;
+    }
+
+    public JsonObject toJson()  {
+
+        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
+        String pubKey = Base64.getEncoder().encodeToString(_publicKey.getEncoded());
+
+        jsonBuilder.add("Type", "Register");
+        jsonBuilder.add("Public Key", pubKey);
+        jsonBuilder.add("User", _username);
+
+        return jsonBuilder.build();
     }
 }

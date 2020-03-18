@@ -3,9 +3,14 @@ package dpas.common.domain;
 import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import java.io.Serializable;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -16,7 +21,6 @@ public class Announcement implements Serializable {
     private User _user;
     private String _message;
     private ArrayList<Announcement> _references; // Can be null
-
     private String _identifier;
 
     public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
@@ -81,9 +85,9 @@ public class Announcement implements Serializable {
 
         try {
             if (!sign.verify(signature))
-                throw new InvalidSignatureException();
+                throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
         } catch (SignatureException e) {
-            throw new InvalidSignatureException();
+            throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
         }
     }
 
@@ -112,11 +116,32 @@ public class Announcement implements Serializable {
     }
 
 
-    public Contract.Announcement announcementToGRPCObject() {
+    public Contract.Announcement toContract() {
 
         Stream<Announcement> myStream = _references.stream();
         List<String> announcementToIdentifier = myStream.map(Announcement::getIdentifier).collect(Collectors.toList());
 
         return Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername()).addAllReferences(announcementToIdentifier).setIdentifier(_identifier).build();
+    }
+
+    public JsonObject toJson(String type) {
+        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
+        String pubKey = Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded());
+        String sign = Base64.getEncoder().encodeToString(_signature);
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+
+        for (Announcement reference : _references) {
+            builder.add(reference.getIdentifier());
+        }
+
+        jsonBuilder.add("Type", type);
+        jsonBuilder.add("Public Key", pubKey);
+        jsonBuilder.add("User", _user.getUsername());
+        jsonBuilder.add("Message", _message);
+        jsonBuilder.add("Signature", sign);
+        jsonBuilder.add("Identifier", _identifier);
+        jsonBuilder.add("References", builder.build());
+
+        return jsonBuilder.build();
     }
 }

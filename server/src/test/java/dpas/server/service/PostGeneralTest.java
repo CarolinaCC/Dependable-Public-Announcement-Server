@@ -1,6 +1,7 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -9,6 +10,8 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -174,7 +177,7 @@ public class PostGeneralTest {
     @Test
     public void postNullPublicKey() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        exception.expectMessage("Missing key encoding");
 
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setUsername(FIRST_USER_NAME)
@@ -187,7 +190,7 @@ public class PostGeneralTest {
     @Test
     public void postInvalidMessageSize() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Message");
+        exception.expectMessage("Invalid Message Length provided: over 255 characters");
 
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
@@ -213,7 +216,7 @@ public class PostGeneralTest {
     @Test
     public void postInvalidSignature() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
+        exception.expectMessage("Invalid Signature: Signature Could not be verified");
 
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))

@@ -13,7 +13,6 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,13 +50,8 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 replyObserver.onNext(Empty.newBuilder().build());
                 replyObserver.onCompleted();
             }
-        } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
-        } catch (NullUsernameException e) {
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null Username").asRuntimeException());
-        } catch (NullUserException e) {
-            //Should Never Happen
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("Null User For Board").asRuntimeException());
+        } catch (Exception e) {
+            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
         }
     }
 
@@ -77,21 +71,9 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
-        } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Signature").asRuntimeException());
-        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
-        } catch (InvalidMessageSizeException | NullMessageException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Message").asRuntimeException());
-        } catch (NullUserException | InvalidUserException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
-        } catch (InvalidReferenceException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException e) {
-            //Should never happen
-            e.printStackTrace();
+        } catch (Exception e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
         }
-
     }
 
     @Override
@@ -113,20 +95,10 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
 
-        } catch (InvalidSignatureException | NullSignatureException | SignatureException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Signature").asRuntimeException());
-        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Public Key").asRuntimeException());
-        } catch (InvalidMessageSizeException | NullMessageException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Message").asRuntimeException());
-        } catch (NullUserException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid User").asRuntimeException());
-        } catch (InvalidReferenceException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Announcement Reference").asRuntimeException());
-        } catch (NullAnnouncementException e) {
-            //Should never happen
-            e.printStackTrace();
+        } catch (Exception e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
         }
+
     }
 
     @Override
@@ -147,7 +119,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
 
                 for (Announcement announcement : announcements) {
-                    announcementsGRPC.add(announcement.announcementToGRPCObject());
+                    announcementsGRPC.add(announcement.toContract());
                 }
 
                 responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC)
@@ -156,17 +128,11 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 responseObserver.onCompleted();
             }
 
-        } catch (InvalidNumberOfPostsException e) {
+        } catch (Exception e) {
             responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("Invalid Number of Posts")
+                    .withDescription(e.getMessage())
+                    .withCause(e)
                     .asRuntimeException());
-        } catch (InvalidKeySpecException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("Invalid Public Key Provided")
-                    .asRuntimeException());
-        } catch (NoSuchAlgorithmException e) {
-            //Should never happen
-            e.printStackTrace();
         }
     }
 
@@ -177,20 +143,21 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
             int numberToRead = request.getNumber();
             ArrayList<Announcement> announcements = _generalBoard.read(numberToRead);
-            ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
+            ArrayList<Contract.Announcement> contractAnnouncements = new ArrayList<Contract.Announcement>();
 
             for (Announcement announcement : announcements) {
-                announcementsGRPC.add(announcement.announcementToGRPCObject());
+                contractAnnouncements.add(announcement.toContract());
             }
 
             responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .addAllAnnouncements(announcementsGRPC)
+                    .addAllAnnouncements(contractAnnouncements)
                     .build());
             responseObserver.onCompleted();
 
-        } catch (InvalidNumberOfPostsException e) {
+        } catch (Exception e) {
             responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("Invalid Number of Posts")
+                    .withDescription(e.getMessage())
+                    .withCause(e)
                     .asRuntimeException());
         }
     }
@@ -202,7 +169,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         for (var reference : referenceIDs) {
             var announcement = _announcements.get(reference);
             if (announcement == null) {
-                throw new InvalidReferenceException();
+                throw new InvalidReferenceException("Invalid Reference: reference provided does not exist");
             }
         }
         return references;
