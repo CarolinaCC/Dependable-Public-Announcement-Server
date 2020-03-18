@@ -72,26 +72,23 @@ public class PersistenceManager {
         Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
     }
 
-    public ServiceDPASImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
+    public ServiceDPASPersistentImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
         InputStream fis = new FileInputStream(_file);
         JsonReader reader = Json.createReader(fis);
+
         JsonArray jsonArray = reader.readObject().getJsonArray("operation");
 
         ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
-        if (jsonArray.isEmpty()) {
-            return service;
-        }
 
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
+            PublicKey key = KeyFactory.getInstance("RSA")
+                    .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(operation.getString("Public Key"))));
+
             if (operation.getString("Type").equals("Register")) {
-                PublicKey key = KeyFactory.getInstance("RSA")
-                        .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(operation.getString("Public Key"))));
                 service.addUser(operation.getString("User"), key);
             }
             else {
-                PublicKey key = KeyFactory.getInstance("RSA")
-                        .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(operation.getString("Public Key"))));
                 byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
 
                 JsonArray refsJson = operation.getJsonArray("References");
