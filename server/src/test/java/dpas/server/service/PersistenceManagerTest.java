@@ -49,4 +49,24 @@ public class PersistenceManagerTest {
         assertEquals(impl._users.size(), 0);
     }
 
+    @Test
+    public void loadGeneralTest() throws IOException, SignatureException, NullUserException, NullAnnouncementException, InvalidUserException, InvalidKeySpecException, NullMessageException, NoSuchAlgorithmException, InvalidMessageSizeException, NullPublicKeyException, InvalidKeyException, NullUsernameException, InvalidSignatureException, NullSignatureException, InvalidReferenceException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("valid_load_target.json").getPath();;
+        PersistenceManager manager = new PersistenceManager(path);
+        ServiceDPASPersistentImpl impl = manager.load();
+        assertEquals(impl._announcements.size(), 2);
+        assertEquals(impl._users.size(), 2);
+    }
+
+    @Test
+    public void loadGeneralTestWithSwap() throws IOException, SignatureException, NullUserException, NullAnnouncementException, InvalidUserException, InvalidKeySpecException, NullMessageException, NoSuchAlgorithmException, InvalidMessageSizeException, NullPublicKeyException, InvalidKeyException, NullUsernameException, InvalidSignatureException, NullSignatureException, InvalidReferenceException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("valid_load_target_with_swap.json").getPath();;
+        PersistenceManager manager = new PersistenceManager(path);
+        ServiceDPASPersistentImpl impl = manager.load();
+        assertEquals(impl._announcements.size(), 2);
+        assertEquals(impl._users.size(), 2);
+    }
+
 }

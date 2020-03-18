@@ -32,6 +32,19 @@ public class Announcement implements Serializable {
         this._identifier = UUID.randomUUID().toString();
     }
 
+    public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references, String identifier) throws NullSignatureException, NullMessageException,
+            NullAnnouncementException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
+            NullUserException, InvalidMessageSizeException {
+
+        checkArguments(signature, user, message, references);
+        checkSignature(signature, user, message);
+        this._message = message;
+        this._signature = signature;
+        this._user = user;
+        this._references = references;
+        this._identifier = identifier;
+    }
+
     public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
             NullMessageException, NullAnnouncementException, NullUserException, InvalidMessageSizeException {
 

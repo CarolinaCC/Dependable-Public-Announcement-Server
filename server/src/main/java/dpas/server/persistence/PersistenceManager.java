@@ -85,18 +85,19 @@ public class PersistenceManager {
                 for (int j = 0; j < refsJson.size(); j++) {
                     refs.add(refsJson.getString(j));
                 }
+                String identifier = operation.getString("Identifier");
 
                 if (operation.getString("Type").equals("Post"))
-                    service.addAnnouncement(operation.getString("Message"), key, signature, refs);
+                    service.addAnnouncement(operation.getString("Message"), key, signature, refs, identifier);
                 else
-                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, refs);
+                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, refs, identifier);
             }
 
         }
         return service;
     }
 
-    public JsonValue registerToJSON(PublicKey key, String user) {
+    public JsonValue registerToJson(PublicKey key, String user) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
@@ -109,7 +110,7 @@ public class PersistenceManager {
     }
 
 
-    public JsonValue postToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
+    public JsonValue postToJson(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
@@ -123,6 +124,7 @@ public class PersistenceManager {
         jsonBuilder.add("Type", "Post");
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("User", user);
+        jsonBuilder.add("Message", message);
         jsonBuilder.add("Signature", sign);
         jsonBuilder.add("Identifier", identifier);
         jsonBuilder.add("References", builder.build());
@@ -130,7 +132,7 @@ public class PersistenceManager {
         return jsonBuilder.build();
     }
 
-    public JsonValue postGeneralToJSon(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
+    public JsonValue postGeneralToJson(PublicKey key, String user, byte[] signature, String message, String identifier, List<String> references) {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
@@ -144,6 +146,7 @@ public class PersistenceManager {
         jsonBuilder.add("Type", "PostGeneral");
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("User", user);
+        jsonBuilder.add("Message", message);
         jsonBuilder.add("Signature", sign);
         jsonBuilder.add("Identifier", identifier);
         jsonBuilder.add("References", builder.build());
