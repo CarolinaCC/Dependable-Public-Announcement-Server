@@ -12,9 +12,13 @@ import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.io.FileUtils;
+import java.nio.file.Files;
 
-import java.io.File;
-import java.io.Serializable;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -27,6 +31,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase impleme
     private ConcurrentHashMap<String, Announcement> _announcements;
     private ConcurrentHashMap<PublicKey, User> _users;
     private GeneralBoard _generalBoard;
+    private File _json = new File("/json.json");
 
 
     public ServiceDPASImpl()  {
@@ -51,6 +56,22 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase impleme
         return "{\n " + "\"Type\" : \"PostGeneral\",\n" + "\"PublicKey\" : " + "\"" + key + "\""
                 + "\n\"User\" : " + "\"" + user + "\"" + "\n\"Signature\" : " + "\"" + signature + "\"" + "\n\"Message\" : " + "\"" + String.valueOf(message)
                 + "\""  + "\n\"Identifier\" : " + "\"" + identifier + "\"" + "\n\"References\" :" + "\"" + references + "\"" + "\n}";
+    }
+
+    public void save(String operation) throws IOException {
+
+        Path path_json_swap = Paths.get("/json_swap.json");
+        Path path_json = Paths.get("/json.json");
+
+        File json_swap = new File("/json_swap.json");
+        FileUtils.copyFile(_json, json_swap);
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
+        writer.write(operation);
+        writer.close();
+
+        Files.move(path_json_swap, path_json, StandardCopyOption.ATOMIC_MOVE);
+
     }
 
 
