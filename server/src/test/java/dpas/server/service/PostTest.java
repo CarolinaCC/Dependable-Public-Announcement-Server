@@ -94,9 +94,7 @@ public class PostTest {
 
         _invalidReference = "";
 
-        ClassLoader classLoader = getClass().getClassLoader();
-        String path = classLoader.getResource("no_operations.json").getPath();;
-        final BindableService impl = new ServiceDPASPersistentImpl(new PersistenceManager(path));
+        final BindableService impl = new ServiceDPASImpl();
 
         //Start server
         _server = NettyServerBuilder
