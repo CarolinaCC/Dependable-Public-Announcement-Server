@@ -36,13 +36,9 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     @Override
     public void register(RegisterRequest request, StreamObserver<Empty> replyObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA")
-                    .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            User user = User.fromRequest(request);
 
-            String username = request.getUsername();
-            User user = new User(username, key);
-
-            User curr = _users.putIfAbsent(key, user);
+            User curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
                 //User with public key already exists
                 replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());

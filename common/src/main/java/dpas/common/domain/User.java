@@ -1,14 +1,20 @@
 package dpas.common.domain;
 
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
+import dpas.grpc.contract.Contract;
 
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import java.io.Serializable;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 public class User implements Serializable {
@@ -56,5 +62,12 @@ public class User implements Serializable {
         jsonBuilder.add("User", _username);
 
         return jsonBuilder.build();
+    }
+
+    public static User fromRequest(Contract.RegisterRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+        PublicKey key = KeyFactory.getInstance("RSA")
+                .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        String username = request.getUsername();
+        return new User(username, key);
     }
 }

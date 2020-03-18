@@ -58,7 +58,7 @@ public class PersistenceManager {
 
     }
 
-    public ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
+    public ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException {
 
         JsonArray jsonArray = readSaveFile();
 

@@ -28,19 +28,19 @@ public class PersistenceManagerTest {
     }
 
     @Test(expected = JsonException.class)
-    public void loadInvalidFile() throws IOException, SignatureException, NullUserException, NullAnnouncementException, InvalidUserException, InvalidKeySpecException, NullMessageException, NoSuchAlgorithmException, InvalidMessageSizeException, NullPublicKeyException, InvalidKeyException, NullUsernameException, InvalidSignatureException, NullSignatureException, InvalidReferenceException {
+    public void loadInvalidFile() throws IOException, SignatureException, CommonDomainException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("empty.json").getPath();
-        ;
+
         PersistenceManager manager = new PersistenceManager(path);
         manager.load();
     }
 
     @Test
-    public void loadNoOperationsFile() throws IOException, SignatureException, NullUserException, NullAnnouncementException, InvalidUserException, InvalidKeySpecException, NullMessageException, NoSuchAlgorithmException, InvalidMessageSizeException, NullPublicKeyException, InvalidKeyException, NullUsernameException, InvalidSignatureException, NullSignatureException, InvalidReferenceException {
+    public void loadNoOperationsFile() throws IOException, SignatureException, CommonDomainException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("no_operations.json").getPath();
-        ;
+
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
         assertEquals(impl._announcements.size(), 0);
@@ -48,10 +48,10 @@ public class PersistenceManagerTest {
     }
 
     @Test
-    public void loadGeneralTest() throws IOException, SignatureException, NullUserException, NullAnnouncementException, InvalidUserException, InvalidKeySpecException, NullMessageException, NoSuchAlgorithmException, InvalidMessageSizeException, NullPublicKeyException, InvalidKeyException, NullUsernameException, InvalidSignatureException, NullSignatureException, InvalidReferenceException {
+    public void loadGeneralTest() throws IOException, SignatureException, CommonDomainException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("valid_load_target.json").getPath();
-        ;
+
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
         assertEquals(impl._announcements.size(), 2);
@@ -59,10 +59,10 @@ public class PersistenceManagerTest {
     }
 
     @Test
-    public void loadGeneralTestWithSwap() throws IOException, SignatureException, NullUserException, NullAnnouncementException, InvalidUserException, InvalidKeySpecException, NullMessageException, NoSuchAlgorithmException, InvalidMessageSizeException, NullPublicKeyException, InvalidKeyException, NullUsernameException, InvalidSignatureException, NullSignatureException, InvalidReferenceException {
+    public void loadGeneralTestWithSwap() throws IOException, SignatureException, CommonDomainException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("valid_load_target_with_swap.json").getPath();
-        ;
+
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
         assertEquals(impl._announcements.size(), 2);
