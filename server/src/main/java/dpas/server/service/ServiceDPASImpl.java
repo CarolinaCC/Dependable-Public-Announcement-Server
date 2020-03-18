@@ -33,17 +33,24 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         this._generalBoard = new GeneralBoard();
     }
 
-    public String registerToJSON() {
-        return "";
+    public String registerToJSON(PublicKey key, User user) {
+        return "{\n " + "Type : Register,\n" + "PublicKey : " + key + "\n"
+                + "User : " + user + "},";
     }
 
-    public String postToJSON() {
-        return "";
+    public String postToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
+        return "{\n " + "Type : Post,\n" + "PublicKey : " + key
+                + "\nUser : " + user + "\nSignature : " + signature + "\nMessage : " + String.valueOf(message)
+                + "\nIdentifier : " + identifier
+                + "\nReferences :" + references + "\n},";
     }
 
 
-    public String postGeneralToJSON() {
-        return "";
+    public String postGeneralToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
+        return "{\n " + "Type : PostGenera,\n" + "PublicKey : " + key
+                + "\nUser : " + user + "\nSignature : " + signature + "\nMessage : " + String.valueOf(message)
+                + "\nIdentifier : " + identifier
+                + "\nReferences :" + references + "\n}";
     }
 
     @Override
