@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.server.persistence.PersistenceManager;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -93,7 +94,9 @@ public class PostTest {
 
         _invalidReference = "";
 
-        final BindableService impl = new ServiceDPASImpl();
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("no_operations.json").getPath();;
+        final BindableService impl = new ServiceDPASPersistentImpl(new PersistenceManager(path));
 
         //Start server
         _server = NettyServerBuilder

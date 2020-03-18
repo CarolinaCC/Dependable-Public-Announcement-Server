@@ -39,19 +39,23 @@ public class PersistenceManager {
     public void save(JsonValue operation) throws IOException {
 
         File json_swap = new File(_file.getPath() + ".swap");
-        FileUtils.copyFile(_file, json_swap);
 
-        InputStream fis = new FileInputStream(json_swap);
-        JsonReader reader = Json.createReader(fis);
-        try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap))) {
 
-            JsonArray jsonArray = reader.readObject().asJsonArray();
-            jsonArray.add(operation);
+        try (JsonReader reader = Json.createReader(new FileInputStream(_file))) {
+            try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap, false))) {
 
-            final JsonObjectBuilder builder = Json.createObjectBuilder();
+                final JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+                JsonArray jsonArray = reader.readObject().getJsonArray("Operations");
+                for (int i = 0; i < jsonArray.size(); ++i) {
+                    arrayBuilder.add(jsonArray.getJsonObject(i));
+                }
+                arrayBuilder.add(operation);
 
-            builder.add("Operations", jsonArray);
-            jsonWriter.writeObject(builder.build());
+
+                final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+                objectBuilder.add("Operations", arrayBuilder.build());
+                jsonWriter.writeObject(objectBuilder.build());
+            }
         }
 
         Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);

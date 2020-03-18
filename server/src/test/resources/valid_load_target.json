@@ -1,0 +1,32 @@
+{
+  "Operations": [
+    {
+      "Type": "Register",
+      "Public Key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEvA/T/nt4r43NoI6p7r77GzDzdD5RklTm5L6mWiowykDz/jXX7fHDJ100Rd8q9wffbnDbxBOH2YkHAV6IZriqbGgCkJATxFUpV4aCghIH4jnJkhvs3+iecC81TWjZq7O8WQnmH3jQZPBwKeuIPwY9zh3Fy/LLfwJxiFFifIiXQwIDAQAB",
+      "User": "USER"
+    },
+    {
+      "Type": "Register",
+      "Public Key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCE3WmLqbhLCTCK9JQ4T+5C0HQx12HqdLTJcpmgIn2cUTyjlhMWwFtov2MnNPo09vJ44p4jJGkKSQrG7lBqGCaSvp/171MPIidYNDz+FWmZo8VfSvN3wykh8Ezm21+8JN02cxt06npVE15E/Akuf+6P+xEtADPSRbpvwsX+QJlR0QIDAQAB",
+      "User": "USER2"
+    },
+    {
+      "Type": "Post",
+      "Public Key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEvA/T/nt4r43NoI6p7r77GzDzdD5RklTm5L6mWiowykDz/jXX7fHDJ100Rd8q9wffbnDbxBOH2YkHAV6IZriqbGgCkJATxFUpV4aCghIH4jnJkhvs3+iecC81TWjZq7O8WQnmH3jQZPBwKeuIPwY9zh3Fy/LLfwJxiFFifIiXQwIDAQAB",
+      "User": "USER",
+      "Signature": "kqTedIDxl/LoxyOPPih0OXAw2oT2ZjOB0lm/86TDIAqb5phuhyhl//AECiv9avxu0Bt+ypHngvfK1HBlTXyPE+uMfy01jnc+ZlgTxz7iqftYFpHQGR/ZMNYBx1JB60bLguuOBOnv+3ua4+2cy1w0fjCOpkomIb/Uk+agjTVJM0g=",
+      "Identifier": "e41eae04-c52a-4a68-8f67-698ce8fbf628",
+      "References": []
+    },
+    {
+      "Type": "Post",
+      "Public Key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCE3WmLqbhLCTCK9JQ4T+5C0HQx12HqdLTJcpmgIn2cUTyjlhMWwFtov2MnNPo09vJ44p4jJGkKSQrG7lBqGCaSvp/171MPIidYNDz+FWmZo8VfSvN3wykh8Ezm21+8JN02cxt06npVE15E/Akuf+6P+xEtADPSRbpvwsX+QJlR0QIDAQAB",
+      "User": "USER2",
+      "Signature": "XTfKzm2k1w0DttGOT6xaJcqCRHRAHnfY9qF4L70NN/FCBXOe5Y1wn4/HJCkH/ky6Tr+CIhvVNUPElUwMWQn3c/vDwWbC/JAvDtCquEOVhuOP+ZHl6GWaFeOnvS8OAVWsP8c+u3rxcZR4g+v96L0MMwbonhVeQcmMVokhqWGD9cM=",
+      "Identifier": "1266a80e-efdf-415f-9791-a13fddf880cb",
+      "References": [
+        "e41eae04-c52a-4a68-8f67-698ce8fbf628"
+      ]
+    }
+  ]
+}
