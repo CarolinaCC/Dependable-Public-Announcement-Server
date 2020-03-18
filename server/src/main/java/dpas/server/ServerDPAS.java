@@ -5,7 +5,23 @@ import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 
+import java.io.IOException;
+
 public class ServerDPAS {
+
+    public static Server startServer(int port) throws IOException {
+        final BindableService impl =  new ServiceDPASImpl();
+
+        //Start server
+        final Server server = NettyServerBuilder
+                .forPort(port)
+                .addService(impl)
+                .build();
+
+        server.start();
+
+        return server;
+    }
     public static void main(String[] args) throws Exception {
         System.out.println(ServerDPAS.class.getSimpleName());
 
@@ -16,16 +32,7 @@ public class ServerDPAS {
             return;
         }
 
-        final int port = Integer.parseInt(args[0]);
-        final BindableService impl =  new ServiceDPASImpl();
-
-        //Start server
-        final Server server = NettyServerBuilder
-                .forPort(port)
-                .addService(impl)
-                .build();
-
-        server.start();
+        Server server = startServer(Integer.parseInt(args[0]));
 
         // Do not exit the main thread. Wait until server is terminated.
         server.awaitTermination();
