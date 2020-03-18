@@ -1,50 +1,30 @@
 package dpas.server.persistence;
 
-import dpas.common.domain.Announcement;
-import dpas.common.domain.GeneralBoard;
-import dpas.common.domain.User;
 import dpas.common.domain.exception.*;
-import dpas.server.service.ServiceDPASImpl;
 import dpas.server.service.ServiceDPASPersistentImpl;
 import org.apache.commons.io.FileUtils;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.*;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
-import javax.json.stream.JsonParser;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Base64;
 
 
 public class PersistenceManager {
-
-    private ConcurrentHashMap<String, Announcement> _announcements;
-    private ConcurrentHashMap<PublicKey, User> _users;
-    private GeneralBoard _generalBoard;
     private File _file;
 
     public PersistenceManager(String path) throws IOException {
-        _announcements = new ConcurrentHashMap<>();
-        _users = new ConcurrentHashMap<>();
-        _generalBoard = new GeneralBoard();
+
 
         if (Files.isDirectory(Paths.get(path))) {
             //Do something like throwing an exception
@@ -87,8 +67,7 @@ public class PersistenceManager {
 
             if (operation.getString("Type").equals("Register")) {
                 service.addUser(operation.getString("User"), key);
-            }
-            else {
+            } else {
                 byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
 
                 JsonArray refsJson = operation.getJsonArray("References");
@@ -100,9 +79,7 @@ public class PersistenceManager {
                     service.addAnnouncement(operation.getString("Message"), key, signature, refs);
                 else
                     service.addGeneralAnnouncement(operation.getString("Message"), key, signature, refs);
-
             }
-
         }
         return service;
     }
