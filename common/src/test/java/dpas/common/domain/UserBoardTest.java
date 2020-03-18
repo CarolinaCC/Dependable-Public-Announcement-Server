@@ -134,27 +134,4 @@ public class UserBoardTest {
         _userBoard.post(_announcementValid);
         _userBoard.read(-1);
     }
-
-    @Test
-    public void validAnnouncementFromReference() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException, InvalidReferenceException {
-        _userBoard.post(_announcementValid);
-        _userBoard.post(_announcementValid2);
-        assertEquals(_userBoard.getAnnouncementFromReference(0), _announcementValid);
-        assertEquals(_userBoard.getAnnouncementFromReference(1), _announcementValid2);
-
-    }
-
-    @Test(expected = InvalidReferenceException.class)
-    public void negativeReferenceAnnouncementFromReference() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException, InvalidReferenceException {
-        _userBoard.post(_announcementValid);
-        _userBoard.post(_announcementValid2);
-        _userBoard.getAnnouncementFromReference(-1);
-    }
-
-    @Test(expected = InvalidReferenceException.class)
-    public void higherReferenceAnnouncementFromReference() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException, InvalidReferenceException {
-        _userBoard.post(_announcementValid);
-        _userBoard.post(_announcementValid2);
-        _userBoard.getAnnouncementFromReference(2);
-    }
 }

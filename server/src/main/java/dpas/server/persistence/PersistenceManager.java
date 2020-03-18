@@ -19,33 +19,31 @@ import java.util.List;
 
 
 public class PersistenceManager {
-    private File _file;
+    private String _path;
+    private File _swapFile;
+    private FileInputStream _fileStream;
+
 
     public PersistenceManager(String path) throws IOException {
-
-
         if (Files.isDirectory(Paths.get(path))) {
             throw new RuntimeException();
         }
 
-        _file = new File(path);
+        File file = new File(path);
         if (!Files.exists(Paths.get(path))) {
-            //File does not exist
-            _file.createNewFile();
-            FileUtils.writeStringToFile(_file, "\"operation\" : []", StandardCharsets.UTF_8);
+            //File does not exist, start a new save file
+            file.createNewFile();
+            FileUtils.writeStringToFile(file, "\"operation\" : []", StandardCharsets.UTF_8);
         }
+        _path = path;
+        _swapFile = new File(file.getPath() + ".swap");
+        _fileStream = new FileInputStream(file);
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
-        File json_swap = new File(_file.getPath() + ".swap");
-
-        JsonArray jsonArray;
-        try (JsonReader reader = Json.createReader(new FileInputStream(_file))) {
-            jsonArray = reader.readObject().getJsonArray("Operations");
-        }
+        JsonArray jsonArray = readSaveFile();
 
         final JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-
         for (int i = 0; i < jsonArray.size(); ++i) {
             arrayBuilder.add(jsonArray.getJsonObject(i));
         }
@@ -53,50 +51,55 @@ public class PersistenceManager {
 
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
         objectBuilder.add("Operations", arrayBuilder.build());
-
-        try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap, false))) {
+        try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(_swapFile, false))) {
             jsonWriter.writeObject(objectBuilder.build());
         }
 
-
-        Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
+        Files.move(Paths.get(_swapFile.getPath()), Paths.get(_path), StandardCopyOption.ATOMIC_MOVE);
 
     }
 
     public ServiceDPASPersistentImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
-        JsonArray jsonArray;
-        try (JsonReader reader = Json.createReader(new FileInputStream(_file))) {
-            jsonArray = reader.readObject().getJsonArray("Operations");
-        }
+
+        JsonArray jsonArray = readSaveFile();
 
         ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
 
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
-            PublicKey key = KeyFactory.getInstance("RSA")
-                    .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(operation.getString("Public Key"))));
+
+            byte[] keyBytes = Base64.getDecoder().decode(operation.getString("Public Key"));
+            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
 
             if (operation.getString("Type").equals("Register")) {
                 service.addUser(operation.getString("User"), key);
             } else {
                 byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
-                JsonArray refsJson = operation.getJsonArray("References");
+                JsonArray jsonReferences = operation.getJsonArray("References");
 
                 // creating new array list of references
-                ArrayList<String> refs = new ArrayList<String>();
-                for (int j = 0; j < refsJson.size(); j++) {
-                    refs.add(refsJson.getString(j));
+                ArrayList<String> references = new ArrayList<String>();
+                for (int j = 0; j < jsonReferences.size(); j++) {
+                    references.add(jsonReferences.getString(j));
                 }
+
                 String identifier = operation.getString("Identifier");
 
                 if (operation.getString("Type").equals("Post"))
-                    service.addAnnouncement(operation.getString("Message"), key, signature, refs, identifier);
+                    service.addAnnouncement(operation.getString("Message"), key, signature, references, identifier);
                 else
-                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, refs, identifier);
+                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, identifier);
             }
 
         }
         return service;
+    }
+
+    private JsonArray readSaveFile() throws IOException {
+        _fileStream.reset();
+        try (JsonReader reader = Json.createReader(_fileStream)) {
+            return reader.readObject().getJsonArray("Operations");
+        }
     }
 
     public JsonValue registerToJson(PublicKey key, String user) {

@@ -11,17 +11,10 @@ public abstract class AnnouncementBoard {
 
     public ArrayList<Announcement> read(int number) throws InvalidNumberOfPostsException {
         if (number < 0)
-            throw new InvalidNumberOfPostsException();
+            throw new InvalidNumberOfPostsException("Invalid number of posts to read: number cannot be negative");
         if (number == 0 || number >= _posts.size())
             return new ArrayList<>(_posts);
         return new ArrayList<>(_posts.subList(_posts.size() - number, _posts.size()));
-    }
-
-    public Announcement getAnnouncementFromReference(int reference) throws InvalidReferenceException {
-        if (reference < 0 || _posts.size() <= reference) {
-            throw new InvalidReferenceException();
-        }
-        return _posts.get(reference);
     }
 
 }

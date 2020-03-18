@@ -10,7 +10,7 @@ public class UserBoard extends AnnouncementBoard implements Serializable {
     private User _owner;
 
     public UserBoard(User user) throws NullUserException {
-        if (user == null) throw new NullUserException();
+        if (user == null) throw new NullUserException("Invalid User: Cannot be null");
         _owner = user;
     }
 
@@ -22,10 +22,10 @@ public class UserBoard extends AnnouncementBoard implements Serializable {
 
     private void checkArguments(Announcement post) throws NullAnnouncementException, InvalidUserException {
         if (post == null) {
-            throw new NullAnnouncementException();
+            throw new NullAnnouncementException("Invalid Post: Cannot be null");
         }
         if (post.getUser() != _owner) {
-            throw new InvalidUserException();
+            throw new InvalidUserException("Invalid User: User is not owner of this board");
         }
     }
 

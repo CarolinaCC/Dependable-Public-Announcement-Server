@@ -49,22 +49,22 @@ public class Announcement implements Serializable {
             NullMessageException, NullAnnouncementException, NullUserException, InvalidMessageSizeException {
 
         if (signature == null) {
-            throw new NullSignatureException();
+            throw new NullSignatureException("Invalid Signature provided: null");
         }
         if (user == null) {
-            throw new NullUserException();
+            throw new NullUserException("Invalid User provided: null");
         }
         if (message == null) {
-            throw new NullMessageException();
+            throw new NullMessageException("Invalid Message Provided: null");
         }
 
         if (message.length() > 255) {
-            throw new InvalidMessageSizeException();
+            throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
         }
 
         if (references != null) {
             if (references.contains(null)) {
-                throw new NullAnnouncementException();
+                throw new NullAnnouncementException("Invalid Reference: A reference cannot be null");
             }
         }
     }
@@ -111,8 +111,7 @@ public class Announcement implements Serializable {
         return _identifier;
     }
 
-    //TODO
-    //Add setRandomIdentifier
+
     public Contract.Announcement announcementToGRPCObject() {
 
         Stream<Announcement> myStream = _references.stream();

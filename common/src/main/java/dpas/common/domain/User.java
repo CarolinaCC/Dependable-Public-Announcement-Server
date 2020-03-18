@@ -22,11 +22,11 @@ public class User implements Serializable {
 
     public void checkArguments(String username, PublicKey publicKey) throws NullPublicKeyException, NullUsernameException {
         if (username == null || username.isBlank()) {
-            throw new NullUsernameException();
+            throw new NullUsernameException("Invalid Username: Cannot be null or blank");
         }
 
         if (publicKey == null) {
-            throw new NullPublicKeyException();
+            throw new NullPublicKeyException("Invalid Public Key: Cannot be null");
         }
     }
 

@@ -63,13 +63,13 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
 
             Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
+
             _manager.save(_manager.postToJson(key, user.getUsername(), signature, message, announcement.getIdentifier(),
                     request.getReferencesList()));
 
             // post announcement
             _announcements.put(announcement.getIdentifier(), announcement);
             user.getUserBoard().post(announcement);
-
 
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
@@ -102,7 +102,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             Announcement announcement = new Announcement(signature, user, message,
                     getListOfReferences(request.getReferencesList()));
 
-            _manager.save(_manager.postToJson(key, user.getUsername(), signature, message, announcement.getIdentifier(),
+            _manager.save(_manager.postGeneralToJson(key, user.getUsername(), signature, message, announcement.getIdentifier(),
                     request.getReferencesList()));
 
             _announcements.put(announcement.getIdentifier(), announcement);
