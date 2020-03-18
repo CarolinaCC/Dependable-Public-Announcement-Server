@@ -1,17 +1,14 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.persistence.PersistenceManager;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.apache.commons.lang3.SerializationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -20,10 +17,7 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 public class PostTest {
 
@@ -173,7 +167,7 @@ public class PostTest {
 
         String validReference = announcementsGRPC.get(0).getIdentifier();
 
-         _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setUsername(SECOND_USER_NAME)
                 .setMessage(SECOND_MESSAGE)
@@ -203,8 +197,6 @@ public class PostTest {
                 .build());
 
     }
-
-
 
 
     @Test

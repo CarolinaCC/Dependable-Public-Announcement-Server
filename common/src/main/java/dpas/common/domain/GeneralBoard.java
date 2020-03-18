@@ -1,7 +1,6 @@
 package dpas.common.domain;
 
 import dpas.common.domain.exception.NullAnnouncementException;
-import dpas.common.domain.exception.NullUserException;
 
 import java.io.Serializable;
 

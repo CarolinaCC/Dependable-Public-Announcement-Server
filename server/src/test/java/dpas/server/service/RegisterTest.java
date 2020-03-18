@@ -21,8 +21,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 
-import static org.junit.Assert.assertEquals;
-
 public class RegisterTest {
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;

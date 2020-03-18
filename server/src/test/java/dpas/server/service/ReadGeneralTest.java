@@ -1,10 +1,6 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
-import dpas.common.domain.GeneralBoard;
-import dpas.common.domain.User;
-import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -13,7 +9,6 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.apache.commons.lang3.SerializationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,7 +17,6 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -55,7 +49,6 @@ public class ReadGeneralTest {
         sign.initSign(privateKey);
         sign.update(MESSAGE.getBytes());
         byte[] _signature = sign.sign();
-
 
 
         final BindableService impl = new ServiceDPASImpl();
@@ -103,7 +96,7 @@ public class ReadGeneralTest {
 
         assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
         assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
-        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
     }
 
     @Test
@@ -116,7 +109,7 @@ public class ReadGeneralTest {
 
         assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
         assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
-        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
     }
 
     @Test

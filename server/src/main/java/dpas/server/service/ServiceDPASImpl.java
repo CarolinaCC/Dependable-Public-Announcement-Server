@@ -1,7 +1,6 @@
 package dpas.server.service;
 
 import com.google.protobuf.Empty;
-import com.google.protobuf.ProtocolStringList;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
@@ -12,13 +11,7 @@ import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.io.FileUtils;
-import java.nio.file.Files;
 
-import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -34,7 +27,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     protected GeneralBoard _generalBoard;
 
 
-    public ServiceDPASImpl()  {
+    public ServiceDPASImpl() {
         super();
         this._announcements = new ConcurrentHashMap<>();
         this._users = new ConcurrentHashMap<>();

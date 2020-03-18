@@ -36,36 +36,38 @@ public class PersistenceManager {
         }
     }
 
-    public void save(JsonValue operation) throws IOException {
-
+    public synchronized void save(JsonValue operation) throws IOException {
         File json_swap = new File(_file.getPath() + ".swap");
 
-
+        JsonArray jsonArray;
         try (JsonReader reader = Json.createReader(new FileInputStream(_file))) {
-            try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap, false))) {
-
-                final JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-                JsonArray jsonArray = reader.readObject().getJsonArray("Operations");
-                for (int i = 0; i < jsonArray.size(); ++i) {
-                    arrayBuilder.add(jsonArray.getJsonObject(i));
-                }
-                arrayBuilder.add(operation);
-
-
-                final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-                objectBuilder.add("Operations", arrayBuilder.build());
-                jsonWriter.writeObject(objectBuilder.build());
-            }
+            jsonArray = reader.readObject().getJsonArray("Operations");
         }
+
+        final JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+
+        for (int i = 0; i < jsonArray.size(); ++i) {
+            arrayBuilder.add(jsonArray.getJsonObject(i));
+        }
+        arrayBuilder.add(operation);
+
+        final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+        objectBuilder.add("Operations", arrayBuilder.build());
+
+        try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(json_swap, false))) {
+            jsonWriter.writeObject(objectBuilder.build());
+        }
+
 
         Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
 
     }
 
     public ServiceDPASPersistentImpl load() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NullUserException, NullPublicKeyException, NullUsernameException, InvalidMessageSizeException, InvalidReferenceException, NullAnnouncementException, InvalidKeyException, SignatureException, InvalidSignatureException, NullSignatureException, InvalidUserException, NullMessageException {
-        InputStream fis = new FileInputStream(_file);
-        JsonReader reader = Json.createReader(fis);
-        JsonArray jsonArray = reader.readObject().getJsonArray("Operations");
+        JsonArray jsonArray;
+        try (JsonReader reader = Json.createReader(new FileInputStream(_file))) {
+            jsonArray = reader.readObject().getJsonArray("Operations");
+        }
 
         ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
 

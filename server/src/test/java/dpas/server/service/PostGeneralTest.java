@@ -1,7 +1,6 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -10,7 +9,6 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.apache.commons.lang3.SerializationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -19,10 +17,7 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class PostGeneralTest {
@@ -83,7 +78,7 @@ public class PostGeneralTest {
         _bigMessageSignature = sign.sign();
 
         //Invalid Reference (Same as announcement)
-        _invalidReference ="";
+        _invalidReference = "";
 
 
         final BindableService impl = new ServiceDPASImpl();
@@ -174,7 +169,6 @@ public class PostGeneralTest {
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
     }
-
 
 
     @Test

@@ -2,7 +2,6 @@ package dpas.common.domain;
 
 import dpas.common.domain.exception.*;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
 public abstract class AnnouncementBoard {

@@ -12,7 +12,6 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.apache.commons.lang3.SerializationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -24,7 +23,6 @@ import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class ReadTest {
@@ -133,17 +131,16 @@ public class ReadTest {
 
         assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
         assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
-        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 
         assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
         assertEquals(announcementsGRPC.get(1).getUsername(), USER_NAME);
-        assertEquals(announcementsGRPC.get(1).getReferencesList().size(),0);
+        assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
 
     }
 
     @Test
     public void readSuccessAll() {
-
 
 
         Contract.ReadReply reply = _stub.read(Contract.ReadRequest.newBuilder()
@@ -156,11 +153,11 @@ public class ReadTest {
 
         assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
         assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
-        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 
         assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
         assertEquals(announcementsGRPC.get(1).getUsername(), USER_NAME);
-        assertEquals(announcementsGRPC.get(1).getReferencesList().size(),0);
+        assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
 
     }
 
@@ -178,7 +175,7 @@ public class ReadTest {
 
         assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
         assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
-        assertEquals(announcementsGRPC.get(0).getReferencesList().size(),0);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 
     }
 

@@ -1,22 +1,14 @@
 package dpas.server;
 
-import dpas.common.domain.exception.*;
 import dpas.server.persistence.PersistenceManager;
-import dpas.server.service.ServiceDPASImpl;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
-
 public class ServerDPAS {
 
     public static Server startServer(int port, String saveFile) throws Exception {
-    final BindableService impl =  new PersistenceManager(saveFile).load();
+        final BindableService impl = new PersistenceManager(saveFile).load();
 
         //Start server
         final Server server = NettyServerBuilder
@@ -28,6 +20,7 @@ public class ServerDPAS {
 
         return server;
     }
+
     public static void main(String[] args) throws Exception {
         System.out.println(ServerDPAS.class.getSimpleName());
 

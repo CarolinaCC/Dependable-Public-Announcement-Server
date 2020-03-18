@@ -118,6 +118,6 @@ public class Announcement implements Serializable {
         Stream<Announcement> myStream = _references.stream();
         List<String> announcementToIdentifier = myStream.map(Announcement::getIdentifier).collect(Collectors.toList());
 
-        return  Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername()).addAllReferences(announcementToIdentifier).setIdentifier(_identifier).build();
+        return Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername()).addAllReferences(announcementToIdentifier).setIdentifier(_identifier).build();
     }
 }
