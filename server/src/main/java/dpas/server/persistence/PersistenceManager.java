@@ -6,12 +6,16 @@ import dpas.common.domain.User;
 import dpas.server.service.ServiceDPASImpl;
 import org.apache.commons.io.FileUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.PublicKey;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,8 +42,17 @@ public class PersistenceManager {
         }
     }
 
-    public void save(String operation) {
+    public void save(String operation) throws IOException {
 
+
+        File json_swap = new File(_file.getPath() + ".swap");
+        FileUtils.copyFile(_file, json_swap);
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
+        writer.write(operation);
+        writer.close();
+
+        Files.move(Paths.get(json_swap.getPath()), Paths.get(_file.getPath()), StandardCopyOption.ATOMIC_MOVE);
     }
 
     public ServiceDPASImpl load() {

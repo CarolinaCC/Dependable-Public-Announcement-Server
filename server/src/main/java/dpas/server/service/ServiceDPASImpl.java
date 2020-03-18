@@ -12,13 +12,17 @@ import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.io.FileUtils;
+import java.nio.file.Files;
 
-import java.io.Serializable;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -27,6 +31,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     protected ConcurrentHashMap<String, Announcement> _announcements;
     protected ConcurrentHashMap<PublicKey, User> _users;
     protected GeneralBoard _generalBoard;
+    private File _json = new File("/json.json");
 
 
     public ServiceDPASImpl()  {
@@ -34,6 +39,45 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         this._announcements = new ConcurrentHashMap<>();
         this._users = new ConcurrentHashMap<>();
         this._generalBoard = new GeneralBoard();
+    }
+
+
+    public void save(String operation) throws IOException {
+
+        Path path_json_swap = Paths.get("/json_swap.json");
+        Path path_json = Paths.get("/json.json");
+
+        File json_swap = new File("/json_swap.json");
+        FileUtils.copyFile(_json, json_swap);
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(json_swap));
+        writer.write(operation);
+        writer.close();
+
+        Files.move(path_json_swap, path_json, StandardCopyOption.ATOMIC_MOVE);
+
+    }
+
+
+    public void addUser (String username, PublicKey key) throws NullUserException, NullPublicKeyException, NullUsernameException {
+        User user = new User(username, key);
+        _users.put(key, user);
+    }
+
+    public void addAnnouncement (String message, PublicKey key, byte[] signature,
+                                 ArrayList <Announcement> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException, InvalidUserException {
+        Announcement announcement = new Announcement(signature, _users.get(key), message, references);
+        // post announcement
+        _users.get(key).getUserBoard().post(announcement);
+        _announcements.put(announcement.getIdentifier(), announcement);
+    }
+
+    public void addGeneralAnnouncement (String message, PublicKey key, byte[] signature,
+                                        ArrayList <Announcement> references) throws InvalidKeyException, NoSuchAlgorithmException, NullAnnouncementException, NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException, NullUserException, InvalidMessageSizeException {
+        Announcement announcement = new Announcement(signature, _users.get(key), message, references);
+        // post announcement
+        _generalBoard.post(announcement);
+        _announcements.put(announcement.getIdentifier(), announcement);
     }
 
     @Override
