@@ -103,13 +103,13 @@ public class PersistenceManager {
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(key.getEncoded());
         String sign = Base64.getEncoder().encodeToString(signature);
-
+        Json.createArrayBuilder();
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("User", user);
         jsonBuilder.add("Signature", sign);
         jsonBuilder.add("Identifier", identifier);
-        jsonBuilder.add("References", att);
-
+        //jsonBuilder.add("References", att);
+        return null;
     }
 
 
