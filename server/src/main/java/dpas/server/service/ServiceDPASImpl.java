@@ -13,6 +13,7 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
+import java.io.Serializable;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -20,11 +21,12 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
+public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase implements Serializable {
 
     private ConcurrentHashMap<String, Announcement> _announcements;
     private ConcurrentHashMap<PublicKey, User> _users;
     private GeneralBoard _generalBoard;
+
 
     public ServiceDPASImpl()  {
         super();
@@ -35,8 +37,9 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     public String registerToJSON(PublicKey key, User user) {
         return "{\n " + "Type : Register,\n" + "PublicKey : " + key + "\n"
-                + "User : " + user + "},";
+                + "User : " + user + "\n},";
     }
+
 
     public String postToJSON(PublicKey key, User user, Signature signature, char[] message, int identifier, ArrayList<Integer> references) {
         return "{\n " + "Type : Post,\n" + "PublicKey : " + key
