@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.*;
 import dpas.server.persistence.PersistenceManager;
 import org.apache.commons.io.FileUtils;
@@ -43,7 +44,9 @@ public class PersistenceManagerTest {
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("no_operations.json").getPath();;
         PersistenceManager manager = new PersistenceManager(path);
-        manager.load();
+        ServiceDPASPersistentImpl impl = manager.load();
+        assertEquals(impl._announcements.size(), 0);
+        assertEquals(impl._users.size(), 0);
     }
 
 }
