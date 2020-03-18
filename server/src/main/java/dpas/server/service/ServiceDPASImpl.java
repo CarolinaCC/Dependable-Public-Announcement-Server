@@ -1,6 +1,6 @@
 package dpas.server.service;
 
-import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
 import com.google.protobuf.ProtocolStringList;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
@@ -8,29 +8,30 @@ import dpas.common.domain.User;
 import dpas.common.domain.UserBoard;
 import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
-import com.google.protobuf.Empty;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.SerializationUtils;
-
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
-    private ConcurrentHashMap<String, Announcement> _announcements = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<PublicKey, User> _users = new ConcurrentHashMap<>();
-    private GeneralBoard _generalBoard = new GeneralBoard();
+    private ConcurrentHashMap<String, Announcement> _announcements;
+    private ConcurrentHashMap<PublicKey, User> _users;
+    private GeneralBoard _generalBoard;
+
+    public ServiceDPASImpl()  {
+        super();
+        this._announcements = new ConcurrentHashMap<>();
+        this._users = new ConcurrentHashMap<>();
+        this._generalBoard = new GeneralBoard();
+    }
 
     @Override
     public void register(RegisterRequest request, StreamObserver<Empty> replyObserver) {
@@ -144,7 +145,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
                 ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
 
-                for (Announcement announcement: announcements){
+                for (Announcement announcement : announcements) {
                     announcementsGRPC.add(announcement.announcementToGRPCObject());
                 }
 
@@ -177,7 +178,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             ArrayList<Announcement> announcements = _generalBoard.read(numberToRead);
             ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
 
-            for (Announcement announcement: announcements){
+            for (Announcement announcement : announcements) {
                 announcementsGRPC.add(announcement.announcementToGRPCObject());
             }
 
