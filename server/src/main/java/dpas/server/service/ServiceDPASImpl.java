@@ -13,6 +13,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,14 +55,10 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     @Override
     public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            User user = _users.get(key);
-            byte[] signature = request.getSignature().toByteArray();
-            String message = request.getMessage();
 
-            Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
+            Announcement announcement = generateAnnouncement(request);
             // post announcement
-            user.getUserBoard().post(announcement);
+            announcement.getUser().getUserBoard().post(announcement);
             _announcements.put(announcement.getIdentifier(), announcement);
 
             responseObserver.onNext(Empty.newBuilder().build());
@@ -75,12 +72,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            byte[] signature = request.getSignature().toByteArray();
-            String message = request.getMessage();
-
-            Announcement announcement = new Announcement(signature, _users.get(key), message,
-                    getListOfReferences(request.getReferencesList()));
+            Announcement announcement = generateAnnouncement(request);
 
             synchronized (this) {
                 _generalBoard.post(announcement);
@@ -123,12 +115,8 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
                 responseObserver.onCompleted();
             }
-
         } catch (Exception e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
         }
     }
 
@@ -169,5 +157,13 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             }
         }
         return references;
+    }
+
+    protected Announcement generateAnnouncement (Contract.PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] signature = request.getSignature().toByteArray();
+        String message = request.getMessage();
+
+        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
     }
 }

@@ -54,19 +54,14 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     @Override
     public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            User user = _users.get(key);
-            byte[] signature = request.getSignature().toByteArray();
-            String message = request.getMessage();
 
-
-            Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
+            Announcement announcement = generateAnnouncement(request);
 
             _manager.save(announcement.toJson("Post"));
 
             // post announcement
             _announcements.put(announcement.getIdentifier(), announcement);
-            user.getUserBoard().post(announcement);
+            announcement.getUser().getUserBoard().post(announcement);
 
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
@@ -85,13 +80,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            byte[] signature = request.getSignature().toByteArray();
-            String message = request.getMessage();
-
-            User user = _users.get(key);
-            Announcement announcement = new Announcement(signature, user, message,
-                    getListOfReferences(request.getReferencesList()));
+            Announcement announcement = generateAnnouncement(request);
 
             _manager.save(announcement.toJson("PostGeneral"));
 
