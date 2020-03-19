@@ -118,7 +118,7 @@ public class PersistenceManagerTest {
             CommonDomainException, InvalidKeyException, SignatureException {
 
         ClassLoader classLoader = getClass().getClassLoader();
-        String path = classLoader.getResource("valid_load_target.json").getPath();
+        String path = classLoader.getResource("valid_load_target_2.json").getPath();
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
 
@@ -167,7 +167,7 @@ public class PersistenceManagerTest {
 
 
         ClassLoader classLoader = getClass().getClassLoader();
-        String path = classLoader.getResource("valid_load_target.json").getPath();
+        String path = classLoader.getResource("valid_load_target_3.json").getPath();
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
 
