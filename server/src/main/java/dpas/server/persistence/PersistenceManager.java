@@ -91,7 +91,7 @@ public class PersistenceManager {
         return service;
     }
 
-    private JsonArray readSaveFile() {
+    public JsonArray readSaveFile() {
         try (JsonReader reader = Json.createReader(_fileStream)) {
             return reader.readObject().getJsonArray("Operations");
         }
