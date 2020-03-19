@@ -43,9 +43,7 @@ public class PersistenceManager {
         JsonArray jsonArray = readSaveFile();
 
         final JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-        for (int i = 0; i < jsonArray.size(); ++i) {
-            arrayBuilder.add(jsonArray.getJsonObject(i));
-        }
+        jsonArray.forEach(arrayBuilder::add);
         arrayBuilder.add(operation);
 
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
@@ -81,7 +79,6 @@ public class PersistenceManager {
                 for (int j = 0; j < jsonReferences.size(); j++) {
                     references.add(jsonReferences.getString(j));
                 }
-
                 String identifier = operation.getString("Identifier");
 
                 if (operation.getString("Type").equals("Post"))
