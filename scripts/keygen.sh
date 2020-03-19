@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm *.jks *.cert
+rm *.jks *.der *.pem *.cert
 
 #generate Server KeyStore
 keytool -genkey \
@@ -20,16 +20,30 @@ keytool -genkey \
         -storepass testtest \
         -keystore client.jks
 
-#store server public key
+#store server public certificate
 keytool -export \
-        -file server.cert \
+        -file server.der \
         -keystore server.jks \
         -storepass testtest \
         -alias server
 
-#store client public key
+#store client public certificate
 keytool -export \
-        -file client.cert \
+        -file client.der \
         -keystore client.jks \
         -storepass testtest \
         -alias client
+
+#Convert client public certificate to pem format
+openssl x509 \
+       -inform der -in client.der \
+       -out client.pem
+
+
+#Convert client public certificate to pem format
+openssl x509 \
+       -inform der -in server.der \
+       -out server.pem
+
+#remove .der certificates
+rm *.der
