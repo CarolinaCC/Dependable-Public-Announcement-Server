@@ -17,6 +17,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     private PersistenceManager _manager;
@@ -126,6 +127,14 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         // post announcement
         _generalBoard.post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);
+    }
+
+    public ConcurrentHashMap<PublicKey, User> getUsers() {
+        return _users;
+    }
+
+    public ConcurrentHashMap<String, Announcement> getAnnouncements() {
+        return _announcements;
     }
 
 }
