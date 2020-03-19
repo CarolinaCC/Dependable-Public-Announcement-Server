@@ -204,7 +204,7 @@ public class PersistenceManagerTest {
                 assertEquals(operation.getString("Message"), message);
                 assertEquals(operation.getString("Public Key"), Base64.getEncoder().encodeToString(pubKey.getEncoded()));
                 assertEquals(operation.getString("Signature"), Base64.getEncoder().encodeToString(signature));
-                assertEquals(operation.getString("References"), null);
+                assertEquals(operation.getString("References"), "null");
                 assertEquals(operation.getString("Identifier"), identifier);
             }
         }
