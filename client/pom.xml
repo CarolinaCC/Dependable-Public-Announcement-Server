@@ -11,6 +11,9 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <mainclass>dpas.client.Main</mainclass>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>SEC.T18</groupId>
@@ -29,6 +32,32 @@
             <version>3.9</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Plugin that provides two goals to execute system and Java programs -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- to prevent deprecation warning: -->
+                    <killAfter>-1</killAfter>
+                    <mainClass>${mainclass}</mainClass>
+                    <!--<arguments>
+                        <argument>${server.port}</argument>
+                    </arguments>-->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
 
