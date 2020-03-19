@@ -52,7 +52,7 @@ public class User implements Serializable {
         return _userBoard;
     }
 
-    public JsonObject toJson()  {
+    public JsonObject toJson() {
 
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(_publicKey.getEncoded());

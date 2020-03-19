@@ -1,6 +1,9 @@
 package dpas.common.domain;
 
-import dpas.common.domain.exception.*;
+import dpas.common.domain.exception.InvalidNumberOfPostsException;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullAnnouncementException;
+import dpas.common.domain.exception.NullUserException;
 
 import java.util.ArrayList;
 

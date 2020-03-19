@@ -1,6 +1,6 @@
 package dpas.server.persistence;
 
-import dpas.common.domain.exception.*;
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.server.service.ServiceDPASPersistentImpl;
 import org.apache.commons.io.FileUtils;
 
@@ -91,9 +91,9 @@ public class PersistenceManager {
         return service;
     }
 
-    private JsonArray readSaveFile(){
+    private JsonArray readSaveFile() {
         try (JsonReader reader = Json.createReader(_fileStream)) {
-             return reader.readObject().getJsonArray("Operations");
+            return reader.readObject().getJsonArray("Operations");
         }
     }
 }
