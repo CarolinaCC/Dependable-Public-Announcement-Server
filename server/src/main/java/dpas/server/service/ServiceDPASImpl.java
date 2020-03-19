@@ -18,6 +18,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
@@ -99,20 +100,14 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User with public key does not exist")
                         .asRuntimeException());
             } else {
-                User user = _users.get(key);
-                int numberToRead = request.getNumber();
-                UserBoard userBoard = user.getUserBoard();
-                ArrayList<Announcement> announcements = userBoard.read(numberToRead);
 
-                ArrayList<Contract.Announcement> announcementsGRPC = new ArrayList<Contract.Announcement>();
+                ArrayList<Announcement> announcements = _users.get(key).getUserBoard().read(request.getNumber());
 
-                for (Announcement announcement : announcements) {
-                    announcementsGRPC.add(announcement.toContract());
-                }
+                var announcementsGRPC = announcements.stream()
+                        .map(Announcement::toContract)
+                        .collect(Collectors.toList());
 
-                responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC)
-                        .build());
-
+                responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
@@ -124,18 +119,13 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
 
         try {
+            ArrayList<Announcement> announcements = _generalBoard.read(request.getNumber());
 
-            int numberToRead = request.getNumber();
-            ArrayList<Announcement> announcements = _generalBoard.read(numberToRead);
-            ArrayList<Contract.Announcement> contractAnnouncements = new ArrayList<Contract.Announcement>();
+            var announcementsGRPC = announcements.stream()
+                    .map(Announcement::toContract)
+                    .collect(Collectors.toList());
 
-            for (Announcement announcement : announcements) {
-                contractAnnouncements.add(announcement.toContract());
-            }
-
-            responseObserver.onNext(Contract.ReadReply.newBuilder()
-                    .addAllAnnouncements(contractAnnouncements)
-                    .build());
+            responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
             responseObserver.onCompleted();
 
         } catch (Exception e) {
@@ -159,7 +149,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         return references;
     }
 
-    protected Announcement generateAnnouncement (Contract.PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException {
+    protected Announcement generateAnnouncement(Contract.PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
