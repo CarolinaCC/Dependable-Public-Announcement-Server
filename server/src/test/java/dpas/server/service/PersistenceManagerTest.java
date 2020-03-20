@@ -1,13 +1,20 @@
 package dpas.server.service;
 
 import dpas.common.domain.exception.CommonDomainException;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
+import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.StatusRuntimeException;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -22,7 +29,8 @@ import java.util.Base64;
 import static org.junit.Assert.assertEquals;
 
 public class PersistenceManagerTest {
-
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -61,6 +69,43 @@ public class PersistenceManagerTest {
         assertEquals(impl.getUsers().get(pubKey).getUsername(), "USER");
         assertEquals(impl.getUsers().get(pubKey2).getUsername(), "USER2");
 
+    }
+
+
+    @Test
+    public void invalidRegister() throws IOException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("no_operations_2.json").getPath();
+        PersistenceManager manager = new PersistenceManager(path);
+
+        /* SERVER SETUP */
+        ServiceDPASGrpc.ServiceDPASBlockingStub stub;
+        Server server;
+        BindableService impl = new ServiceDPASPersistentImpl(manager);
+        //Start server
+        server = NettyServerBuilder
+                .forPort(8090)
+                .addService(impl)
+                .build();
+        server.start();
+        final String host = "localhost";
+        final int port = 8090;
+        ManagedChannel channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
+        stub = ServiceDPASGrpc.newBlockingStub(channel);
+        /* END SERVER SETUP */
+        stub.register(Contract.RegisterRequest.newBuilder()
+                .setUsername("USERNAME")
+                .build());
+
+        JsonArray jsonArray = manager.readSaveFile();
+        assertEquals(0, jsonArray.size());
+
+        // TEARDOWN
+        server.shutdown();
+        channel.shutdown();
     }
 
     @Test
