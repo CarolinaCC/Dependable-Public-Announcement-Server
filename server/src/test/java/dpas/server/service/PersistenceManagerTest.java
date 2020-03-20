@@ -177,7 +177,6 @@ public class PersistenceManagerTest {
     }
 
 
-
     @Test
     public void invalidPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         exception.expect(StatusRuntimeException.class);
@@ -217,12 +216,12 @@ public class PersistenceManagerTest {
         byte[] signature = sign.sign();
 
         stub.post(Contract.PostRequest.newBuilder()
-                    .setMessage(message)
-                    .setUsername("USERNAME")
-                    .setSignature(ByteString.copyFrom(signature))
-                    .build());
+                .setMessage(message)
+                .setUsername("USERNAME")
+                .setSignature(ByteString.copyFrom(signature))
+                .build());
 
-        assertEquals(sizeInitialJson,manager.readSaveFile().size() );
+        assertEquals(sizeInitialJson, manager.readSaveFile().size());
         // TEARDOWN
         server.shutdown();
         channel.shutdown();
@@ -368,7 +367,7 @@ public class PersistenceManagerTest {
                 .setSignature(ByteString.copyFrom(signature))
                 .build());
 
-        assertEquals(sizeInitialJson,manager.readSaveFile().size() );
+        assertEquals(sizeInitialJson, manager.readSaveFile().size());
         // TEARDOWN
         server.shutdown();
         channel.shutdown();
