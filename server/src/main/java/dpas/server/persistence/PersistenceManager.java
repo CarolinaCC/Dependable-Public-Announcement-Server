@@ -38,8 +38,6 @@ public class PersistenceManager {
         _swapFile = new File(file.getPath() + ".swap");
         _swapFile.createNewFile();
         _file = file;
-
-
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
