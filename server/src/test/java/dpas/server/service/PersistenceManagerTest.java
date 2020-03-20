@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -175,6 +176,57 @@ public class PersistenceManagerTest {
         }
     }
 
+
+
+    @Test
+    public void invalidPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("no_operations_6.json").getPath();
+        PersistenceManager manager = new PersistenceManager(path);
+        int sizeInitialJson = manager.readSaveFile().size();
+
+        /* SERVER SETUP */
+        ServiceDPASGrpc.ServiceDPASBlockingStub stub;
+        Server server;
+        BindableService impl = new ServiceDPASPersistentImpl(manager);
+        //Start server
+        server = NettyServerBuilder
+                .forPort(8090)
+                .addService(impl)
+                .build();
+        server.start();
+        final String host = "localhost";
+        final int port = 8090;
+        ManagedChannel channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
+        stub = ServiceDPASGrpc.newBlockingStub(channel);
+        /* END SERVER SETUP */
+
+        String message = "MESSAGE";
+
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
+        PublicKey pubKey = keygen.generateKeyPair().getPublic();
+        PrivateKey privateKey = keygen.generateKeyPair().getPrivate();
+
+        Signature sign = Signature.getInstance("SHA256withRSA");
+        sign.initSign(privateKey);
+        sign.update(message.getBytes());
+        byte[] signature = sign.sign();
+
+        stub.post(Contract.PostRequest.newBuilder()
+                    .setMessage(message)
+                    .setUsername("USERNAME")
+                    .setSignature(ByteString.copyFrom(signature))
+                    .build());
+
+        assertEquals(sizeInitialJson,manager.readSaveFile().size() );
+        // TEARDOWN
+        server.shutdown();
+        channel.shutdown();
+    }
 
     @Test
     public void validPost() throws IOException, NoSuchAlgorithmException,
