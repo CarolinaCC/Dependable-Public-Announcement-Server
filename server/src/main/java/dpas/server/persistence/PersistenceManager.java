@@ -20,7 +20,7 @@ import java.util.Base64;
 public class PersistenceManager {
     private String _path;
     private File _swapFile;
-    private BufferedInputStream _fileStream;
+    private File _file;
 
 
     public PersistenceManager(String path) throws IOException {
@@ -36,7 +36,10 @@ public class PersistenceManager {
         }
         _path = path;
         _swapFile = new File(file.getPath() + ".swap");
-        _fileStream = new BufferedInputStream(new FileInputStream(file));
+        _swapFile.createNewFile();
+        _file = file;
+
+
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
@@ -48,15 +51,13 @@ public class PersistenceManager {
 
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
         objectBuilder.add("Operations", arrayBuilder.build());
-        try (JsonWriter jsonWriter = Json.createWriter(new FileWriter(_swapFile, false))) {
+        try (JsonWriter jsonWriter = Json.createWriter(new BufferedWriter(new FileWriter(_swapFile, false)))) {
             jsonWriter.writeObject(objectBuilder.build());
         }
-
-        Files.move(Paths.get(_swapFile.getPath()), Paths.get(_path), StandardCopyOption.ATOMIC_MOVE);
-
+        Files.move(Paths.get(_swapFile.getPath()), Paths.get(_path), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException {
+    public synchronized ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException, IOException {
 
         JsonArray jsonArray = readSaveFile();
 
@@ -75,7 +76,7 @@ public class PersistenceManager {
                 JsonArray jsonReferences = operation.getJsonArray("References");
 
                 // creating new array list of references
-                ArrayList<String> references = new ArrayList<String>();
+                ArrayList<String> references = new ArrayList<>();
                 for (int j = 0; j < jsonReferences.size(); j++) {
                     references.add(jsonReferences.getString(j));
                 }
@@ -86,13 +87,12 @@ public class PersistenceManager {
                 else
                     service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, identifier);
             }
-
         }
         return service;
     }
 
-    public JsonArray readSaveFile() {
-        try (JsonReader reader = Json.createReader(_fileStream)) {
+    public JsonArray readSaveFile() throws FileNotFoundException {
+        try (JsonReader reader = Json.createReader(new BufferedInputStream(new FileInputStream(_file)))) {
             return reader.readObject().getJsonArray("Operations");
         }
     }

@@ -52,11 +52,12 @@ public class PersistenceManagerTest {
 
     }
 
+    @Test
     public void testServerPersistence() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException,
             CommonDomainException, InvalidKeyException, SignatureException {
 
         ClassLoader classLoader = getClass().getClassLoader();
-        String path = classLoader.getResource("valid_load_target.json").getPath();
+        String path = classLoader.getResource("valid_load_target_5.json").getPath();
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
 
@@ -81,20 +82,18 @@ public class PersistenceManagerTest {
 
     }
 
-    public void validRegister() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException,
-            CommonDomainException, InvalidKeyException, SignatureException {
+    @Test
+    public void validRegister() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, InvalidKeyException, SignatureException {
 
         ClassLoader classLoader = getClass().getClassLoader();
-        String path = classLoader.getResource("valid_load_target.json").getPath();
+        String path = classLoader.getResource("valid_load_target_4.json").getPath();
         PersistenceManager manager = new PersistenceManager(path);
-        ServiceDPASPersistentImpl impl = manager.load();
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         String userName = "USERNAME";
 
-        impl.addUser(userName, pubKey);
         JsonArray jsonArray = manager.readSaveFile();
 
         JsonObject json = Json.createObjectBuilder()
@@ -105,6 +104,8 @@ public class PersistenceManagerTest {
 
         manager.save(json);
 
+        jsonArray = manager.readSaveFile();
+
         for(int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
             if( i == (jsonArray.size() - 1) && operation.getString("Type").equals("Register")){
@@ -114,13 +115,13 @@ public class PersistenceManagerTest {
         }
     }
 
+    @Test
     public void validPost() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException,
             CommonDomainException, InvalidKeyException, SignatureException {
 
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("valid_load_target_2.json").getPath();
         PersistenceManager manager = new PersistenceManager(path);
-        ServiceDPASPersistentImpl impl = manager.load();
 
         String userName = "USERNAME";
         String message = "Hello World";
@@ -136,7 +137,6 @@ public class PersistenceManagerTest {
         byte[] signature = sign.sign();
         String identifier = "a1s2d3f4g5h638j438j499j9j9jm";
 
-        impl.addAnnouncement(message, pubKey, signature, null, identifier);
 
         JsonObject json = Json.createObjectBuilder()
                 .add("Type", "Post")
@@ -144,9 +144,11 @@ public class PersistenceManagerTest {
                 .add("Signature", Base64.getEncoder().encodeToString(signature))
                 .add("References", "null")
                 .add("Identifier", identifier)
+                .add("Message", message)
                 .build();
 
         manager.save(json);
+
 
         JsonArray jsonArray = manager.readSaveFile();
         for(int i = 0; i < jsonArray.size(); i++) {
@@ -162,6 +164,7 @@ public class PersistenceManagerTest {
 
     }
 
+    @Test
     public void validPostGeneral() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException,
             CommonDomainException, InvalidKeyException, SignatureException {
 
@@ -169,7 +172,6 @@ public class PersistenceManagerTest {
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("valid_load_target_3.json").getPath();
         PersistenceManager manager = new PersistenceManager(path);
-        ServiceDPASPersistentImpl impl = manager.load();
 
         String userName = "USERNAME";
         String message = "Hello World";
@@ -185,7 +187,6 @@ public class PersistenceManagerTest {
         byte[] signature = sign.sign();
         String identifier = "a1s2d3f4g5h6";
 
-        impl.addGeneralAnnouncement(message, pubKey, signature, null, identifier);
 
         JsonObject json = Json.createObjectBuilder()
                 .add("Type", "PostGeneral")
@@ -193,6 +194,7 @@ public class PersistenceManagerTest {
                 .add("Signature", Base64.getEncoder().encodeToString(signature))
                 .add("References", "null")
                 .add("Identifier", identifier)
+                .add("Message", message)
                 .build();
 
         manager.save(json);
