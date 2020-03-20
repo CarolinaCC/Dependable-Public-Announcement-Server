@@ -92,13 +92,13 @@ public class PostTest {
 
         //Start server
         _server = NettyServerBuilder
-                .forPort(8090)
+                .forPort(9000)
                 .addService(impl)
                 .build();
         _server.start();
 
         final String host = "localhost";
-        final int port = 8090;
+        final int port = 9000;
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 

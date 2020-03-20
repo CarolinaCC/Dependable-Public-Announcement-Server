@@ -26,8 +26,10 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PersistenceManagerTest {
     @Rule
@@ -74,9 +76,8 @@ public class PersistenceManagerTest {
 
 
     @Test
-    public void invalidRegister() throws IOException {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
+    public void invalidRegister() throws IOException, InterruptedException, InvalidKeySpecException, NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException {
+
 
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("no_operations_2.json").getPath();
@@ -84,29 +85,39 @@ public class PersistenceManagerTest {
 
         /* SERVER SETUP */
         ServiceDPASGrpc.ServiceDPASBlockingStub stub;
-        Server server;
-        BindableService impl = new ServiceDPASPersistentImpl(manager);
+        final BindableService impl = manager.load();
         //Start server
-        server = NettyServerBuilder
-                .forPort(8090)
+        Server server = NettyServerBuilder
+                .forPort(9000)
                 .addService(impl)
                 .build();
         server.start();
+
         final String host = "localhost";
-        final int port = 8090;
+        final int port = 9000;
         ManagedChannel channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         stub = ServiceDPASGrpc.newBlockingStub(channel);
         /* END SERVER SETUP */
-        stub.register(Contract.RegisterRequest.newBuilder()
-                .setUsername("USERNAME")
-                .build());
 
-        JsonArray jsonArray = manager.readSaveFile();
-        assertEquals(0, jsonArray.size());
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
+        try {
+            stub.register(Contract.RegisterRequest.newBuilder()
+                    .setUsername("USERNAME")
+                    .build());
+        } finally {
 
-        // TEARDOWN
-        server.shutdown();
-        channel.shutdown();
+            JsonArray jsonArray = manager.readSaveFile();
+            assertEquals(0, jsonArray.size());
+
+            // TEARDOWN
+            channel.shutdownNow();
+            server.shutdownNow();
+
+            assertTrue(server.isShutdown());
+            assertTrue(channel.isShutdown());
+        }
+
     }
 
     @Test
@@ -178,9 +189,7 @@ public class PersistenceManagerTest {
 
 
     @Test
-    public void invalidPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
+    public void invalidPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidKeySpecException, CommonDomainException, InterruptedException {
 
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("valid_load_target_6.json").getPath();
@@ -189,16 +198,15 @@ public class PersistenceManagerTest {
 
         /* SERVER SETUP */
         ServiceDPASGrpc.ServiceDPASBlockingStub stub;
-        Server server;
-        BindableService impl = new ServiceDPASPersistentImpl(manager);
+        BindableService impl = manager.load();
         //Start server
-        server = NettyServerBuilder
-                .forPort(8090)
+        Server server = NettyServerBuilder
+                .forPort(9000)
                 .addService(impl)
                 .build();
         server.start();
         final String host = "localhost";
-        final int port = 8090;
+        final int port = 9000;
         ManagedChannel channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         stub = ServiceDPASGrpc.newBlockingStub(channel);
         /* END SERVER SETUP */
@@ -215,17 +223,25 @@ public class PersistenceManagerTest {
         sign.update(message.getBytes());
         byte[] signature = sign.sign();
 
-        stub.post(Contract.PostRequest.newBuilder()
-                .setMessage(message)
-                .setUsername("USERNAME")
-                .setSignature(ByteString.copyFrom(signature))
-                .build());
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Key Provided");
 
-        assertEquals(sizeInitialJson, manager.readSaveFile().size());
-        // TEARDOWN
-        server.shutdown();
-        channel.shutdown();
-    }
+        try {
+            stub.post(Contract.PostRequest.newBuilder()
+                    .setMessage(message)
+                    .setUsername("USERNAME")
+                    .setSignature(ByteString.copyFrom(signature))
+                    .build());
+        } finally {
+            assertEquals(sizeInitialJson, manager.readSaveFile().size());
+            // TEARDOWN
+            channel.shutdownNow();
+            server.shutdownNow();
+            assertTrue(server.isShutdown());
+            assertTrue(channel.isShutdown());
+        }
+
+}
 
     @Test
     public void validPost() throws IOException, NoSuchAlgorithmException,
@@ -324,9 +340,9 @@ public class PersistenceManagerTest {
     }
 
 
-    public void invalidPostGeneral() throws IOException, InvalidKeyException, SignatureException, NoSuchAlgorithmException {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
+    @Test
+    public void invalidPostGeneral() throws IOException, InvalidKeyException, SignatureException, NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+
 
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("valid_load_target_7.json").getPath();
@@ -336,15 +352,15 @@ public class PersistenceManagerTest {
         /* SERVER SETUP */
         ServiceDPASGrpc.ServiceDPASBlockingStub stub;
         Server server;
-        BindableService impl = new ServiceDPASPersistentImpl(manager);
+        BindableService impl = manager.load();
         //Start server
         server = NettyServerBuilder
-                .forPort(8090)
+                .forPort(9000)
                 .addService(impl)
                 .build();
         server.start();
         final String host = "localhost";
-        final int port = 8090;
+        final int port = 9000;
         ManagedChannel channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         stub = ServiceDPASGrpc.newBlockingStub(channel);
         /* END SERVER SETUP */
@@ -361,16 +377,25 @@ public class PersistenceManagerTest {
         sign.update(message.getBytes());
         byte[] signature = sign.sign();
 
-        stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setMessage(message)
-                .setUsername("USERNAME")
-                .setSignature(ByteString.copyFrom(signature))
-                .build());
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Key Provide");
 
-        assertEquals(sizeInitialJson, manager.readSaveFile().size());
-        // TEARDOWN
-        server.shutdown();
-        channel.shutdown();
+        try {
+
+            stub.postGeneral(Contract.PostRequest.newBuilder()
+                    .setMessage(message)
+                    .setUsername("USERNAME")
+                    .setSignature(ByteString.copyFrom(signature))
+                    .build());
+        } finally {
+            assertEquals(sizeInitialJson, manager.readSaveFile().size());
+            // TEARDOWN
+            server.shutdownNow();
+            channel.shutdownNow();
+
+            assertTrue(server.isShutdown());
+            assertTrue(channel.isShutdown());
+        }
     }
 
     @Test

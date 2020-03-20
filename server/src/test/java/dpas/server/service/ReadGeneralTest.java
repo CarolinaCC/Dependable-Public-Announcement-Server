@@ -55,13 +55,13 @@ public class ReadGeneralTest {
 
         //Start server
         _server = NettyServerBuilder
-                .forPort(8091)
+                .forPort(9000)
                 .addService(impl)
                 .build();
         _server.start();
 
         final String host = "localhost";
-        final int port = 8091;
+        final int port = 9000;
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
