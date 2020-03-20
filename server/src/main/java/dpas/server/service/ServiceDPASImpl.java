@@ -93,19 +93,15 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     @Override
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA")
-                    .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(_users.containsKey(key))) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User with public key does not exist")
                         .asRuntimeException());
             } else {
 
-                ArrayList<Announcement> announcements = _users.get(key).getUserBoard().read(request.getNumber());
-
-                var announcementsGRPC = announcements.stream()
-                        .map(Announcement::toContract)
-                        .collect(Collectors.toList());
+                var announcements = _users.get(key).getUserBoard().read(request.getNumber());
+                var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
                 responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
                 responseObserver.onCompleted();

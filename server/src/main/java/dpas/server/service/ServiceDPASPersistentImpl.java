@@ -2,6 +2,7 @@ package dpas.server.service;
 
 import com.google.protobuf.Empty;
 import dpas.common.domain.Announcement;
+import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
@@ -61,8 +62,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             Announcement announcement = generateAnnouncement(request);
 
             _manager.save(announcement.toJson("Post"));
-
-            // post announcement
             _announcements.put(announcement.getIdentifier(), announcement);
             announcement.getUser().getUserBoard().post(announcement);
 
@@ -86,7 +85,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             Announcement announcement = generateAnnouncement(request);
 
             _manager.save(announcement.toJson("PostGeneral"));
-
             _announcements.put(announcement.getIdentifier(), announcement);
             synchronized (this) {
                 _generalBoard.post(announcement);
@@ -105,6 +103,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         }
     }
 
+
     public void addUser(String username, PublicKey key) throws NullUserException, NullPublicKeyException, NullUsernameException {
         User user = new User(username, key);
         _users.put(key, user);
@@ -114,7 +113,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                                 ArrayList<String> references, String identifier) throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
 
         Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references), identifier);
-        // post announcement
         _users.get(key).getUserBoard().post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);
     }
@@ -123,7 +121,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                                        String identifier) throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
 
         Announcement announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references), identifier);
-        // post announcement
         _generalBoard.post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);
     }
