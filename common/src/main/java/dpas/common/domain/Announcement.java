@@ -1,14 +1,10 @@
 package dpas.common.domain;
 
-import dpas.common.domain.exception.*;
-import dpas.grpc.contract.Contract;
-
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import java.io.Serializable;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -16,132 +12,148 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Announcement implements Serializable {
-    private byte[] _signature;
-    private User _user;
-    private String _message;
-    private ArrayList<Announcement> _references; // Can be null
-    private String _identifier;
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 
-    public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException, NullMessageException,
-            NullAnnouncementException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
-            NullUserException, InvalidMessageSizeException {
+import dpas.common.domain.exception.InvalidMessageSizeException;
+import dpas.common.domain.exception.InvalidSignatureException;
+import dpas.common.domain.exception.NullAnnouncementException;
+import dpas.common.domain.exception.NullMessageException;
+import dpas.common.domain.exception.NullSignatureException;
+import dpas.common.domain.exception.NullUserException;
+import dpas.grpc.contract.Contract;
 
-        checkArguments(signature, user, message, references);
-        checkSignature(signature, user, message);
-        this._message = message;
-        this._signature = signature;
-        this._user = user;
-        this._references = references;
-        this._identifier = UUID.randomUUID().toString();
-    }
+public class Announcement {
+	private byte[] _signature;
+	private User _user;
+	private String _message;
+	private ArrayList<Announcement> _references; // Can be null
+	private String _identifier;
 
-    public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references, String identifier) throws NullSignatureException, NullMessageException,
-            NullAnnouncementException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
-            NullUserException, InvalidMessageSizeException {
+	public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references)
+			throws NullSignatureException, NullMessageException, NullAnnouncementException, InvalidSignatureException,
+			NoSuchAlgorithmException, InvalidKeyException, SignatureException, NullUserException,
+			InvalidMessageSizeException {
 
-        checkArguments(signature, user, message, references);
-        checkSignature(signature, user, message);
-        this._message = message;
-        this._signature = signature;
-        this._user = user;
-        this._references = references;
-        this._identifier = identifier;
-    }
+		checkArguments(signature, user, message, references);
+		checkSignature(signature, user, message);
+		this._message = message;
+		this._signature = signature;
+		this._user = user;
+		this._references = references;
+		this._identifier = UUID.randomUUID().toString();
+	}
 
-    public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references) throws NullSignatureException,
-            NullMessageException, NullAnnouncementException, NullUserException, InvalidMessageSizeException {
+	public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references,
+			String identifier) throws NullSignatureException, NullMessageException, NullAnnouncementException,
+			InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
+			NullUserException, InvalidMessageSizeException {
 
-        if (signature == null) {
-            throw new NullSignatureException("Invalid Signature provided: null");
-        }
-        if (user == null) {
-            throw new NullUserException("Invalid User provided: null");
-        }
-        if (message == null) {
-            throw new NullMessageException("Invalid Message Provided: null");
-        }
+		checkArguments(signature, user, message, references);
+		checkSignature(signature, user, message);
+		this._message = message;
+		this._signature = signature;
+		this._user = user;
+		this._references = references;
+		this._identifier = identifier;
+	}
 
-        if (message.length() > 255) {
-            throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
-        }
+	public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references)
+			throws NullSignatureException, NullMessageException, NullAnnouncementException, NullUserException,
+			InvalidMessageSizeException {
 
-        if (references != null) {
-            if (references.contains(null)) {
-                throw new NullAnnouncementException("Invalid Reference: A reference cannot be null");
-            }
-        }
-    }
+		if (signature == null) {
+			throw new NullSignatureException("Invalid Signature provided: null");
+		}
+		if (user == null) {
+			throw new NullUserException("Invalid User provided: null");
+		}
+		if (message == null) {
+			throw new NullMessageException("Invalid Message Provided: null");
+		}
 
-    public void checkSignature(byte[] signature, User user, String message) throws InvalidSignatureException, InvalidKeyException, NoSuchAlgorithmException,
-            SignatureException {
+		if (message.length() > 255) {
+			throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
+		}
 
-        byte[] messageBytes = message.getBytes();
-        PublicKey publicKey = user.getPublicKey();
+		if (references != null) {
+			if (references.contains(null)) {
+				throw new NullAnnouncementException("Invalid Reference: A reference cannot be null");
+			}
+		}
+	}
 
-        Signature sign = Signature.getInstance("SHA256withRSA"); // Hardcoded for now
-        sign.initVerify(publicKey);
-        sign.update(messageBytes);
+	public void checkSignature(byte[] signature, User user, String message)
+			throws InvalidSignatureException, InvalidKeyException, NoSuchAlgorithmException, SignatureException {
 
-        try {
-            if (!sign.verify(signature))
-                throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
-        } catch (SignatureException e) {
-            throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
-        }
-    }
+		byte[] messageBytes = message.getBytes();
+		PublicKey publicKey = user.getPublicKey();
 
-    public String getMessage() {
-        return this._message;
-    }
+		Signature sign = Signature.getInstance("SHA256withRSA"); // Hardcoded for now
+		sign.initVerify(publicKey);
+		sign.update(messageBytes);
 
-    public byte[] getSignature() {
-        return this._signature;
-    }
+		try {
+			if (!sign.verify(signature))
+				throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
+		} catch (SignatureException e) {
+			throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
+		}
+	}
 
-    public ArrayList<Announcement> getReferences() {
-        return this._references;
-    }
+	public String getMessage() {
+		return this._message;
+	}
 
-    public User getUser() {
-        return this._user;
-    }
+	public byte[] getSignature() {
+		return this._signature;
+	}
 
-    public String getPostUsername() {
-        return this._user.getUsername();
-    }
+	public ArrayList<Announcement> getReferences() {
+		return this._references;
+	}
 
-    public String getIdentifier() {
-        return _identifier;
-    }
+	public User getUser() {
+		return this._user;
+	}
 
+	public String getPostUsername() {
+		return this._user.getUsername();
+	}
 
-    public Contract.Announcement toContract() {
+	public String getIdentifier() {
+		return _identifier;
+	}
 
-        Stream<Announcement> myStream = _references.stream();
-        List<String> announcementToIdentifier = myStream.map(Announcement::getIdentifier).collect(Collectors.toList());
+	public Contract.Announcement toContract() {
 
-        return Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername()).addAllReferences(announcementToIdentifier).setIdentifier(_identifier).build();
-    }
+		Stream<Announcement> myStream = _references.stream();
+		List<String> announcementToIdentifier = myStream.map(Announcement::getIdentifier).collect(Collectors.toList());
 
-    public JsonObject toJson(String type) {
-        JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
-        String pubKey = Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded());
-        String sign = Base64.getEncoder().encodeToString(_signature);
-        final JsonArrayBuilder builder = Json.createArrayBuilder();
+		return Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername())
+				.addAllReferences(announcementToIdentifier).setIdentifier(_identifier).build();
+	}
 
-        for (Announcement reference : _references) {
-            builder.add(reference.getIdentifier());
-        }
+	public JsonObject toJson(String type) {
+		JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
+		String pubKey = Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded());
+		String sign = Base64.getEncoder().encodeToString(_signature);
+		final JsonArrayBuilder builder = Json.createArrayBuilder();
 
-        jsonBuilder.add("Type", type);
-        jsonBuilder.add("Public Key", pubKey);
-        jsonBuilder.add("User", _user.getUsername());
-        jsonBuilder.add("Message", _message);
-        jsonBuilder.add("Signature", sign);
-        jsonBuilder.add("Identifier", _identifier);
-        jsonBuilder.add("References", builder.build());
+		for (Announcement reference : _references) {
+			builder.add(reference.getIdentifier());
+		}
 
-        return jsonBuilder.build();
-    }
+		jsonBuilder.add("Type", type);
+		jsonBuilder.add("Public Key", pubKey);
+		jsonBuilder.add("User", _user.getUsername());
+		jsonBuilder.add("Message", _message);
+		jsonBuilder.add("Signature", sign);
+		jsonBuilder.add("Identifier", _identifier);
+		jsonBuilder.add("References", builder.build());
+
+		return jsonBuilder.build();
+	}
 }

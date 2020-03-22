@@ -2,16 +2,31 @@ package dpas.common.domain;
 
 import static org.junit.Assert.assertEquals;
 
-import dpas.common.domain.exception.*;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.UnsupportedEncodingException;
-import java.security.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import dpas.common.domain.exception.InvalidMessageSizeException;
+import dpas.common.domain.exception.InvalidNumberOfPostsException;
+import dpas.common.domain.exception.InvalidSignatureException;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullAnnouncementException;
+import dpas.common.domain.exception.NullMessageException;
+import dpas.common.domain.exception.NullPublicKeyException;
+import dpas.common.domain.exception.NullSignatureException;
+import dpas.common.domain.exception.NullUserException;
+import dpas.common.domain.exception.NullUsernameException;
 
 public class UserBoardTest {
 

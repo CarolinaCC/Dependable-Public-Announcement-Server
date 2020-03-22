@@ -99,7 +99,7 @@ public class AnnouncementTest {
             InvalidSignatureException, NullSignatureException, NullUserException, SignatureException,
             NullAnnouncementException, UnsupportedEncodingException, InvalidMessageSizeException {
 
-        Announcement announcement = new Announcement(null, _user, MESSAGE, _references);
+        new Announcement(null, _user, MESSAGE, _references);
     }
 
 
@@ -108,7 +108,7 @@ public class AnnouncementTest {
             InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
             UnsupportedEncodingException, InvalidMessageSizeException {
 
-        Announcement announcement = new Announcement(_signature, null, MESSAGE, _references);
+        new Announcement(_signature, null, MESSAGE, _references);
     }
 
     @Test(expected = NullMessageException.class)
@@ -116,7 +116,7 @@ public class AnnouncementTest {
             InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
             UnsupportedEncodingException, InvalidMessageSizeException {
 
-        Announcement announcement = new Announcement(_signature, _user, null, _references);
+    	new Announcement(_signature, _user, null, _references);
     }
 
     @Test(expected = NullAnnouncementException.class)
@@ -127,7 +127,7 @@ public class AnnouncementTest {
         ArrayList<Announcement> refNullElement = new ArrayList<>();
         refNullElement.add(null);
 
-        Announcement announcement = new Announcement(_signature, _user, MESSAGE, refNullElement);
+        new Announcement(_signature, _user, MESSAGE, refNullElement);
     }
 
     @Test(expected = InvalidSignatureException.class)
@@ -136,7 +136,7 @@ public class AnnouncementTest {
             UnsupportedEncodingException, InvalidMessageSizeException {
 
         byte[] invalidSig = "InvalidSignature".getBytes();
-        Announcement announcement = new Announcement(invalidSig, _user, MESSAGE, _references);
+        new Announcement(invalidSig, _user, MESSAGE, _references);
     }
 
     @Test(expected = InvalidMessageSizeException.class)
@@ -144,7 +144,7 @@ public class AnnouncementTest {
             NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException,
             NullUserException, NullAnnouncementException, InvalidMessageSizeException {
 
-        Announcement announcement = new Announcement(_signature, _user, INVALID_MESSAGE, _references);
+        new Announcement(_signature, _user, INVALID_MESSAGE, _references);
     }
 
 

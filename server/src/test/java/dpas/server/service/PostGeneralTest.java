@@ -1,7 +1,23 @@
 package dpas.server.service;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.util.List;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
 import com.google.protobuf.ByteString;
-import dpas.common.domain.exception.NullPublicKeyException;
+
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -10,220 +26,165 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.hamcrest.core.IsEqual;
-import org.hamcrest.core.IsInstanceOf;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import java.io.IOException;
-import java.security.*;
-import java.util.List;
-
 
 public class PostGeneralTest {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
+	@Rule
+	public ExpectedException exception = ExpectedException.none();
 
-    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
-    private String _invalidReference;
+	private Server _server;
+	private PublicKey _firstPublicKey;
+	private PublicKey _secondPublicKey;
+	private byte[] _firstSignature;
+	private byte[] _secondSignature;
+	private byte[] _bigMessageSignature;
 
-    private Server _server;
-    private PublicKey _firstPublicKey;
-    private PublicKey _secondPublicKey;
-    private byte[] _firstSignature;
-    private byte[] _secondSignature;
-    private byte[] _bigMessageSignature;
+	private ManagedChannel _channel;
 
-    private ManagedChannel _channel;
+	private final static String FIRST_USER_NAME = "USER";
+	private final static String SECOND_USER_NAME = "USER2";
 
-    private final static String FIRST_USER_NAME = "USER";
-    private final static String SECOND_USER_NAME = "USER2";
+	private static final String MESSAGE = "Message";
+	private static final String SECOND_MESSAGE = "Second Message";
+	private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid"
+			+ "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
 
-    private static final String MESSAGE = "Message";
-    private static final String SECOND_MESSAGE = "Second Message";
-    private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
-            "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
+	@Before
+	public void setup() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+		keygen.initialize(1024);
+		KeyPair keyPair = keygen.generateKeyPair();
+		_firstPublicKey = keyPair.getPublic();
 
-    @Before
-    public void setup() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
-        KeyPair keyPair = keygen.generateKeyPair();
-        _firstPublicKey = keyPair.getPublic();
+		// generate first signature
+		Signature sign = Signature.getInstance("SHA256withRSA");
+		sign.initSign(keyPair.getPrivate());
+		sign.update(MESSAGE.getBytes());
+		_firstSignature = sign.sign();
 
-        // generate first signature
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(keyPair.getPrivate());
-        sign.update(MESSAGE.getBytes());
-        _firstSignature = sign.sign();
+		// second key pair
+		keygen = KeyPairGenerator.getInstance("RSA");
+		keygen.initialize(1024);
+		keyPair = keygen.generateKeyPair();
+		_secondPublicKey = keyPair.getPublic();
 
-        // second key pair
-        keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
-        keyPair = keygen.generateKeyPair();
-        _secondPublicKey = keyPair.getPublic();
+		// Generate second signature
+		sign = Signature.getInstance("SHA256withRSA");
+		sign.initSign(keyPair.getPrivate());
+		sign.update(SECOND_MESSAGE.getBytes());
+		_secondSignature = sign.sign();
 
-        // Generate second signature
-        sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(keyPair.getPrivate());
-        sign.update(SECOND_MESSAGE.getBytes());
-        _secondSignature = sign.sign();
-
-        // Generate signature for too big message
-        sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(keyPair.getPrivate());
-        sign.update(INVALID_MESSAGE.getBytes());
-        _bigMessageSignature = sign.sign();
-
-        //Invalid Reference (Same as announcement)
-        _invalidReference = "";
+		// Generate signature for too big message
+		sign = Signature.getInstance("SHA256withRSA");
+		sign.initSign(keyPair.getPrivate());
+		sign.update(INVALID_MESSAGE.getBytes());
+		_bigMessageSignature = sign.sign();
 
 
-        final BindableService impl = new ServiceDPASImpl();
+		final BindableService impl = new ServiceDPASImpl();
 
-        //Start server
-        _server = NettyServerBuilder
-                .forPort(9000)
-                .addService(impl)
-                .build();
-        _server.start();
+		// Start server
+		_server = NettyServerBuilder.forPort(9000).addService(impl).build();
+		_server.start();
 
-        final String host = "localhost";
-        final int port = 9000;
-        _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
-        _stub = ServiceDPASGrpc.newBlockingStub(_channel);
+		final String host = "localhost";
+		final int port = 9000;
+		_channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
+		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-        // create first user
-        _stub.register(Contract.RegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .build());
+		// create first user
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME).build());
 
-        // create second user
-        _stub.register(Contract.RegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-                .setUsername(SECOND_USER_NAME)
-                .build());
+		// create second user
+		_stub.register(
+				Contract.RegisterRequest.newBuilder().setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+						.setUsername(SECOND_USER_NAME).build());
 
-    }
+	}
 
-    @After
-    public void teardown() {
-        _server.shutdown();
-        _channel.shutdown();
-    }
+	@After
+	public void teardown() {
+		_server.shutdown();
+		_channel.shutdown();
+	}
 
-    @Test
-    public void postSuccess() {
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_firstSignature))
-                .build());
-    }
+	@Test
+	public void postSuccess() {
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME)
+				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature)).build());
+	}
 
-    @Test
-    public void twoPostsSuccess() {
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_firstSignature))
-                .build());
+	@Test
+	public void twoPostsSuccess() {
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME)
+				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature)).build());
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-                .setUsername(SECOND_USER_NAME)
-                .setMessage(SECOND_MESSAGE)
-                .setSignature(ByteString.copyFrom(_secondSignature))
-                .build());
-    }
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded())).setUsername(SECOND_USER_NAME)
+				.setMessage(SECOND_MESSAGE).setSignature(ByteString.copyFrom(_secondSignature)).build());
+	}
 
-    @Test
-    public void twoPostsWithReference() {
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_firstSignature))
-                .build());
+	@Test
+	public void twoPostsWithReference() {
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME)
+				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature)).build());
 
-        Contract.ReadReply readReply = _stub.readGeneral(Contract.ReadRequest.newBuilder()
-                .setNumber(1)
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .build());
+		Contract.ReadReply readReply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(1)
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME).build());
 
+		List<Contract.Announcement> announcementsGRPC = readReply.getAnnouncementsList();
+		String validReference = announcementsGRPC.get(0).getIdentifier();
 
-        List<Contract.Announcement> announcementsGRPC = readReply.getAnnouncementsList();
-        String validReference = announcementsGRPC.get(0).getIdentifier();
+		_stub.postGeneral(
+				Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+						.setUsername(SECOND_USER_NAME).setMessage(SECOND_MESSAGE).addReferences(validReference)
+						.setSignature(ByteString.copyFrom(_secondSignature)).build());
+	}
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-                .setUsername(SECOND_USER_NAME)
-                .setMessage(SECOND_MESSAGE)
-                .addReferences(validReference)
-                .setSignature(ByteString.copyFrom(_secondSignature))
-                .build());
-    }
+	@Test
+	public void postNullPublicKey() {
+		exception.expect(StatusRuntimeException.class);
+		exception.expectMessage("Missing key encoding");
 
+		_stub.postGeneral(Contract.PostRequest.newBuilder().setUsername(FIRST_USER_NAME).setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature)).build());
 
-    @Test
-    public void postNullPublicKey() {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Missing key encoding");
+	}
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_firstSignature))
-                .build());
+	@Test
+	public void postInvalidMessageSize() {
+		exception.expect(StatusRuntimeException.class);
+		exception.expectMessage("Invalid Message Length provided: over 255 characters");
 
-    }
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME)
+				.setMessage(INVALID_MESSAGE).setSignature(ByteString.copyFrom(_bigMessageSignature)).build());
+	}
 
-    @Test
-    public void postInvalidMessageSize() {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Message Length provided: over 255 characters");
+	@Test
+	public void postNullSignature() {
+		exception.expect(StatusRuntimeException.class);
+		exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(INVALID_MESSAGE)
-                .setSignature(ByteString.copyFrom(_bigMessageSignature))
-                .build());
-    }
+		_stub.postGeneral(
+				Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+						.setUsername(FIRST_USER_NAME).setMessage(MESSAGE).build());
+	}
 
+	@Test
+	public void postInvalidSignature() {
+		exception.expect(StatusRuntimeException.class);
+		exception.expectMessage("Invalid Signature: Signature Could not be verified");
 
-    @Test
-    public void postNullSignature() {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
-
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .build());
-    }
-
-    @Test
-    public void postInvalidSignature() {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Signature: Signature Could not be verified");
-
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setUsername(FIRST_USER_NAME)
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_secondSignature))
-                .build());
-    }
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME)
+				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_secondSignature)).build());
+	}
 
 }
