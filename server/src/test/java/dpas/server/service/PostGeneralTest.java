@@ -10,6 +10,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,9 +49,8 @@ public class PostGeneralTest {
 
 	private static final String MESSAGE = "Message";
 	private static final String SECOND_MESSAGE = "Second Message";
-	private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid"
-			+ "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
-
+	private static final String INVALID_MESSAGE = StringUtils.repeat("ThisMessageisInvalid", "", 15);
+	
 	@Before
 	public void setup() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
