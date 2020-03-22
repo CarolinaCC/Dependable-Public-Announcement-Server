@@ -20,9 +20,6 @@ public class AnnouncementTest {
     private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
             "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
 
-    private static final String USERNAME = "Einstein";
-    private static final String OTHER_USERNAME = "Marie Curie";
-
     private ArrayList<Announcement> _references = new ArrayList<>();
     private byte[] _signature;
     private User _user;

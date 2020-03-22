@@ -1,7 +1,6 @@
 package dpas.common.domain;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -17,10 +16,6 @@ import dpas.common.domain.exception.NullUserException;
 import dpas.common.domain.exception.NullUsernameException;
 
 public class UserTest {
-
-
-    private static final String FIRST_USER_NAME = "FIRST_USER_NAME";
-
 
     private PublicKey _publicKey;
     @Before
