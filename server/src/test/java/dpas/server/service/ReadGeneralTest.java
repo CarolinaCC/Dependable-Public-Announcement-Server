@@ -40,7 +40,6 @@ public class ReadGeneralTest {
 	private ManagedChannel _channel;
 	private PublicKey _publicKey;
 
-	private static final String USER_NAME = "USER";
 	private static final String MESSAGE = "Message to sign";
 
 	@Before

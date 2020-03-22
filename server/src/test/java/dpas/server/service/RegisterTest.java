@@ -32,8 +32,6 @@ public class RegisterTest {
 	private PublicKey _publicDSAKey;
 	private ManagedChannel _channel;
 
-	private final static String FIRST_USER_NAME = "USER";
-	private final static String SECOND_USER_NAME = "USER2";
 
 	@Rule
 	public ExpectedException exception = ExpectedException.none();

@@ -51,9 +51,6 @@ public class ReadTest {
 	private Server _server;
 	private ManagedChannel _channel;
 
-	private final static String USER_NAME = "USER";
-	private final static String NON_REGISTERED_USER = "USER2";
-
 	private PublicKey _publicKey;
 	private User _user;
 
