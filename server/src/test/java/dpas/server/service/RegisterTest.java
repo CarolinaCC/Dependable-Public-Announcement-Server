@@ -78,39 +78,35 @@ public class RegisterTest {
 	@Test
 	public void registerSuccess() {
 		_stub.register(Contract.RegisterRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME).build());
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.build());
 	}
 
 	@Test
 	public void registerTwoUsers() {
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(FIRST_USER_NAME)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).build());
-
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(FIRST_USER_NAME)
-				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded())).build());
-	}
-
-	@Test
-	public void registerNullUsername() {
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: Invalid Username: Cannot be null or blank");
 		_stub.register(Contract.RegisterRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).build());
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.build());
+
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.build());
 	}
 
 	@Test
 	public void registerNullKey() {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(FIRST_USER_NAME).build());
+		_stub.register(Contract.RegisterRequest.newBuilder().build());
 	}
 
 	@Test
 	public void registerEmptyKey() {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
-		_stub.register(Contract.RegisterRequest.newBuilder().setPublicKey(ByteString.copyFrom(new byte[0]))
-				.setUsername(FIRST_USER_NAME).build());
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(new byte[0]))
+				.build());
 	}
 
 	@Test
@@ -118,7 +114,8 @@ public class RegisterTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: invalid key format");
 		_stub.register(Contract.RegisterRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(new byte[] { 12, 2, 12, 5 })).setUsername(FIRST_USER_NAME).build());
+				.setPublicKey(ByteString.copyFrom(new byte[] { 12, 2, 12, 5 }))
+				.build());
 	}
 
 	@Test
@@ -128,29 +125,21 @@ public class RegisterTest {
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Invalid RSA public key");
 
 		_stub.register(Contract.RegisterRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_publicDSAKey.getEncoded())).setUsername(FIRST_USER_NAME).build());
+				.setPublicKey(ByteString.copyFrom(_publicDSAKey.getEncoded()))
+				.build());
 	}
 
 	@Test
 	public void registerRepeatedUser() {
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(FIRST_USER_NAME)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).build());
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.build());
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: User Already Exists");
 
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(FIRST_USER_NAME)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).build());
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.build());
 	}
 
-	@Test
-	public void registerRepeatedPublicKeyUser() {
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(FIRST_USER_NAME)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).build());
-
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: User Already Exists");
-
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(SECOND_USER_NAME)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).build());
-	}
 }

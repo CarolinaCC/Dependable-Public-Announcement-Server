@@ -45,7 +45,7 @@ public class AnnouncementTest {
         this._signature = sign.sign();
 
         //Generate user
-        this._user = new User(USERNAME, publicKey);
+        this._user = new User(publicKey);
 
         //Create another announcement
         KeyPairGenerator otherKeyGen = KeyPairGenerator.getInstance("RSA");
@@ -58,7 +58,7 @@ public class AnnouncementTest {
         sign.update(OTHER_MESSAGE.getBytes());
         byte[] otherSignature = sign.sign();
 
-        User otherUser = new User(OTHER_USERNAME, otherPublicKey);
+        User otherUser = new User(otherPublicKey);
         Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null);
 
         //Add it to references

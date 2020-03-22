@@ -13,7 +13,6 @@ service ServiceDPAS {
 //
 message RegisterRequest {
     bytes publicKey = 1;
-    string username = 2;
 }
 
 
@@ -32,9 +31,8 @@ message GeneralBoardReference {
 message PostRequest {
     bytes publicKey = 1;
     string message = 2;
-    string username = 3;
-    bytes signature = 4;
-    repeated string references = 5;
+    bytes signature = 3;
+    repeated string references = 4;
 }
 
 
@@ -42,7 +40,6 @@ message PostRequest {
 message ReadRequest {
     bytes publicKey = 1;
     int32 number = 2;
-    string username = 3;
 }
 
 //
@@ -52,8 +49,7 @@ message ReadReply {
 
 message Announcement {
     string message = 1;
-    string username = 2;
-    string identifier = 3;
-    repeated string references = 4;
+    string identifier = 2;
+    repeated string references = 3;
 }
 

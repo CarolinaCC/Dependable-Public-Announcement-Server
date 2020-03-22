@@ -86,7 +86,7 @@ public class ReadTest {
 		sign.update(SECOND_MESSAGE.getBytes());
 		_signature2 = sign.sign();
 
-		_user = new User(USER_NAME, _publicKey);
+		_user = new User(_publicKey);
 
 		Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references);
 		_user.getUserBoard().post(announcement);
@@ -103,16 +103,21 @@ public class ReadTest {
 		_stub = ServiceDPASGrpc.newBlockingStub(_channel).withMaxInboundMessageSize(1024 * 1024 * 1024)
 				.withMaxOutboundMessageSize(1024 * 1024 * 1024);
 
-		_stub.register(Contract.RegisterRequest.newBuilder().setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.setUsername(_user.getUsername()).build());
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+				.build());
 
-		_stub.post(Contract.PostRequest.newBuilder().setUsername(USER_NAME).setMessage(MESSAGE)
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature))
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded())).build());
+				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+				.build());
 
-		_stub.post(Contract.PostRequest.newBuilder().setUsername(USER_NAME).setMessage(SECOND_MESSAGE)
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setMessage(SECOND_MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature2))
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded())).build());
+				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+				.build());
 
 	}
 
@@ -127,16 +132,17 @@ public class ReadTest {
 	public void readSuccessAllWith0() {
 
 		Contract.ReadReply reply = _stub.read(
-				Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
-						.setUsername(_user.getUsername()).setNumber(0).build());
+				Contract.ReadRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
+				.setNumber(0)
+				.build());
+		
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 
 		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
-		assertEquals(announcementsGRPC.get(1).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
 
 	}
@@ -145,17 +151,17 @@ public class ReadTest {
 	public void readSuccessAll() {
 
 		Contract.ReadReply reply = _stub.read(
-				Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
-						.setUsername(_user.getUsername()).setNumber(2).build());
+				Contract.ReadRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
+				.setNumber(2)
+				.build());
 
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 
 		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
-		assertEquals(announcementsGRPC.get(1).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
 
 	}
@@ -163,14 +169,14 @@ public class ReadTest {
 	@Test
 	public void readSuccess() {
 
-		Contract.ReadReply reply = _stub
-				.read(Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-						.setUsername(USER_NAME).setNumber(1).build());
+		var reply = _stub.read(Contract.ReadRequest.newBuilder()
+						.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+						.setNumber(1)
+						.build());
 
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
 		assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 
 	}
@@ -180,8 +186,10 @@ public class ReadTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: Invalid number of posts to read: number cannot be negative");
 
-		_stub.read(Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.setUsername(USER_NAME).setNumber(-1).build());
+		_stub.read(Contract.ReadRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+				.setNumber(-1)
+				.build());
 	}
 
 	@Test
@@ -189,7 +197,7 @@ public class ReadTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
-		_stub.read(Contract.ReadRequest.newBuilder().setUsername(USER_NAME).setNumber(0).build());
+		_stub.read(Contract.ReadRequest.newBuilder().setNumber(0).build());
 	}
 
 	@Test
@@ -197,8 +205,10 @@ public class ReadTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
-		_stub.read(Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(new byte[0]))
-				.setUsername(USER_NAME).setNumber(0).build());
+		_stub.read(Contract.ReadRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(new byte[0]))
+				.setNumber(0)
+				.build());
 	}
 
 	@Test
@@ -206,8 +216,10 @@ public class ReadTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: invalid key format");
 
-		_stub.read(Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(new byte[] { 12, 2, 12, 5 }))
-				.setUsername(USER_NAME).setNumber(0).build());
+		_stub.read(Contract.ReadRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(new byte[] { 12, 2, 12, 5 }))
+				.setNumber(0)
+				.build());
 	}
 
 	@Test
@@ -221,8 +233,10 @@ public class ReadTest {
 		KeyPair keyPair = keygen.generateKeyPair();
 		PublicKey publicKey = keyPair.getPublic();
 
-		_stub.read(Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-				.setUsername(USER_NAME).setNumber(0).build());
+		_stub.read(Contract.ReadRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+				.setNumber(0)
+				.build());
 	}
 
 	@Test
@@ -235,8 +249,10 @@ public class ReadTest {
 		KeyPair keyPair = keygen.generateKeyPair();
 		PublicKey publicKey = keyPair.getPublic();
 
-		_stub.read(Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-				.setUsername(NON_REGISTERED_USER).setNumber(0).build());
+		_stub.read(Contract.ReadRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+				.setNumber(0)
+				.build());
 
 	}
 

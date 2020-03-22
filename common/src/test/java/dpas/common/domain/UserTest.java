@@ -38,33 +38,13 @@ public class UserTest {
 
     @Test
     public void validUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
-        User user = new User(FIRST_USER_NAME, _publicKey);
-        assertEquals(user.getUsername(), FIRST_USER_NAME);
+        User user = new User(_publicKey);
         assertArrayEquals(user.getPublicKey().getEncoded(), _publicKey.getEncoded());
     }
 
     @Test(expected = NullPublicKeyException.class)
     public void nullPublicKeyUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
-        new User(FIRST_USER_NAME, null);
+        new User(null);
     }
 
-    @Test(expected = NullUsernameException.class)
-    public void nullUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
-        new User(null, _publicKey);
-    }
-
-    @Test(expected = NullUsernameException.class)
-    public void emptyUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
-        new User("", _publicKey);
-    }
-
-    @Test(expected = NullUsernameException.class)
-    public void tabUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
-        new User("\t", _publicKey);
-    }
-
-    @Test(expected = NullUsernameException.class)
-    public void newlineUsernameUser() throws NullPublicKeyException, NullUsernameException, NullUserException {
-        new User("\n", _publicKey);
-    }
 }

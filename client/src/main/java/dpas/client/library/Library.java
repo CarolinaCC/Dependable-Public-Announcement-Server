@@ -8,6 +8,8 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.protobuf.ByteString;
 
@@ -26,37 +28,20 @@ public class Library {
 		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
 	}
 
-	public void register(PublicKey publicKey, String username) {
+	public void register(PublicKey publicKey) {
 		try {
 			_stub.register(Contract.RegisterRequest.newBuilder()
-					.setPublicKey(ByteString.copyFrom(publicKey.getEncoded())).setUsername(username).build());
+					.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+					.build());
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		}
 
 	}
 
-	public void post(PublicKey key, char[] message, String username, Announcement[] a, PrivateKey privateKey) {
+	public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
 		try {
-			_stub.post(createPostRequest(key, message, username, a, privateKey));
-		} catch (StatusRuntimeException e) {
-			System.out.println("An error ocurred: " + e.getMessage());
-		} catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
-			System.out.println("Could not create signature from values provided");
-		}
-	}
-
-	public void post(PublicKey key, char[] message, String username, Announcement[] a, byte[] signature) {
-		try {
-			_stub.post(createPostRequest(key, message, username, a, signature));
-		} catch (StatusRuntimeException e) {
-			System.out.println("An error ocurred: " + e.getMessage());
-		}
-	}
-
-	public void postGeneral(PublicKey key, char[] message, String username, Announcement[] a, PrivateKey privateKey) {
-		try {
-			_stub.postGeneral(createPostRequest(key, message, username, a, privateKey));
+			_stub.post(createPostRequest(key, message, a, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		} catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
@@ -64,9 +49,27 @@ public class Library {
 		}
 	}
 
-	public void postGeneral(PublicKey key, char[] message, String username, Announcement[] a, byte[] signature) {
+	public void post(PublicKey key, char[] message, Announcement[] a, byte[] signature) {
 		try {
-			_stub.postGeneral(createPostRequest(key, message, username, a, signature));
+			_stub.post(createPostRequest(key, message, a, signature));
+		} catch (StatusRuntimeException e) {
+			System.out.println("An error ocurred: " + e.getMessage());
+		}
+	}
+
+	public void postGeneral(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
+		try {
+			_stub.postGeneral(createPostRequest(key, message, a, privateKey));
+		} catch (StatusRuntimeException e) {
+			System.out.println("An error ocurred: " + e.getMessage());
+		} catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
+			System.out.println("Could not create signature from values provided");
+		}
+	}
+
+	public void postGeneral(PublicKey key, char[] message, Announcement[] a, byte[] signature) {
+		try {
+			_stub.postGeneral(createPostRequest(key, message, a, signature));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		}
@@ -74,9 +77,10 @@ public class Library {
 
 	public Announcement[] read(PublicKey publicKey, String username, int number) {
 		try {
-			Contract.ReadReply reply = _stub
-					.read(Contract.ReadRequest.newBuilder().setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-							.setUsername(username).setNumber(number).build());
+			var reply = _stub.read(Contract.ReadRequest.newBuilder()
+							.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+							.setNumber(number)
+							.build());
 			return (Announcement[]) reply.getAnnouncementsList().toArray();
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
@@ -94,28 +98,28 @@ public class Library {
 		}
 	}
 
-	private Contract.PostRequest createPostRequest(PublicKey key, char[] message, String username, Announcement[] a,
-			byte[] signature) {
-		List<String> identifiers = new ArrayList<String>();
-		for (Announcement announcement : a) {
-			identifiers.add(announcement.getIdentifier());
-		}
+	private Contract.PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a, byte[] signature) {
+		List<String> identifiers = Stream.of(a)
+				.map(Announcement::getIdentifier)
+				.collect(Collectors.toList());
 
 		Contract.PostRequest postRequest = Contract.PostRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(key.getEncoded())).setMessage(String.valueOf(message))
-				.setSignature(ByteString.copyFrom(signature)).setUsername(username).addAllReferences(identifiers)
+				.setPublicKey(ByteString.copyFrom(key.getEncoded()))
+				.setMessage(String.valueOf(message))
+				.setSignature(ByteString.copyFrom(signature))
+				.addAllReferences(identifiers)
 				.build();
 		return postRequest;
 	}
 
-	private Contract.PostRequest createPostRequest(PublicKey key, char[] message, String username, Announcement[] a,
+	private Contract.PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a,
 			PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
 		Signature signature = Signature.getInstance("SHA256withRSA");
 		signature.initSign(privateKey);
 		signature.update(String.valueOf(message).getBytes());
 
-		return createPostRequest(key, message, username, a, signature.sign());
+		return createPostRequest(key, message, a, signature.sign());
 	}
 
 }

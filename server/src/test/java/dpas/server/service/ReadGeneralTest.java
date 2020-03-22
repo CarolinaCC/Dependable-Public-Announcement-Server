@@ -68,12 +68,15 @@ public class ReadGeneralTest {
 		_channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
 		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-		_stub.register(Contract.RegisterRequest.newBuilder().setUsername(USER_NAME)
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded())).build());
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+				.build());
 
-		_stub.postGeneral(Contract.PostRequest.newBuilder().setUsername(USER_NAME).setMessage(MESSAGE)
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature))
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded())).build());
+				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+				.build());
 	}
 
 	@After
@@ -91,7 +94,6 @@ public class ReadGeneralTest {
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 	}
 
@@ -102,7 +104,6 @@ public class ReadGeneralTest {
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 	}
 
@@ -114,7 +115,6 @@ public class ReadGeneralTest {
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getUsername(), USER_NAME);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
 
 	}

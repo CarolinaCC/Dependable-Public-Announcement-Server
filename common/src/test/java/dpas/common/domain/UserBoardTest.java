@@ -45,7 +45,7 @@ public class UserBoardTest {
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
-        User user = new User("FIRST_USER_NAME", publicKey);
+        User user = new User(publicKey);
 
         //Generate valid signature for first message
         Signature sign = Signature.getInstance("SHA256withRSA");
@@ -73,7 +73,7 @@ public class UserBoardTest {
         keygen.initialize(1024);
         keyPair = keygen.generateKeyPair();
         publicKey = keyPair.getPublic();
-        user = new User("FIRST_USER_NAME", publicKey);
+        user = new User(publicKey);
         //Generate valid signature
         sign = Signature.getInstance("SHA256withRSA");
         sign.initSign(keyPair.getPrivate());

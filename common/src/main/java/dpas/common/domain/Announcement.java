@@ -119,9 +119,6 @@ public class Announcement {
 		return this._user;
 	}
 
-	public String getPostUsername() {
-		return this._user.getUsername();
-	}
 
 	public String getIdentifier() {
 		return _identifier;
@@ -132,8 +129,11 @@ public class Announcement {
 		Stream<Announcement> myStream = _references.stream();
 		List<String> announcementToIdentifier = myStream.map(Announcement::getIdentifier).collect(Collectors.toList());
 
-		return Contract.Announcement.newBuilder().setMessage(_message).setUsername(_user.getUsername())
-				.addAllReferences(announcementToIdentifier).setIdentifier(_identifier).build();
+		return Contract.Announcement.newBuilder()
+				.setMessage(_message)
+				.addAllReferences(announcementToIdentifier)
+				.setIdentifier(_identifier)
+				.build();
 	}
 
 	public JsonObject toJson(String type) {
@@ -148,7 +148,6 @@ public class Announcement {
 
 		jsonBuilder.add("Type", type);
 		jsonBuilder.add("Public Key", pubKey);
-		jsonBuilder.add("User", _user.getUsername());
 		jsonBuilder.add("Message", _message);
 		jsonBuilder.add("Signature", sign);
 		jsonBuilder.add("Identifier", _identifier);

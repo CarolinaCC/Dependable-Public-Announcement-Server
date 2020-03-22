@@ -87,7 +87,7 @@ public class PersistenceManager {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
 
             if (operation.getString("Type").equals("Register")) {
-                service.addUser(operation.getString("User"), key);
+                service.addUser(key);
             } else {
                 byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
                 JsonArray jsonReferences = operation.getJsonArray("References");

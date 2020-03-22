@@ -38,8 +38,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 			PublicKey key = KeyFactory.getInstance("RSA")
 					.generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
-			String username = request.getUsername();
-			User user = new User(username, key);
+			User user = new User(key);
 
 			User curr = _users.putIfAbsent(key, user);
 			if (curr != null) {
@@ -115,9 +114,9 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		}
 	}
 
-	public void addUser(String username, PublicKey key)
+	public void addUser(PublicKey key)
 			throws NullUserException, NullPublicKeyException, NullUsernameException {
-		User user = new User(username, key);
+		User user = new User(key);
 		_users.put(key, user);
 	}
 	

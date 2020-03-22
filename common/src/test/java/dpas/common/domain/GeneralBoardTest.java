@@ -23,7 +23,7 @@ public class GeneralBoardTest {
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
-        User userA = new User("FIRST_USER_NAME", publicKey);
+        User userA = new User(publicKey);
 
         //Generate valid signature
         Signature sign = Signature.getInstance("SHA256withRSA");

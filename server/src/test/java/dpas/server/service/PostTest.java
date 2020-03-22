@@ -46,9 +46,6 @@ public class PostTest {
 
 	private ManagedChannel _channel;
 
-	private final static String FIRST_USER_NAME = "USER";
-	private final static String SECOND_USER_NAME = "USER2";
-
 	private static final String MESSAGE = "Message";
 	private static final String SECOND_MESSAGE = "Second Message";
 	private static final String INVALID_MESSAGE = StringUtils.repeat("ThisMessageisInvalid", "", 15);
@@ -104,12 +101,13 @@ public class PostTest {
 
 		// create first user
 		_stub.register(Contract.RegisterRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME).build());
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.build());
 
 		// create second user
-		_stub.register(
-				Contract.RegisterRequest.newBuilder().setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-						.setUsername(SECOND_USER_NAME).build());
+		_stub.register(Contract.RegisterRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.build());
 	}
 
 	@After
@@ -120,53 +118,70 @@ public class PostTest {
 
 	@Test
 	public void postSuccess() {
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setUsername(FIRST_USER_NAME).setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature))
 				.build());
 	}
 
 	@Test
 	public void twoPostsSuccess() {
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setUsername(FIRST_USER_NAME).setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature))
 				.build());
 
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-				.setUsername(SECOND_USER_NAME).setMessage(SECOND_MESSAGE)
-				.setSignature(ByteString.copyFrom(_secondSignature)).build());
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.setMessage(SECOND_MESSAGE)
+				.setSignature(ByteString.copyFrom(_secondSignature))
+				.build());
 	}
 
 	@Test
 	public void twoPostsValidReference() {
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setUsername(FIRST_USER_NAME).setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature))
 				.build());
 
-		Contract.ReadReply readReply = _stub.read(Contract.ReadRequest.newBuilder().setNumber(1)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded())).setUsername(FIRST_USER_NAME).build());
+		Contract.ReadReply readReply = _stub.read(Contract.ReadRequest.newBuilder()
+				.setNumber(1)
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.build());
 
 		List<Contract.Announcement> announcementsGRPC = readReply.getAnnouncementsList();
 
 		String validReference = announcementsGRPC.get(0).getIdentifier();
 
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-				.setUsername(SECOND_USER_NAME).setMessage(SECOND_MESSAGE).addReferences(validReference)
-				.setSignature(ByteString.copyFrom(_secondSignature)).build());
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.setMessage(SECOND_MESSAGE)
+				.addReferences(validReference)
+				.setSignature(ByteString.copyFrom(_secondSignature))
+				.build());
 	}
 
 	@Test
 	public void twoPostsInvalidReference() {
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setUsername(FIRST_USER_NAME).setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature))
 				.build());
 
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: Invalid Reference: reference provided does not exist");
 
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-				.setUsername(SECOND_USER_NAME).setMessage(SECOND_MESSAGE).addReferences(_invalidReference)
-				.setSignature(ByteString.copyFrom(_secondSignature)).build());
-
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.setMessage(SECOND_MESSAGE)
+				.addReferences(_invalidReference)
+				.setSignature(ByteString.copyFrom(_secondSignature))
+				.build());
 	}
 
 	@Test
@@ -174,8 +189,10 @@ public class PostTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
-		_stub.post(Contract.PostRequest.newBuilder().setUsername(FIRST_USER_NAME).setMessage(MESSAGE)
-				.setSignature(ByteString.copyFrom(_firstSignature)).build());
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature))
+				.build());
 	}
 
 	@Test
@@ -183,9 +200,11 @@ public class PostTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: Invalid Message");
 
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setUsername(FIRST_USER_NAME).setMessage(INVALID_MESSAGE)
-				.setSignature(ByteString.copyFrom(_bigMessageSignature)).build());
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(INVALID_MESSAGE)
+				.setSignature(ByteString.copyFrom(_bigMessageSignature))
+				.build());
 	}
 
 	@Test
@@ -193,9 +212,10 @@ public class PostTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
 
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setUsername(FIRST_USER_NAME).setMessage(MESSAGE).build());
-
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE)
+				.build());
 	}
 
 	@Test
@@ -203,9 +223,10 @@ public class PostTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
 
-		_stub.post(Contract.PostRequest.newBuilder().setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setUsername(FIRST_USER_NAME).setMessage(MESSAGE).setSignature(ByteString.copyFrom(_secondSignature))
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_secondSignature))
 				.build());
 	}
-
 }

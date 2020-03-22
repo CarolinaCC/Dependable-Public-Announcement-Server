@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -80,8 +81,8 @@ public class PersistenceManagerTest {
 		PublicKey pubKey = keyFactory.generatePublic(keySpec);
 		PublicKey pubKey2 = keyFactory.generatePublic(keySpec2);
 
-		assertEquals(impl.getUsers().get(pubKey).getUsername(), "USER");
-		assertEquals(impl.getUsers().get(pubKey2).getUsername(), "USER2");
+		assertArrayEquals(impl.getUsers().get(pubKey).getPublicKey().getEncoded(), pubKey.getEncoded());
+		assertArrayEquals(impl.getUsers().get(pubKey2).getPublicKey().getEncoded(), pubKey2.getEncoded());
 
 	}
 
@@ -109,7 +110,7 @@ public class PersistenceManagerTest {
 		exception.expect(StatusRuntimeException.class);
 		exception.expectMessage("INVALID_ARGUMENT: Invalid Public Key");
 		try {
-			stub.register(Contract.RegisterRequest.newBuilder().setUsername("USERNAME").build());
+			stub.register(Contract.RegisterRequest.newBuilder().build());
 		} finally {
 
 			JsonArray jsonArray = manager.readSaveFile();
@@ -224,8 +225,9 @@ public class PersistenceManagerTest {
 		exception.expectMessage("INVALID_ARGUMENT: Invalid Key Provided");
 
 		try {
-			stub.post(Contract.PostRequest.newBuilder().setMessage(message).setUsername("USERNAME")
-					.setSignature(ByteString.copyFrom(signature)).build());
+			stub.post(Contract.PostRequest.newBuilder().setMessage(message)
+					.setSignature(ByteString.copyFrom(signature))
+					.build());
 		} finally {
 			assertEquals(sizeInitialJson, manager.readSaveFile().size());
 			// TEARDOWN
@@ -356,8 +358,10 @@ public class PersistenceManagerTest {
 
 		try {
 
-			stub.postGeneral(Contract.PostRequest.newBuilder().setMessage(message).setUsername("USERNAME")
-					.setSignature(ByteString.copyFrom(signature)).build());
+			stub.postGeneral(Contract.PostRequest.newBuilder()
+					.setMessage(message)
+					.setSignature(ByteString.copyFrom(signature))
+					.build());
 		} finally {
 			assertEquals(sizeInitialJson, manager.readSaveFile().size());
 			// TEARDOWN

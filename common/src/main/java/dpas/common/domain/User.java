@@ -19,31 +19,20 @@ import dpas.grpc.contract.Contract;
 
 public class User {
 
-	private String _username;
 	private PublicKey _publicKey;
 	private UserBoard _userBoard;
 
-	public User(String username, PublicKey publicKey)
-			throws NullPublicKeyException, NullUsernameException, NullUserException {
-		checkArguments(username, publicKey);
-		this._username = username;
+	public User(PublicKey publicKey) throws NullPublicKeyException, NullUsernameException, NullUserException {
+		checkArguments(publicKey);
 		this._publicKey = publicKey;
 		this._userBoard = new UserBoard(this);
 	}
 
-	public void checkArguments(String username, PublicKey publicKey)
+	public void checkArguments(PublicKey publicKey)
 			throws NullPublicKeyException, NullUsernameException {
-		if (username == null || username.isBlank()) {
-			throw new NullUsernameException("Invalid Username: Cannot be null or blank");
-		}
-
 		if (publicKey == null) {
 			throw new NullPublicKeyException("Invalid Public Key: Cannot be null");
 		}
-	}
-
-	public String getUsername() {
-		return _username;
 	}
 
 	public PublicKey getPublicKey() {
@@ -61,7 +50,6 @@ public class User {
 
 		jsonBuilder.add("Type", "Register");
 		jsonBuilder.add("Public Key", pubKey);
-		jsonBuilder.add("User", _username);
 
 		return jsonBuilder.build();
 	}
@@ -70,7 +58,6 @@ public class User {
 			throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
 		PublicKey key = KeyFactory.getInstance("RSA")
 				.generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-		String username = request.getUsername();
-		return new User(username, key);
+		return new User(key);
 	}
 }
