@@ -29,7 +29,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
 	public ServiceDPASPersistentImpl(PersistenceManager manager) {
 		super();
-		this._manager = manager;
+		_manager = manager;
 	}
 
 	@Override
@@ -120,23 +120,19 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		User user = new User(username, key);
 		_users.put(key, user);
 	}
-
-	public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references,
-			String identifier)
+	
+	public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier) 
 			throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
 
-		Announcement announcement = new Announcement(signature, _users.get(key), message,
-				getListOfReferences(references), identifier);
+		var announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references), identifier);
 		_users.get(key).getUserBoard().post(announcement);
 		_announcements.put(announcement.getIdentifier(), announcement);
 	}
 
-	public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references,
-			String identifier)
+	public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier)
 			throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
 
-		Announcement announcement = new Announcement(signature, _users.get(key), message,
-				getListOfReferences(references), identifier);
+		var announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references), identifier);
 		_generalBoard.post(announcement);
 		_announcements.put(announcement.getIdentifier(), announcement);
 	}

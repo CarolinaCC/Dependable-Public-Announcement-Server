@@ -61,7 +61,7 @@
                         <argument>${client.KeyStoreFile}</argument>
                         <argument>${client.PublicKeyFile}</argument>
                         <argument>${server.PublicKeyFile}</argument>
-                    </arguments>-->
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

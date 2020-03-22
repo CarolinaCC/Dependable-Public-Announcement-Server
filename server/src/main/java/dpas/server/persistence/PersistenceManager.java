@@ -1,20 +1,39 @@
 package dpas.server.persistence;
 
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.server.service.ServiceDPASPersistentImpl;
-import org.apache.commons.io.FileUtils;
-
-import javax.json.*;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
+import javax.json.JsonWriter;
+
+import org.apache.commons.io.FileUtils;
+
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.server.service.ServiceDPASPersistentImpl;
 
 
 public class PersistenceManager {

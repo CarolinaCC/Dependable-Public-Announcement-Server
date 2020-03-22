@@ -30,17 +30,17 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     public ServiceDPASImpl() {
         super();
-        this._announcements = new ConcurrentHashMap<>();
-        this._users = new ConcurrentHashMap<>();
-        this._generalBoard = new GeneralBoard();
+        _announcements = new ConcurrentHashMap<>();
+        _users = new ConcurrentHashMap<>();
+        _generalBoard = new GeneralBoard();
     }
 
     @Override
     public void register(RegisterRequest request, StreamObserver<Empty> replyObserver) {
         try {
-            User user = User.fromRequest(request);
+            var user = User.fromRequest(request);
 
-            User curr = _users.putIfAbsent(user.getPublicKey(), user);
+            var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
                 //User with public key already exists
                 replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
@@ -57,7 +57,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
 
-            Announcement announcement = generateAnnouncement(request);
+            var announcement = generateAnnouncement(request);
             // post announcement
             announcement.getUser().getUserBoard().post(announcement);
             _announcements.put(announcement.getIdentifier(), announcement);
@@ -73,7 +73,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
-            Announcement announcement = generateAnnouncement(request);
+            var announcement = generateAnnouncement(request);
 
             synchronized (this) {
                 _generalBoard.post(announcement);
@@ -115,7 +115,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
 
         try {
-            ArrayList<Announcement> announcements = _generalBoard.read(request.getNumber());
+            var announcements = _generalBoard.read(request.getNumber());
 
             var announcementsGRPC = announcements.stream()
                     .map(Announcement::toContract)
