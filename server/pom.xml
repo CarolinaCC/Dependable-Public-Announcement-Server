@@ -16,6 +16,7 @@
         <server.saveFile>src/main/resources/save/save.json</server.saveFile>
         <server.keyStoreFile>src/main/resources/server.jks</server.keyStoreFile>
         <server.publicKeyFile>src/main/resources/server.der</server.publicKeyFile>
+        <server.KeyStorePassword>testtest</server.KeyStorePassword>
     </properties>
     <dependencies>
         <dependency>
@@ -70,6 +71,7 @@
                         <argument>${server.saveFile}</argument>
                         <argument>${server.keyStoreFile}</argument>
                         <argument>${server.publicKeyFile}</argument>
+                        <argument>${server.KeyStorePassword}</argument>
                         </arguments>
                 </configuration>
             </plugin>

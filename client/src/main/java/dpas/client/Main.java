@@ -20,10 +20,10 @@ public class Main {
 	public static void main(String[] args) throws FileNotFoundException, IOException, KeyStoreException,
 			NoSuchAlgorithmException, UnrecoverableKeyException, CertificateException {
 
-		if (args.length < 5) {
+		if (args.length < 6) {
 			System.out.println("Argument(s) missing!");
 			System.out.printf("<Usage> java ServerAddress ServerPort ClientKeyStoreFile "
-					+ "ClientPublicKeyFile ServerPublicKeyFile %s %n", Main.class.getName());
+					+ "ClientPublicKeyFile ServerPublicKeyFile ClientKeyStorePassword %s %n", Main.class.getName());
 			System.exit(-1);
 		}
 		String serverAddr = args[0];
@@ -94,7 +94,7 @@ public class Main {
 		System.out.println("Retrieved server public key successfully!");
 
 		System.out.println("Retrieving client private key from keystore...");
-		char[] keyStorePassword = System.console().readPassword("Enter Key Store Password: ");
+		char[] keyStorePassword = args[5].toCharArray();
 		KeyStore ks = KeyStore.getInstance("JKS");
 		PrivateKey privKey = null;
 		try (FileInputStream fis = new FileInputStream(jksFile)) {

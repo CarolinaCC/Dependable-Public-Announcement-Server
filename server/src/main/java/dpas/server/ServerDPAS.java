@@ -21,9 +21,9 @@ public class ServerDPAS {
 		System.out.println(ServerDPAS.class.getSimpleName());
 
 		// check arguments
-		if (args.length < 4) {
+		if (args.length < 5) {
 			System.err.println("Argument(s) missing!");
-			System.err.printf("<Usage> java port saveFile ServerKeyStoreFile ServerPublicKeyFile %s %n",
+			System.err.printf("<Usage> java port saveFile ServerKeyStoreFile ServerPublicKeyFile ServerKeyStorePassword %s %n",
 					ServerDPAS.class.getName());
 			return;
 		}
@@ -69,15 +69,14 @@ public class ServerDPAS {
 		System.out.println("Retrieved server public key successfully!");
 
 		System.out.println("Retrieving server private key from keystore...");
-		char[] keyStorePassword = System.console().readPassword("Enter Key Store Password: ");
+		char[] keyStorePassword = args[4].toCharArray();
 		KeyStore ks = KeyStore.getInstance("JKS");
 		PrivateKey privKey = null;
 		try (FileInputStream fis = new FileInputStream(jksFile)) {
 			ks.load(fis, keyStorePassword);
 			privKey = (PrivateKey) ks.getKey("server", keyStorePassword);
 		} catch (IOException e) {
-			System.out
-					.println("Error: Could not server client key from KeyStore (Did you input the correct password?)!");
+			System.out.println("Error: Could not server client key from KeyStore! (Is the password correct?)");
 			System.exit(-1);
 		}
 		if (!privKey.getAlgorithm().equals("RSA")) {

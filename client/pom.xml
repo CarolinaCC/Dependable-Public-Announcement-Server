@@ -16,6 +16,7 @@
         <client.KeyStoreFile>src/main/resources/client.jks</client.KeyStoreFile>
         <client.PublicKeyFile>src/main/resources/client.der</client.PublicKeyFile>
         <server.PublicKeyFile>src/main/resources/server.der</server.PublicKeyFile>
+        <client.KeyStorePassword>testtest</client.KeyStorePassword>
         <mainclass>dpas.client.Main</mainclass>
     </properties>
     <dependencies>
@@ -61,6 +62,7 @@
                         <argument>${client.KeyStoreFile}</argument>
                         <argument>${client.PublicKeyFile}</argument>
                         <argument>${server.PublicKeyFile}</argument>
+                        <argument>${client.KeyStorePassword}</argument>
                     </arguments>
                 </configuration>
             </plugin>
