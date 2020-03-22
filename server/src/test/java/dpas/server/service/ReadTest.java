@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -135,13 +136,18 @@ public class ReadTest {
 				.build());
 		
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
-
+		
+		assertEquals(announcementsGRPC.size(), 2);
+		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
 		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
 		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
-
+		assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
 	}
 
 	@Test
@@ -155,12 +161,17 @@ public class ReadTest {
 
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
+		assertEquals(announcementsGRPC.size(), 2);
+		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
 		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
 		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
-
+		assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
 	}
 
 	@Test
@@ -173,9 +184,12 @@ public class ReadTest {
 
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
+		assertEquals(announcementsGRPC.size(), 1);
+		
 		assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-
+		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature2);
 	}
 
 	@Test

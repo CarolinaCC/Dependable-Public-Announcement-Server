@@ -17,6 +17,8 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
+import com.google.protobuf.ByteString;
+
 import dpas.common.domain.exception.InvalidMessageSizeException;
 import dpas.common.domain.exception.InvalidSignatureException;
 import dpas.common.domain.exception.NullAnnouncementException;
@@ -133,6 +135,8 @@ public class Announcement {
 				.setMessage(_message)
 				.addAllReferences(announcementToIdentifier)
 				.setIdentifier(_identifier)
+				.setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
+				.setSignature(ByteString.copyFrom(_signature))
 				.build();
 	}
 

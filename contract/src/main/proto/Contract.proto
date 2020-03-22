@@ -51,5 +51,7 @@ message Announcement {
     string message = 1;
     string identifier = 2;
     repeated string references = 3;
+    bytes publicKey = 4;
+    bytes signature = 5;
 }
 

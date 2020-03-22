@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ public class ReadGeneralTest {
 	private Server _server;
 	private ManagedChannel _channel;
 	private PublicKey _publicKey;
+	private byte[] _signature;
 
 	private static final String MESSAGE = "Message to sign";
 
@@ -54,7 +56,7 @@ public class ReadGeneralTest {
 		Signature sign = Signature.getInstance("SHA256withRSA");
 		sign.initSign(privateKey);
 		sign.update(MESSAGE.getBytes());
-		byte[] _signature = sign.sign();
+		_signature = sign.sign();
 
 		final BindableService impl = new ServiceDPASImpl();
 
@@ -92,8 +94,12 @@ public class ReadGeneralTest {
 
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
+		assertEquals(announcementsGRPC.size(), 1);
+		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}
 
 	@Test
@@ -102,8 +108,12 @@ public class ReadGeneralTest {
 
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
+		assertEquals(announcementsGRPC.size(), 1);
+		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}
 
 	@Test
@@ -113,9 +123,12 @@ public class ReadGeneralTest {
 
 		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
+		assertEquals(announcementsGRPC.size(), 1);
+		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-
+		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}
 
 	@Test
