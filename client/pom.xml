@@ -12,6 +12,11 @@
     </parent>
 
     <properties>
+        <server.ip>localhost</server.ip>
+        <server.port>9000</server.port>
+        <client.KeyStoreFile>src/main/resources/client.jks</client.KeyStoreFile>
+        <client.PublicKeyFile>src/main/resources/client.der</client.PublicKeyFile>
+        <server.PublicKeyFile>src/main/resources/server.der</server.PublicKeyFile>
         <mainclass>dpas.client.Main</mainclass>
     </properties>
     <dependencies>
@@ -51,8 +56,12 @@
                     <!-- to prevent deprecation warning: -->
                     <killAfter>-1</killAfter>
                     <mainClass>${mainclass}</mainClass>
-                    <!--<arguments>
+                    <arguments>
+                        <argument>${server.ip}</argument>
                         <argument>${server.port}</argument>
+                        <argument>${client.KeyStoreFile}</argument>
+                        <argument>${client.PublicKeyFile}</argument>
+                        <argument>${server.PublicKeyFile}</argument>
                     </arguments>-->
                 </configuration>
             </plugin>

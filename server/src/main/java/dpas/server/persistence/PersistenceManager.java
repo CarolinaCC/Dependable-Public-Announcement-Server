@@ -32,7 +32,7 @@ public class PersistenceManager {
         if (!Files.exists(Paths.get(path))) {
             //File does not exist, start a new save file
             file.createNewFile();
-            FileUtils.writeStringToFile(file, "\"operation\" : []", StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(file, "{ \"Operations\" : [] }", StandardCharsets.UTF_8);
         }
         _path = path;
         _swapFile = new File(file.getPath() + ".swap");
