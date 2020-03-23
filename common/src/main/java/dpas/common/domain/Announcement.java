@@ -2,6 +2,7 @@ package dpas.common.domain;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -162,5 +163,20 @@ public class Announcement {
 		jsonBuilder.add("References", builder.build());
 
 		return jsonBuilder.build();
+	}
+	
+	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, List<String> references, PublicKey boardKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+		var builder = new StringBuilder();
+		builder.append(message);
+		builder.append(identifier);
+		references.forEach(ref -> builder.append(ref));
+		builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
+		
+		byte[] messageBytes = builder.toString().getBytes();
+		
+		Signature sign = Signature.getInstance("SHA256withRSA");
+		sign.initSign(privKey);
+		sign.update(messageBytes);
+		return sign.sign();
 	}
 }

@@ -25,8 +25,7 @@ public class AnnouncementTest {
     private User _user;
 
     @Before
-    public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NullPublicKeyException, NullUsernameException, NullMessageException,
-            NullSignatureException, NullUserException, NullAnnouncementException, InvalidSignatureException, UnsupportedEncodingException, InvalidMessageSizeException {
+    public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException, CommonDomainException {
 
         //Generate public key
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
@@ -56,7 +55,7 @@ public class AnnouncementTest {
         byte[] otherSignature = sign.sign();
 
         User otherUser = new User(otherPublicKey);
-        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null);
+        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, publicKey);
 
         //Add it to references
         _references.add(ref);
@@ -72,7 +71,7 @@ public class AnnouncementTest {
             InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
             UnsupportedEncodingException, InvalidMessageSizeException {
 
-        Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references);
+        Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references, publicKey);
         assertEquals(announcement.getSignature(), _signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
