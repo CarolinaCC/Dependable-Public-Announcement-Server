@@ -12,21 +12,12 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.UUID;
 
+import dpas.common.domain.exception.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import dpas.common.domain.exception.InvalidMessageSizeException;
-import dpas.common.domain.exception.InvalidNumberOfPostsException;
-import dpas.common.domain.exception.InvalidSignatureException;
-import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullAnnouncementException;
-import dpas.common.domain.exception.NullMessageException;
-import dpas.common.domain.exception.NullPublicKeyException;
-import dpas.common.domain.exception.NullSignatureException;
-import dpas.common.domain.exception.NullUserException;
-import dpas.common.domain.exception.NullUsernameException;
 
 public class UserBoardTest {
 
@@ -39,31 +30,28 @@ public class UserBoardTest {
     private static final String SECOND_MESSAGE = "Second Message";
 
     @Before
-    public void setup() throws NullPublicKeyException, NullUsernameException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, NullMessageException, UnsupportedEncodingException, NullSignatureException, NullUserException, InvalidMessageSizeException, NullAnnouncementException, InvalidSignatureException {
+    public void setup() throws CommonDomainException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         // generate user A
+
+        String identifier = UUID.randomUUID().toString();
+        String identifier2 =  UUID.randomUUID().toString();
+        String identifierInvalid =  UUID.randomUUID().toString();
+
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         User user = new User(publicKey);
 
-        //Generate valid signature for first message
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(keyPair.getPrivate());
-        sign.update(FIRST_MESSAGE.getBytes());
-        byte[] signature = sign.sign();
+        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, identifier, null, publicKey);
 
         // Generate Announcement A
-        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null);
+        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, publicKey);
 
         //Generate valid signature for second message
-        sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(keyPair.getPrivate());
-        sign.update(SECOND_MESSAGE.getBytes());
-        signature = sign.sign();
+        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, identifier, null, publicKey);
 
-        _announcementValid2 = new Announcement(signature, user, SECOND_MESSAGE, new ArrayList<Announcement>(Collections.singletonList(_announcementValid)));
-
+        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, new ArrayList<Announcement>(Collections.singletonList(_announcementValid)), identifier2, publicKey);
 
         // Get UserBoard
         _userBoard = user.getUserBoard();
@@ -74,13 +62,11 @@ public class UserBoardTest {
         keyPair = keygen.generateKeyPair();
         publicKey = keyPair.getPublic();
         user = new User(publicKey);
-        //Generate valid signature
-        sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(keyPair.getPrivate());
-        sign.update(FIRST_MESSAGE.getBytes());
-        signature = sign.sign();
+
+        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, identifierInvalid, null, publicKey);
+
         // Generate Announcement B
-        _announcementInvalid = new Announcement(signature, user, FIRST_MESSAGE, null);
+        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, identifierInvalid, publicKey);
     }
 
     @After
