@@ -11,10 +11,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 
-import dpas.client.library.Library;
+import dpas.client.library.Library;		
 
 public class App {
 	public static void main(String[] args) throws FileNotFoundException, IOException, KeyStoreException,
