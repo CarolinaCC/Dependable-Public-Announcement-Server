@@ -14,7 +14,7 @@ public class UserBoard extends AnnouncementBoard {
 	}
 
 	@Override
-	public void post(Announcement announcement) throws NullAnnouncementException, InvalidUserException {
+	public synchronized void post(Announcement announcement) throws NullAnnouncementException, InvalidUserException {
 		checkArguments(announcement);
 		_posts.add(announcement);
 	}

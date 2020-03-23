@@ -36,20 +36,20 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void register(RegisterRequest request, StreamObserver<Empty> replyObserver) {
+    public void register(RegisterRequest request, StreamObserver<Empty> responseObserver) {
         try {
             var user = User.fromRequest(request);
 
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
                 //User with public key already exists
-                replyObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
-                replyObserver.onNext(Empty.newBuilder().build());
-                replyObserver.onCompleted();
+                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onCompleted();
             }
         } catch (Exception e) {
-            replyObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
         }
     }
 
@@ -58,13 +58,16 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         try {
 
             var announcement = generateAnnouncement(request);
-            // post announcement
-            announcement.getUser().getUserBoard().post(announcement);
-            _announcements.put(announcement.getIdentifier(), announcement);
-
-            responseObserver.onNext(Empty.newBuilder().build());
-            responseObserver.onCompleted();
-
+    
+            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            if (curr != null) {
+            	//Announcement with that identifier already exists
+            	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+            } else {
+            	announcement.getUser().getUserBoard().post(announcement);
+                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onCompleted();	
+            }
         } catch (Exception e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
         }
@@ -74,16 +77,17 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             var announcement = generateAnnouncement(request);
-
-            synchronized (this) {
+            
+            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            if (curr != null) {
+            	//Announcement with that identifier already exists
+            	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+            } else {
                 _generalBoard.post(announcement);
+                _announcements.put(announcement.getIdentifier(), announcement);
+                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onCompleted();
             }
-
-            _announcements.put(announcement.getIdentifier(), announcement);
-
-            responseObserver.onNext(Empty.newBuilder().build());
-            responseObserver.onCompleted();
-
         } catch (Exception e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
         }
@@ -150,6 +154,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
-        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()));
+        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), request.getIdentifier());
     }
 }

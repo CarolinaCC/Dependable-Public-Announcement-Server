@@ -9,6 +9,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -113,6 +114,7 @@ public class PostGeneralTest {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 
@@ -121,37 +123,55 @@ public class PostGeneralTest {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.setIdentifier(UUID.randomUUID().toString())
 				.setMessage(SECOND_MESSAGE).setSignature(ByteString.copyFrom(_secondSignature))
 				.build());
 	}
 
 	@Test
 	public void twoPostsWithReference() {
+		String firstIdentifier = UUID.randomUUID().toString();
+		String secondIdentifier = UUID.randomUUID().toString();
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(firstIdentifier)
 				.build());
 
-		Contract.ReadReply readReply = _stub.readGeneral(Contract.ReadRequest.newBuilder()
-				.setNumber(1)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.build());
-
-		List<Contract.Announcement> announcementsGRPC = readReply.getAnnouncementsList();
-		String validReference = announcementsGRPC.get(0).getIdentifier();
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
-				.addReferences(validReference)
+				.setIdentifier(secondIdentifier)
 				.setSignature(ByteString.copyFrom(_secondSignature))
 				.build());
 	}
 
+	@Test
+	public void twoPostsSameIdentifier() {
+		String firstIdentifier = UUID.randomUUID().toString();
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(firstIdentifier)
+				.build());
+
+		exception.expect(StatusRuntimeException.class);
+		exception.expectMessage("INVALID_ARGUMENT: Post Identifier Already Exists");
+
+		_stub.postGeneral(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.setMessage(SECOND_MESSAGE)
+				.setIdentifier(firstIdentifier)
+				.setSignature(ByteString.copyFrom(_secondSignature))
+				.build());
+	}
+	
 	@Test
 	public void postNullPublicKey() {
 		exception.expect(StatusRuntimeException.class);
@@ -159,6 +179,7 @@ public class PostGeneralTest {
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
+				.setIdentifier(UUID.randomUUID().toString())
 				.setSignature(ByteString.copyFrom(_firstSignature))
 				.build());
 	}
@@ -171,6 +192,7 @@ public class PostGeneralTest {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(INVALID_MESSAGE)
+				.setIdentifier(UUID.randomUUID().toString())
 				.setSignature(ByteString.copyFrom(_bigMessageSignature))
 				.build());
 	}
@@ -182,6 +204,7 @@ public class PostGeneralTest {
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setIdentifier(UUID.randomUUID().toString())
 				.setMessage(MESSAGE)
 				.build());
 	}
@@ -193,6 +216,7 @@ public class PostGeneralTest {
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setIdentifier(UUID.randomUUID().toString())
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
 				.build());

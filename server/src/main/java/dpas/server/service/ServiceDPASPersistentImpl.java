@@ -37,7 +37,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		try {
 			PublicKey key = KeyFactory.getInstance("RSA")
 					.generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-
 			User user = new User(key);
 
 			User curr = _users.putIfAbsent(key, user);
@@ -65,16 +64,18 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 	@Override
 	public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
 		try {
-
-			Announcement announcement = generateAnnouncement(request);
-
-			_manager.save(announcement.toJson("Post"));
-			_announcements.put(announcement.getIdentifier(), announcement);
-			announcement.getUser().getUserBoard().post(announcement);
-
-			responseObserver.onNext(Empty.newBuilder().build());
-			responseObserver.onCompleted();
-
+			var announcement = generateAnnouncement(request);
+		    
+            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            if (curr != null) {
+            	//Announcement with that identifier already	 exists
+            	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+            } else {
+            	_manager.save(announcement.toJson("Post"));
+            	announcement.getUser().getUserBoard().post(announcement);
+                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onCompleted();	
+            }
 		} catch (CommonDomainException | SignatureException e) {
 			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
 		} catch (IOException e) {
@@ -93,15 +94,17 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		try {
 			Announcement announcement = generateAnnouncement(request);
 
-			_manager.save(announcement.toJson("PostGeneral"));
-			_announcements.put(announcement.getIdentifier(), announcement);
-			synchronized (this) {
-				_generalBoard.post(announcement);
-			}
-
-			responseObserver.onNext(Empty.newBuilder().build());
-			responseObserver.onCompleted();
-
+			var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            if (curr != null) {
+            	//Announcement with that identifier already exists
+            	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+            } else {
+            	_manager.save(announcement.toJson("PostGeneral"));
+                _generalBoard.post(announcement);
+                _announcements.put(announcement.getIdentifier(), announcement);
+                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onCompleted();
+            }
 		} catch (CommonDomainException | SignatureException e) {
 			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
 		} catch (IOException e) {

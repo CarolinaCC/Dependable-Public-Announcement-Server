@@ -7,6 +7,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -106,6 +107,7 @@ public class Library {
 				.setPublicKey(ByteString.copyFrom(key.getEncoded()))
 				.setMessage(String.valueOf(message))
 				.setSignature(ByteString.copyFrom(signature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.addAllReferences(identifiers)
 				.build();
 		return postRequest;

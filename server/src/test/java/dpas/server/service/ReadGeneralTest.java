@@ -13,6 +13,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,6 +42,8 @@ public class ReadGeneralTest {
 	private ManagedChannel _channel;
 	private PublicKey _publicKey;
 	private byte[] _signature;
+	
+	private String _identifier;
 
 	private static final String MESSAGE = "Message to sign";
 
@@ -57,6 +60,8 @@ public class ReadGeneralTest {
 		sign.initSign(privateKey);
 		sign.update(MESSAGE.getBytes());
 		_signature = sign.sign();
+		
+		_identifier = UUID.randomUUID().toString();
 
 		final BindableService impl = new ServiceDPASImpl();
 
@@ -76,6 +81,7 @@ public class ReadGeneralTest {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature))
+				.setIdentifier(_identifier)
 				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
 				.build());
 	}
@@ -98,6 +104,7 @@ public class ReadGeneralTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}
@@ -112,6 +119,7 @@ public class ReadGeneralTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}
@@ -127,6 +135,7 @@ public class ReadGeneralTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}

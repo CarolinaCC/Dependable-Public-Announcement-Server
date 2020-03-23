@@ -31,8 +31,9 @@ message GeneralBoardReference {
 message PostRequest {
     bytes publicKey = 1;
     string message = 2;
-    bytes signature = 3;
-    repeated string references = 4;
+    string identifier = 3;
+    bytes signature = 4;
+    repeated string references = 5;
 }
 
 

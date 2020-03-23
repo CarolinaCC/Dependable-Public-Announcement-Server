@@ -9,6 +9,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -122,6 +123,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 
@@ -131,12 +133,14 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 
@@ -146,6 +150,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 
 		Contract.ReadReply readReply = _stub.read(Contract.ReadRequest.newBuilder()
@@ -162,6 +167,7 @@ public class PostTest {
 				.setMessage(SECOND_MESSAGE)
 				.addReferences(validReference)
 				.setSignature(ByteString.copyFrom(_secondSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 
@@ -171,6 +177,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 
 		exception.expect(StatusRuntimeException.class);
@@ -181,9 +188,31 @@ public class PostTest {
 				.setMessage(SECOND_MESSAGE)
 				.addReferences(_invalidReference)
 				.setSignature(ByteString.copyFrom(_secondSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 
+	@Test
+	public void twoPostsSameIdentifier() {
+		String identifier = UUID.randomUUID().toString();
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(identifier)
+				.build());
+
+		exception.expect(StatusRuntimeException.class);
+		exception.expectMessage("INVALID_ARGUMENT: Post Identifier Already Exists");
+
+		_stub.post(Contract.PostRequest.newBuilder()
+				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+				.setMessage(SECOND_MESSAGE)
+				.setSignature(ByteString.copyFrom(_secondSignature))
+				.setIdentifier(identifier)
+				.build());
+	}
+	
 	@Test
 	public void postNullPublicKey() {
 		exception.expect(StatusRuntimeException.class);
@@ -192,6 +221,7 @@ public class PostTest {
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 
@@ -204,6 +234,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(INVALID_MESSAGE)
 				.setSignature(ByteString.copyFrom(_bigMessageSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 
@@ -214,6 +245,7 @@ public class PostTest {
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.setIdentifier(UUID.randomUUID().toString())
 				.setMessage(MESSAGE)
 				.build());
 	}
@@ -227,6 +259,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
+				.setIdentifier(UUID.randomUUID().toString())
 				.build());
 	}
 }
