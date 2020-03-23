@@ -17,7 +17,7 @@ public class GeneralBoardTest {
     private GeneralBoard _generalBoard;
 
     @Before
-    public void setup() throws NullPublicKeyException, NullUsernameException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, NullMessageException, UnsupportedEncodingException, NullSignatureException, NullUserException, InvalidMessageSizeException, NullAnnouncementException, InvalidSignatureException {
+    public void setup() throws CommonDomainException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
         // generate user
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
@@ -32,7 +32,7 @@ public class GeneralBoardTest {
         byte[] signature = sign.sign();
 
         // Generate Announcement
-        _announcement = new Announcement(signature, userA, "MESSAGE", null);
+        _announcement = new Announcement(signature, userA, "MESSAGE", null, publicKey);
         // Generate Board
         _generalBoard = new GeneralBoard();
     }
