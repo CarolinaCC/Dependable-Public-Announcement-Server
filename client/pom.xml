@@ -17,7 +17,7 @@
         <client.PublicKeyFile>src/main/resources/client.der</client.PublicKeyFile>
         <server.PublicKeyFile>src/main/resources/server.der</server.PublicKeyFile>
         <client.KeyStorePassword>testtest</client.KeyStorePassword>
-        <mainclass>dpas.client.Main</mainclass>
+        <mainclass>dpas.client.app.App</mainclass>
     </properties>
     <dependencies>
         <dependency>

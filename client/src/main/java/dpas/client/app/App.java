@@ -1,4 +1,4 @@
-package dpas.client;
+package dpas.client.app;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,14 +16,14 @@ import java.security.cert.X509Certificate;
 
 import dpas.client.library.Library;
 
-public class Main {
+public class App {
 	public static void main(String[] args) throws FileNotFoundException, IOException, KeyStoreException,
 			NoSuchAlgorithmException, UnrecoverableKeyException, CertificateException {
 
 		if (args.length < 6) {
 			System.out.println("Argument(s) missing!");
 			System.out.printf("<Usage> java ServerAddress ServerPort ClientKeyStoreFile "
-					+ "ClientPublicKeyFile ServerPublicKeyFile ClientKeyStorePassword %s %n", Main.class.getName());
+					+ "ClientPublicKeyFile ServerPublicKeyFile ClientKeyStorePassword %s %n", App.class.getName());
 			System.exit(-1);
 		}
 		String serverAddr = args[0];
