@@ -1,35 +1,38 @@
 #!/bin/bash
 
-rm *.jks *.der *.pem *.cert
+rm *.jks 
 
 #generate Server KeyStore
-keytool -genkey \
+keytool -genkeypair \
         -alias server \
         -dname "CN=localhost" \
         -keyalg RSA \
         -validity 365 \
-        -storepass testtest \
+        -storepass server-password \
         -keystore server.jks
 
 #generate client KeyStore
-keytool -genkey \
+keytool -genkeypair \
         -alias client \
         -dname "CN=localhost" \
         -keyalg RSA \
         -validity 365 \
-        -storepass testtest \
+        -storepass client-password \
         -keystore client.jks
 
 #store server public certificate
-keytool -export \
+keytool -exportcert \
         -file server.der \
         -keystore server.jks \
-        -storepass testtest \
+        -storepass server-password \
         -alias server
 
-#store client public certificate
-keytool -export \
-        -file client.der \
-        -keystore client.jks \
-        -storepass testtest \
-        -alias client
+#store server certificate in client keystore
+keytool -importcert \
+	-file server.der \
+	-keystore client.jks \
+	-storepass client-password \
+	-noprompt \
+	-alias server
+
+rm server.der

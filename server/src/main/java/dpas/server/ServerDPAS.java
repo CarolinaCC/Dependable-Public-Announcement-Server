@@ -21,22 +21,20 @@ public class ServerDPAS {
 		System.out.println(ServerDPAS.class.getSimpleName());
 
 		// check arguments
-		if (args.length < 5) {
+		if (args.length < 6) {
 			System.err.println("Argument(s) missing!");
-			System.err.printf("<Usage> java port saveFile ServerKeyStoreFile ServerPublicKeyFile ServerKeyStorePassword %s %n",
+			System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword %s %n",
 					ServerDPAS.class.getName());
 			return;
 		}
 
 		String jksPath = args[2];
-		String pubKeyPath = args[3];
+		String jksPassword = args[3];
+		String keyPairAlias = args[4];
+		String privKeyPassword = args[5];
 
 		if (!jksPath.endsWith(".jks")) {
 			System.out.println("Invalid argument: Client key store must be a JKS file!");
-			System.exit(-1);
-		}
-		if (!pubKeyPath.endsWith(".der")) {
-			System.out.println("Invalid Argument: Client Public Key must be in der format!");
 			System.exit(-1);
 		}
 
@@ -45,46 +43,32 @@ public class ServerDPAS {
 			System.out.println("Invalid Argument: Client Key Store File must exist and must not be a directory!");
 			System.exit(-1);
 		}
-		File pubKeyFile = new File(pubKeyPath);
-		if (!pubKeyFile.exists() || pubKeyFile.isDirectory()) {
-			System.out.println("Invalid Argument: Client Public Key File must exist and must not be a directory!");
+		
+		System.out.println("Retrieving server key pair from keystore...");
+		KeyStore ks = KeyStore.getInstance("JKS");
+		PrivateKey privKey = null;
+		PublicKey pubKey = null;
+		try (FileInputStream fis = new FileInputStream(jksFile)) {
+			ks.load(fis, jksPassword.toCharArray());
+			privKey = (PrivateKey) ks.getKey(keyPairAlias, privKeyPassword.toCharArray());
+			pubKey = (PublicKey) ks.getCertificate(keyPairAlias).getPublicKey();
+		} catch (IOException e) {
+			System.out.println("Error: Could not get server key pair from KeyStore! (Are the password and alias correct?)");
 			System.exit(-1);
 		}
-
-		CertificateFactory factory = CertificateFactory.getInstance("X.509");
-
-		System.out.println("Retrieving server public key from certificate...");
-		X509Certificate serverKeyCertificate = null;
-		try (FileInputStream fis = new FileInputStream(pubKeyFile)) {
-			serverKeyCertificate = (X509Certificate) factory.generateCertificate(fis);
-		} catch (CertificateException e) {
-			System.out.println("Error: Could not retrieve server public key from file provided!");
+		if (!privKey.getAlgorithm().equals("RSA")) {
+			System.out.println("Error: Server private key must be an RSA key");
 			System.exit(-1);
 		}
-		PublicKey pubKey = serverKeyCertificate.getPublicKey();
 		if (!pubKey.getAlgorithm().equals("RSA")) {
 			System.out.println("Error: Server public key must be an RSA key");
 			System.exit(-1);
 		}
-		System.out.println("Retrieved server public key successfully!");
-
-		System.out.println("Retrieving server private key from keystore...");
-		char[] keyStorePassword = args[4].toCharArray();
-		KeyStore ks = KeyStore.getInstance("JKS");
-		PrivateKey privKey = null;
-		try (FileInputStream fis = new FileInputStream(jksFile)) {
-			ks.load(fis, keyStorePassword);
-			privKey = (PrivateKey) ks.getKey("server", keyStorePassword);
-		} catch (IOException e) {
-			System.out.println("Error: Could not server client key from KeyStore! (Is the password correct?)");
-			System.exit(-1);
-		}
-		if (!privKey.getAlgorithm().equals("RSA")) {
-			System.out.println("Error: Client server key must be an RSA key");
-			System.exit(-1);
-		}
-		System.out.println("Retrieved server private key successfully!");
-
+		
+		System.out.println("Retrieved server key pair successfully!");
+		
+		
+		
 		Server server = startServer(Integer.parseInt(args[0]), args[1]);
 
 		// Do not exit the main thread. Wait until server is terminated.

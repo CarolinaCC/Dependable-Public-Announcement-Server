@@ -14,9 +14,10 @@
         <server.ip>localhost</server.ip>
         <server.port>9000</server.port>
         <client.KeyStoreFile>src/main/resources/client.jks</client.KeyStoreFile>
-        <client.PublicKeyFile>src/main/resources/client.der</client.PublicKeyFile>
-        <server.PublicKeyFile>src/main/resources/server.der</server.PublicKeyFile>
-        <client.KeyStorePassword>testtest</client.KeyStorePassword>
+        <client.KeyStorePassword>client-password</client.KeyStorePassword>
+        <client.KeyPairAlias>client</client.KeyPairAlias>
+        <client.PrivateKeyPassword>client-password</client.PrivateKeyPassword>
+        <server.PublicKeyAlias>server</server.PublicKeyAlias>
         <mainclass>dpas.client.app.App</mainclass>
     </properties>
     <dependencies>
@@ -60,9 +61,9 @@
                         <argument>${server.ip}</argument>
                         <argument>${server.port}</argument>
                         <argument>${client.KeyStoreFile}</argument>
-                        <argument>${client.PublicKeyFile}</argument>
-                        <argument>${server.PublicKeyFile}</argument>
                         <argument>${client.KeyStorePassword}</argument>
+                        <argument>${client.KeyPairAlias}</argument>
+                        <argument>${server.PublicKeyAlias}</argument>
                     </arguments>
                 </configuration>
             </plugin>

@@ -15,8 +15,9 @@
         <server.port>9000</server.port>
         <server.saveFile>src/main/resources/save/save.json</server.saveFile>
         <server.keyStoreFile>src/main/resources/server.jks</server.keyStoreFile>
-        <server.publicKeyFile>src/main/resources/server.der</server.publicKeyFile>
-        <server.KeyStorePassword>testtest</server.KeyStorePassword>
+        <server.publicKeyAlias>server</server.publicKeyAlias>
+        <server.KeyStorePassword>server-password</server.KeyStorePassword>
+        <server.PrivateKeyPassword>server-password</server.PrivateKeyPassword>
     </properties>
     <dependencies>
         <dependency>
@@ -70,8 +71,9 @@
                         <argument>${server.port}</argument>
                         <argument>${server.saveFile}</argument>
                         <argument>${server.keyStoreFile}</argument>
-                        <argument>${server.publicKeyFile}</argument>
                         <argument>${server.KeyStorePassword}</argument>
+                        <argument>${server.publicKeyAlias}</argument>
+                        <argumennt>${server.PrivateKeyPassword}</argumennt>
                         </arguments>
                 </configuration>
             </plugin>
