@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -15,6 +16,7 @@ public class GeneralBoardTest {
 
     private Announcement _announcement;
     private GeneralBoard _generalBoard;
+    private String _identifier;
 
     @Before
     public void setup() throws CommonDomainException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
@@ -30,9 +32,11 @@ public class GeneralBoardTest {
         sign.initSign(keyPair.getPrivate());
         sign.update("MESSAGE".getBytes());
         byte[] signature = sign.sign();
+        
+        _identifier = UUID.randomUUID().toString();
 
         // Generate Announcement
-        _announcement = new Announcement(signature, userA, "MESSAGE", null, publicKey);
+        _announcement = new Announcement(signature, userA, "MESSAGE", null, _identifier, publicKey);
         // Generate Board
         _generalBoard = new GeneralBoard();
     }

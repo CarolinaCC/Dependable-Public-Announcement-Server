@@ -8,7 +8,9 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -72,9 +74,11 @@ public class AnnouncementTest {
     @Test
     public void validAnnouncement() throws InvalidKeyException, NoSuchAlgorithmException,
             SignatureException, UnsupportedEncodingException, CommonDomainException {
-
-        Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references, _pubKey);
-        assertEquals(announcement.getSignature(), _signature);
+    	List<String> refs = _references.stream().map(Announcement::getIdentifier).collect(Collectors.toList());
+    	byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, _identifier, refs, _pubKey);
+    	
+        Announcement announcement = new Announcement(signature, _user, MESSAGE, _references, _identifier, _pubKey);
+        assertEquals(announcement.getSignature(), signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
         assertEquals(announcement.getReferences(), _references);

@@ -11,6 +11,7 @@ public class UserBoard extends AnnouncementBoard {
 		if (user == null)
 			throw new NullUserException("Invalid User: Cannot be null");
 		_owner = user;
+		_publicKey = user.getPublicKey();
 	}
 
 	@Override

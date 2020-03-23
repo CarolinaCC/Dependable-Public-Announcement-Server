@@ -25,6 +25,10 @@ public class UserBoardTest {
     private Announcement _announcementValid2;
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
+    
+    private String _identifier;
+    private String _identifier2;
+    private String _identifierInvalid;
 
     private static final String FIRST_MESSAGE = "Message";
     private static final String SECOND_MESSAGE = "Second Message";
@@ -33,9 +37,9 @@ public class UserBoardTest {
     public void setup() throws CommonDomainException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         // generate user A
 
-        String identifier = UUID.randomUUID().toString();
-        String identifier2 =  UUID.randomUUID().toString();
-        String identifierInvalid =  UUID.randomUUID().toString();
+        _identifier = UUID.randomUUID().toString();
+        _identifier2 =  UUID.randomUUID().toString();
+        _identifierInvalid =  UUID.randomUUID().toString();
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
@@ -43,15 +47,15 @@ public class UserBoardTest {
         PublicKey publicKey = keyPair.getPublic();
         User user = new User(publicKey);
 
-        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, identifier, null, publicKey);
+        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifier, null, publicKey);
 
         // Generate Announcement A
-        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, publicKey);
+        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, _identifier ,publicKey);
 
         //Generate valid signature for second message
-        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, identifier, null, publicKey);
+        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, _identifier2, null, publicKey);
 
-        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, new ArrayList<Announcement>(Collections.singletonList(_announcementValid)), identifier2, publicKey);
+        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, new ArrayList<Announcement>(Collections.singletonList(_announcementValid)), _identifier2, publicKey);
 
         // Get UserBoard
         _userBoard = user.getUserBoard();
@@ -63,10 +67,10 @@ public class UserBoardTest {
         publicKey = keyPair.getPublic();
         user = new User(publicKey);
 
-        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, identifierInvalid, null, publicKey);
+        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifierInvalid, null, publicKey);
 
         // Generate Announcement B
-        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, identifierInvalid, publicKey);
+        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, _identifierInvalid, publicKey);
     }
 
     @After

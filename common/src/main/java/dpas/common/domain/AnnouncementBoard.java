@@ -1,5 +1,6 @@
 package dpas.common.domain;
 
+import java.security.PublicKey;
 import java.util.ArrayList;
 
 import dpas.common.domain.exception.InvalidNumberOfPostsException;
@@ -9,6 +10,11 @@ import dpas.common.domain.exception.NullUserException;
 
 public abstract class AnnouncementBoard {
 	protected ArrayList<Announcement> _posts = new ArrayList<>();
+	protected PublicKey _publicKey;
+	
+	public PublicKey getPublicKey() {
+		return _publicKey;
+	}
 
 	public abstract void post(Announcement announcement)
 			throws NullAnnouncementException, NullUserException, InvalidUserException;
