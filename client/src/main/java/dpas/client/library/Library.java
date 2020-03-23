@@ -120,7 +120,9 @@ public class Library {
 		signature.initSign(privateKey);
 		signature.update(String.valueOf(message).getBytes());
 
-		return createPostRequest(key, message, a, signature.sign());
+		return null;
+		//return createPostRequest(key, message, a,
+		//		dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message), identifier, Stream.of(a).map(Announcement::getIdentifier), key ));
 	}
 
 }

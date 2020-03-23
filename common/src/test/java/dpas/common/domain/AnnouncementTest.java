@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -22,7 +23,12 @@ public class AnnouncementTest {
 
     private ArrayList<Announcement> _references = new ArrayList<>();
     private byte[] _signature;
+    private String _identifier;
+    
     private User _user;
+    
+    private PublicKey _pubKey;
+    private PrivateKey _privKey;
 
     @Before
     public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException, CommonDomainException {
@@ -31,17 +37,16 @@ public class AnnouncementTest {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(2048);
         KeyPair keyPair = keygen.generateKeyPair();
-        PrivateKey privateKey = keyPair.getPrivate();
-        PublicKey publicKey = keyPair.getPublic();
-
-        //Generate valid signature
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(privateKey);
-        sign.update(MESSAGE_BYTES);
-        this._signature = sign.sign();
+        _privKey = keyPair.getPrivate();
+        _pubKey = keyPair.getPublic();
 
         //Generate user
-        this._user = new User(publicKey);
+        this._user = new User(_pubKey);
+
+        _identifier = UUID.randomUUID().toString();
+        this._signature = Announcement.generateSignature(_privKey, MESSAGE, _identifier, new ArrayList<String>(), _pubKey);
+
+
 
         //Create another announcement
         KeyPairGenerator otherKeyGen = KeyPairGenerator.getInstance("RSA");
@@ -50,12 +55,10 @@ public class AnnouncementTest {
         PublicKey otherPublicKey = otherKeyPair.getPublic();
         PrivateKey otherPrivateKey = otherKeyPair.getPrivate();
 
-        sign.initSign(otherPrivateKey);
-        sign.update(OTHER_MESSAGE.getBytes());
-        byte[] otherSignature = sign.sign();
-
+        byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, _identifier, new ArrayList<String>(), _pubKey);
+        	
         User otherUser = new User(otherPublicKey);
-        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, publicKey);
+        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, _identifier, _pubKey);
 
         //Add it to references
         _references.add(ref);
@@ -67,11 +70,10 @@ public class AnnouncementTest {
     }
 
     @Test
-    public void validAnnouncement() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
-            UnsupportedEncodingException, InvalidMessageSizeException {
+    public void validAnnouncement() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-        Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references, publicKey);
+        Announcement announcement = new Announcement(_signature, _user, MESSAGE, _references, _pubKey);
         assertEquals(announcement.getSignature(), _signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
@@ -79,11 +81,10 @@ public class AnnouncementTest {
     }
 
     @Test
-    public void validAnnouncementNullReference() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
-            UnsupportedEncodingException, InvalidMessageSizeException {
+    public void validAnnouncementNullReference() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-        Announcement announcement = new Announcement(_signature, _user, MESSAGE, null);
+        Announcement announcement = new Announcement(_signature, _user, MESSAGE, null, _identifier, _pubKey);
         assertEquals(announcement.getSignature(), _signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
@@ -91,56 +92,50 @@ public class AnnouncementTest {
     }
 
     @Test(expected = NullSignatureException.class)
-    public void nullSignature() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException,
-            NullAnnouncementException, UnsupportedEncodingException, InvalidMessageSizeException {
+    public void nullSignature() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-        new Announcement(null, _user, MESSAGE, _references);
+        new Announcement(null, _user, MESSAGE, _references, _identifier, _pubKey);
     }
 
 
     @Test(expected = NullUserException.class)
-    public void nullUser() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
-            UnsupportedEncodingException, InvalidMessageSizeException {
+    public void nullUser() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-        new Announcement(_signature, null, MESSAGE, _references);
+        new Announcement(_signature, null, MESSAGE, _references, _identifier, _pubKey);
     }
 
     @Test(expected = NullMessageException.class)
-    public void nullMessage() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
-            UnsupportedEncodingException, InvalidMessageSizeException {
+    public void nullMessage() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-    	new Announcement(_signature, _user, null, _references);
+    	new Announcement(_signature, _user, null, _references, _identifier, _pubKey);
     }
 
     @Test(expected = NullAnnouncementException.class)
-    public void nullReferences() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
-            UnsupportedEncodingException, InvalidMessageSizeException {
+    public void nullReferences() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
 
         ArrayList<Announcement> refNullElement = new ArrayList<>();
         refNullElement.add(null);
 
-        new Announcement(_signature, _user, MESSAGE, refNullElement);
+        new Announcement(_signature, _user, MESSAGE, refNullElement, _identifier, _pubKey);
     }
 
     @Test(expected = InvalidSignatureException.class)
-    public void invalidSignature() throws InvalidKeyException, NullMessageException, NoSuchAlgorithmException,
-            InvalidSignatureException, NullSignatureException, NullUserException, SignatureException, NullAnnouncementException,
-            UnsupportedEncodingException, InvalidMessageSizeException {
+    public void invalidSignature() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
 
         byte[] invalidSig = "InvalidSignature".getBytes();
-        new Announcement(invalidSig, _user, MESSAGE, _references);
+        new Announcement(invalidSig, _user, MESSAGE, _references, _identifier, _pubKey);
     }
 
     @Test(expected = InvalidMessageSizeException.class)
     public void invalidMessage() throws InvalidKeyException, NoSuchAlgorithmException, UnsupportedEncodingException,
-            NullMessageException, SignatureException, InvalidSignatureException, NullSignatureException,
-            NullUserException, NullAnnouncementException, InvalidMessageSizeException {
+            SignatureException, CommonDomainException {
 
-        new Announcement(_signature, _user, INVALID_MESSAGE, _references);
+        new Announcement(_signature, _user, INVALID_MESSAGE, _references, _identifier, _pubKey);
     }
 
 
