@@ -20,10 +20,10 @@ public class App {
 	public static void main(String[] args) throws FileNotFoundException, IOException, KeyStoreException,
 			NoSuchAlgorithmException, UnrecoverableKeyException, CertificateException {
 
-		if (args.length < 6) {
+		if (args.length < 7) {
 			System.out.println("Argument(s) missing!");
 			System.out.printf("<Usage> java ServerAddress ServerPort KeyStoreFile "
-					+ "KeyStorePassword ClientKeyPairAlias ServerPublicKeyAlias %s %n", App.class.getName());
+					+ "KeyStorePassword ClientKeyPairAlias PrivateKeyPassword ServerPublicKeyAlias %s %n", App.class.getName());
 			System.exit(-1);
 		}
 		String serverAddr = args[0];
@@ -31,7 +31,8 @@ public class App {
 		String jksPath = args[2];
 		String jksPassword = args[3];
 		String keyPairAlias = args[4];
-		String serverCertAlias = args[5];
+		String privKeyPassword = args[5];
+		String serverCertAlias = args[6];
 
 		if (!jksPath.endsWith(".jks")) {
 			System.out.println("Invalid argument: Client key store must be a JKS file!");
@@ -51,7 +52,7 @@ public class App {
 		PublicKey serverPubKey = null;
 		try (FileInputStream fis = new FileInputStream(jksFile)) {
 			ks.load(fis, jksPassword.toCharArray());
-			privKey = (PrivateKey) ks.getKey("client", jksPassword.toCharArray());
+			privKey = (PrivateKey) ks.getKey(keyPairAlias, privKeyPassword.toCharArray());
 			pubKey = ks.getCertificate(keyPairAlias).getPublicKey();
 			serverPubKey = ks.getCertificate(serverCertAlias).getPublicKey();
 		} catch (IOException | UnrecoverableKeyException e) {
