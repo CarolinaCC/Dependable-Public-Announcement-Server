@@ -4,34 +4,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import com.google.protobuf.ByteString;
-import dpas.client.library.Library;
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidSignatureException;
-import dpas.grpc.contract.Contract;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Base64;
+import java.util.UUID;
 
 import dpas.client.library.Library;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 
 public class App {
 
-	public static void main(String[] args) throws FileNotFoundException, IOException, KeyStoreException,
-			NoSuchAlgorithmException, UnrecoverableKeyException, CertificateException {
+	public static void main(String[] args) {
 
 		if (args.length < 2) {
 			System.out.println("Argument(s) missing!");
@@ -43,6 +32,7 @@ public class App {
 		
 		Library lib = new Library(serverAddr, port);
 		while(true) {
+
 			String line = System.console().readLine("Enter Command: ");
 			String[] split = line.split(" ");
 			if(split.length == 0) {
@@ -183,8 +173,8 @@ public class App {
 			}
 			System.out.println("Signature: "+ Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
 			System.out.println("Author: " + Base64.getEncoder().encodeToString(announcement.getPublicKey().toByteArray()));
+			System.out.println();
 		}
-		System.out.println();
 	}
 	
 	public static void printHelp() {
@@ -203,9 +193,15 @@ public class App {
 		try {
 			String [] split = line.split(" ");
 			if (split.length < 3) {
-				System.out.println("Invalid argument: Must be post post/postGeneral <KeyStorePath> <message> <numReferences <references...>");
+				System.out.println("Invalid argument: Must be post/postGeneral <KeyStorePath> <message> <numReferences <references...>");
 				return;
 			}
+			
+			if (split.length != 4 + Integer.parseInt(split[3])) {
+				System.out.println("Invalid Argument: Number of references provided does not match real value");
+				return;
+			}
+			
 			String jksPath = split[1];
 
 			if (!jksPath.endsWith(".jks")) {
@@ -222,10 +218,10 @@ public class App {
 			String message = split[2];
 			String identifier = UUID.randomUUID().toString();
 
-			char[] jksPassword = System.console().readPassword("Insert JSK Password: ");
-			String keyPairAlias = System.console().readLine("Insert Certificate alias: ");
+			char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
+			String keyPairAlias = System.console().readLine("Insert Certificate Alias: ");
 
-			char[] privKeyPassword = System.console().readPassword("Insert Private Key Password: ");
+			char[] privKeyPassword = System.console().readPassword("Insert PrivateKey Password: ");
 			KeyStore ks = KeyStore.getInstance("JKS");
 
 			PublicKey pubKey = null;
@@ -240,7 +236,7 @@ public class App {
 			int numberOfReferences = Integer.parseInt(split[3]);
 
 			Contract.Announcement[] refs = new Contract.Announcement[numberOfReferences];
-			for (int i = 3, j = 0; i < 3 + numberOfReferences; i++, j++) {
+			for (int i = 4, j = 0; i < 4 + numberOfReferences; i++, j++) {
 				refs[j] = Contract.Announcement.newBuilder()
 						.setIdentifier(split[i])
 						.build();

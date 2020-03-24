@@ -92,7 +92,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 	@Override
 	public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
 		try {
-			Announcement announcement = generateAnnouncement(request);
+			Announcement announcement = generateAnnouncement(request, _generalBoard);
 
 			var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
