@@ -1,10 +1,7 @@
 package dpas.client.library;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -61,26 +58,30 @@ public class Library {
 		}
 	}
 
-	public Announcement[] read(PublicKey publicKey, String username, int number) {
+	public Announcement[] read(PublicKey publicKey, int number) {
 		try {
 			var reply = _stub.read(Contract.ReadRequest.newBuilder()
 							.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
 							.setNumber(number)
 							.build());
-			return (Announcement[]) reply.getAnnouncementsList().toArray();
+			var a = new Announcement[reply.getAnnouncementsCount()];
+			reply.getAnnouncementsList().toArray(a);
+			return a;
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
-			return null;
+			return new Announcement[0];
 		}
 	}
 
 	public Announcement[] readGeneral(int number) {
 		try {
 			Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(number).build());
-			return (Announcement[]) reply.getAnnouncementsList().toArray();
+			var a = new Announcement[reply.getAnnouncementsCount()];
+			reply.getAnnouncementsList().toArray(a);
+			return a;
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
-			return null;
+			return new Announcement[0];
 		}
 	}
 
