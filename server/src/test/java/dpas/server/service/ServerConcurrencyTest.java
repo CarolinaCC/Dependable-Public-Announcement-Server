@@ -143,7 +143,9 @@ public class ServerConcurrencyTest {
                     });
         }
         synchronized (t) {
-            t.wait();
+            if (t.get() != 0) {
+                t.wait();
+            }
         }
         Contract.ReadReply reply = _blockingStub.read(
                 Contract.ReadRequest.newBuilder()
@@ -194,7 +196,9 @@ public class ServerConcurrencyTest {
                     });
         }
         synchronized (t) {
-            t.wait();
+            if (t.get() != 0) {
+                t.wait();
+            }
         }
         Contract.ReadReply reply = _blockingStub.readGeneral(
                 Contract.ReadRequest.newBuilder()
