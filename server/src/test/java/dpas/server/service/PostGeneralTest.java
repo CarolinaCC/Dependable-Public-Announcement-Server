@@ -131,7 +131,8 @@ public class PostGeneralTest {
 	public void postSuccess() {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+				.setMessage(MESSAGE)
+				.setSignature(ByteString.copyFrom(_firstSignature))
 				.setIdentifier(_firstIdentifier)
 				.build());
 	}
