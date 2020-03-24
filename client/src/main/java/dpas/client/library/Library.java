@@ -61,7 +61,7 @@ public class Library {
 		}
 	}
 
-	public Announcement[] read(PublicKey publicKey, String username, int number) {
+	public Announcement[] read(PublicKey publicKey, int number) {
 		try {
 			var reply = _stub.read(Contract.ReadRequest.newBuilder()
 							.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
