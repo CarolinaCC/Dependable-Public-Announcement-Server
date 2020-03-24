@@ -19,6 +19,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -60,15 +61,15 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         try {
 
             var announcement = generateAnnouncement(request);
-    
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+
+            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-            	//Announcement with that identifier already exists
-            	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                //Announcement with that identifier already exists
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-            	announcement.getUser().getUserBoard().post(announcement);
+                announcement.getUser().getUserBoard().post(announcement);
                 responseObserver.onNext(Empty.newBuilder().build());
-                responseObserver.onCompleted();	
+                responseObserver.onCompleted();
             }
         } catch (Exception e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
@@ -79,11 +80,11 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             var announcement = generateAnnouncement(request, _generalBoard);
-            
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+
+            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-            	//Announcement with that identifier already exists
-            	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                //Announcement with that identifier already exists
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 _generalBoard.post(announcement);
                 _announcements.put(announcement.getIdentifier(), announcement);
@@ -154,19 +155,19 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
-        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), request.getIdentifier(), board);
+        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), UUID.randomUUID().toString(), board);
     }
 
     protected Announcement generateAnnouncement(Contract.PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
-        
+
         User user = _users.get(key);
         if (user == null) {
-        	throw new InvalidUserException("User does not exist");
+            throw new InvalidUserException("User does not exist");
         }
-        return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), request.getIdentifier(), user.getUserBoard());
+        return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), UUID.randomUUID().toString(), user.getUserBoard());
     }
-    
+
 }

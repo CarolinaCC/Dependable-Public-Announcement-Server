@@ -66,7 +66,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		try {
 			var announcement = generateAnnouncement(request);
 		    
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
             	//Announcement with that identifier already	 exists
             	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
@@ -94,7 +94,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		try {
 			Announcement announcement = generateAnnouncement(request, _generalBoard);
 
-			var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+			var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
             	//Announcement with that identifier already exists
             	responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
@@ -124,7 +124,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 	}
 	
 	public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier) 
-			throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
+			throws CommonDomainException {
 
 		var refs = getListOfReferences(references);
 		var user = _users.get(key);
@@ -132,11 +132,11 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		
 		var announcement = new Announcement(signature, user, message, refs, identifier, board);
 		board.post(announcement);
-		_announcements.put(announcement.getIdentifier(), announcement);
+		_announcements.put(announcement.getHash(), announcement);
 	}
 
 	public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier)
-			throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
+			throws CommonDomainException {
 		
 		var refs = getListOfReferences(references);
 		var user = _users.get(key);
@@ -144,7 +144,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		
 		var announcement = new Announcement(signature, user, message, refs, identifier, board);
 		_generalBoard.post(announcement);
-		_announcements.put(announcement.getIdentifier(), announcement);
+		_announcements.put(announcement.getHash(), announcement);
 	}
 
 	public ConcurrentHashMap<PublicKey, User> getUsers() {

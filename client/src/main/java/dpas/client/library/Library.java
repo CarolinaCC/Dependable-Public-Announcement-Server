@@ -38,9 +38,9 @@ public class Library {
 
 	}
 
-	public void post(PublicKey key, char[] message, Announcement[] a, String identifier, PrivateKey privateKey) {
+	public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
 		try {
-			_stub.post(createPostRequest(key, message, a, identifier, privateKey));
+			_stub.post(createPostRequest(key, message, a, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		} catch (CommonDomainException e) {
@@ -48,9 +48,9 @@ public class Library {
 		}
 	}
 
-	public void postGeneral(PublicKey key, char[] message, Announcement[] a, String identifier, PrivateKey privateKey) {
+	public void postGeneral(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
 		try {
-			_stub.postGeneral(createPostGeneralRequest(key, message, a, identifier, privateKey));
+			_stub.postGeneral(createPostGeneralRequest(key, message, a, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		} catch (CommonDomainException e) {
@@ -86,16 +86,15 @@ public class Library {
 	}
 
 	private PostRequest createPostRequest(String boardIdentifier, PublicKey key, char[] message, Announcement[] a,
-			String identifier, PrivateKey privateKey) throws CommonDomainException {
+										  PrivateKey privateKey) throws CommonDomainException {
 	
-		List<String> references = a == null ? new ArrayList<String>() 
-				: Stream.of(a).map(Announcement::getIdentifier).collect(Collectors.toList());
+		List<String> references = a == null ? new ArrayList<>()
+				: Stream.of(a).map(Announcement::getHash).collect(Collectors.toList());
 
-	byte[] signature = dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message), 
-			identifier, references, boardIdentifier);
+	byte[] signature = dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message),
+            references, boardIdentifier);
 	
 	return PostRequest.newBuilder()
-			.setIdentifier(identifier)
 			.setMessage(String.copyValueOf(message))
 			.setPublicKey(ByteString.copyFrom(key.getEncoded()))
 			.addAllReferences(references)
@@ -103,13 +102,13 @@ public class Library {
 			.build();
 	}
 			
-	private PostRequest createPostGeneralRequest(PublicKey key, char[] message, Announcement[] a, String identifier,
-			PrivateKey privateKey) throws CommonDomainException {
-		return createPostRequest("DPAS-GENERAL-BOARD", key, message, a, identifier, privateKey);
+	private PostRequest createPostGeneralRequest(PublicKey key, char[] message, Announcement[] a,
+												 PrivateKey privateKey) throws CommonDomainException {
+		return createPostRequest("DPAS-GENERAL-BOARD", key, message, a, privateKey);
 	}
 
-	private PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a, String identifier,
-			PrivateKey privateKey) throws CommonDomainException {
-		return createPostRequest(Base64.getEncoder().encodeToString(key.getEncoded()), key, message, a, identifier, privateKey);
+	private PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a,
+										  PrivateKey privateKey) throws CommonDomainException {
+		return createPostRequest(Base64.getEncoder().encodeToString(key.getEncoded()), key, message, a, privateKey);
 	}
 }

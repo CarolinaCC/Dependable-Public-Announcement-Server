@@ -1,29 +1,6 @@
 package dpas.server.service;
 
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import com.google.protobuf.ByteString;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -34,6 +11,18 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.io.IOException;
+import java.security.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
 
 public class PostTest {
 
@@ -43,23 +32,14 @@ public class PostTest {
 	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
 	private Server _server;
-	private PublicKey _serverKey;
-	
+
 	private PublicKey _firstPublicKey;
 	private PublicKey _secondPublicKey;
-	private PublicKey _thirdPublicKey;
 
-	private PrivateKey _firstPrivateKey;
 	private PrivateKey _secondPrivateKey;
-	private PrivateKey _thirdPrivateKey;
-	
-	private String _firstIdentifier;
-	private String _secondIdentifier;
-	
+
 	private byte[] _firstSignature;
 	private byte[] _secondSignature;
-	private byte[] _secondSignatureWithRef;
-	private byte[] _signatureForSameId;
 	private byte[] _bigMessageSignature;
 
 	private String _invalidReference;
@@ -75,53 +55,36 @@ public class PostTest {
 	
 	@Before
 	public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException {
-
-		// Identifiers
-		_firstIdentifier = UUID.randomUUID().toString();
-		_secondIdentifier = UUID.randomUUID().toString();
-
-		
 		// Keys
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);
 		
 		KeyPair keyPair = keygen.generateKeyPair();
 		_firstPublicKey = keyPair.getPublic();
-		_firstPrivateKey = keyPair.getPrivate();
+		PrivateKey _firstPrivateKey = keyPair.getPrivate();
 		
 		keyPair = keygen.generateKeyPair();
 		_secondPublicKey = keyPair.getPublic();
 		_secondPrivateKey = keyPair.getPrivate();
 		
 		keyPair = keygen.generateKeyPair();
-		_thirdPublicKey = keyPair.getPublic();
-		_thirdPrivateKey = keyPair.getPrivate();
-		
-		keyPair = keygen.generateKeyPair();
-		_serverKey = keyPair.getPublic();
+		PublicKey _serverKey = keyPair.getPublic();
 		
 		// References
 		_invalidReference = "";
 		
 	
 		// Signatures
-		_firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+		_firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
+				new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
-		_secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
+		_secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
+				new ArrayList<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 
-		_secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, Collections.singletonList(_firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 		
-		_signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
-		
-		_bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
-		
-		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target.json").getPath();
+		_bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
+				new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+
 
 		final BindableService impl = new ServiceDPASImpl(_serverKey);
 		_server = NettyServerBuilder.forPort(port).addService(impl).build();
@@ -151,7 +114,6 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 
@@ -161,32 +123,39 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(_secondIdentifier)
 				.build());
 	}
 
 	@Test
-	public void twoPostsValidReference() {
+	public void twoPostsValidReference() throws CommonDomainException {
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
+
+		var firstIdentifier = _stub.read(Contract.ReadRequest
+				.newBuilder()
+				.setNumber(1)
+				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+				.build())
+				.getAnnouncements(0)
+				.getHash();
+
+		byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
+				Collections.singletonList(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
-				.addReferences(_firstIdentifier)
-				.setSignature(ByteString.copyFrom(_secondSignatureWithRef))
-				.setIdentifier(_secondIdentifier)
+				.addReferences(firstIdentifier)
+				.setSignature(ByteString.copyFrom(secondSignatureWithRef))
 				.build());
 	}
 
@@ -196,7 +165,6 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 
 		exception.expect(StatusRuntimeException.class);
@@ -207,30 +175,9 @@ public class PostTest {
 				.setMessage(SECOND_MESSAGE)
 				.addReferences(_invalidReference)
 				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(_secondIdentifier)
 				.build());
 	}
 
-	@Test
-	public void twoPostsSameIdentifier() {
-		_stub.post(Contract.PostRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setMessage(MESSAGE)
-				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
-				.build());
-
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: Post Identifier Already Exists");
-
-		_stub.post(Contract.PostRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-				.setMessage(SECOND_MESSAGE)
-				.setSignature(ByteString.copyFrom(_signatureForSameId))
-				.setIdentifier(_firstIdentifier)
-				.build());
-	}
-	
 	@Test
 	public void postNullPublicKey() {
 		exception.expect(StatusRuntimeException.class);
@@ -239,7 +186,6 @@ public class PostTest {
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 
@@ -252,7 +198,6 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(INVALID_MESSAGE)
 				.setSignature(ByteString.copyFrom(_bigMessageSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 
@@ -263,7 +208,6 @@ public class PostTest {
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setIdentifier(_firstIdentifier)
 				.setMessage(MESSAGE)
 				.build());
 	}
@@ -277,7 +221,6 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 }

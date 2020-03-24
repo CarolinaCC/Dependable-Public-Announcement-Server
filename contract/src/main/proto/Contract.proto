@@ -31,7 +31,6 @@ message GeneralBoardReference {
 message PostRequest {
     bytes publicKey = 1;
     string message = 2;
-    string identifier = 3;
     bytes signature = 4;
     repeated string references = 5;
 }
@@ -50,9 +49,9 @@ message ReadReply {
 
 message Announcement {
     string message = 1;
-    string identifier = 2;
     repeated string references = 3;
     bytes publicKey = 4;
     bytes signature = 5;
+    string hash = 6;
 }
 

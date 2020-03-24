@@ -11,10 +11,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
@@ -25,18 +23,7 @@ import org.junit.rules.ExpectedException;
 import com.google.protobuf.ByteString;
 
 import dpas.common.domain.Announcement;
-import dpas.common.domain.AnnouncementBoard;
-import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidMessageSizeException;
-import dpas.common.domain.exception.InvalidSignatureException;
-import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullAnnouncementException;
-import dpas.common.domain.exception.NullMessageException;
-import dpas.common.domain.exception.NullPublicKeyException;
-import dpas.common.domain.exception.NullSignatureException;
-import dpas.common.domain.exception.NullUserException;
-import dpas.common.domain.exception.NullUsernameException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -61,9 +48,7 @@ public class ReadTest {
 
 	private byte[] _signature;
 	private byte[] _signature2;
-	
-	private String _identifier;
-	private String _identifier2;
+
 
 	private static final String MESSAGE = "Message to sign";
 	private static final String SECOND_MESSAGE = "Second message to sign";
@@ -84,13 +69,9 @@ public class ReadTest {
 		keyPair = keygen.generateKeyPair();
 		_serverKey = keyPair.getPublic();
 
-		//Identifiers
-		_identifier =UUID.randomUUID().toString();
-		_identifier2 =UUID.randomUUID().toString();
-
 		//Signatures
-		_signature = Announcement.generateSignature(_privateKey, MESSAGE, _identifier, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
-		_signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, _identifier2, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
+		_signature = Announcement.generateSignature(_privateKey, MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
+		_signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
 		
 		//Start Server
 		final BindableService impl = new ServiceDPASImpl(_serverKey);
@@ -111,12 +92,10 @@ public class ReadTest {
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature))
 				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.setIdentifier(_identifier)
 				.build());
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setMessage(SECOND_MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature2))
-				.setIdentifier(_identifier2)
 				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
 				.build());
 	}
@@ -143,13 +122,11 @@ public class ReadTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
 		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
 		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(1).getIdentifier(), _identifier2);
 		assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
 	}
@@ -169,13 +146,11 @@ public class ReadTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
 		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
 		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(1).getIdentifier(), _identifier2);
 		assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
 	}
@@ -194,7 +169,6 @@ public class ReadTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier2);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature2);
 	}

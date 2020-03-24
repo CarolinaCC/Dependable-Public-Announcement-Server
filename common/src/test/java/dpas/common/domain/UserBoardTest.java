@@ -1,26 +1,23 @@
 package dpas.common.domain;
 
-import static org.junit.Assert.assertEquals;
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidNumberOfPostsException;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullAnnouncementException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidNumberOfPostsException;
-import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullAnnouncementException;
+import static org.junit.Assert.assertEquals;
 
 public class UserBoardTest {
 
@@ -28,7 +25,7 @@ public class UserBoardTest {
     private Announcement _announcementValid2;
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
-    
+
     private String _identifier;
     private String _identifier2;
     private String _identifierInvalid;
@@ -37,32 +34,32 @@ public class UserBoardTest {
     private static final String SECOND_MESSAGE = "Second Message";
 
     @Before
-    public void setup() throws CommonDomainException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    public void setup() throws CommonDomainException, NoSuchAlgorithmException {
         // generate user A
 
         _identifier = UUID.randomUUID().toString();
-        _identifier2 =  UUID.randomUUID().toString();
-        _identifierInvalid =  UUID.randomUUID().toString();
+        _identifier2 = UUID.randomUUID().toString();
+        _identifierInvalid = UUID.randomUUID().toString();
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         User user = new User(publicKey);
-        
+
         _userBoard = user.getUserBoard();
 
-        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifier, null, _userBoard);
+        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard);
 
         // Generate Announcement A
-        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, _identifier ,_userBoard);
+        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, _identifier, _userBoard);
 
         //Generate References
         ArrayList<Announcement> references = new ArrayList<>(Collections.singletonList(_announcementValid));
         List<String> referenceIds = Announcement.getReferenceStrings(references);
-        
+
         //Generate valid signature for second message
-        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, _identifier2, referenceIds, _userBoard);
+        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, referenceIds, _userBoard);
 
         _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, references, _identifier2, _userBoard);
 
@@ -76,7 +73,7 @@ public class UserBoardTest {
         publicKey = keyPair.getPublic();
         user = new User(publicKey);
 
-        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifierInvalid, null, _userBoard);
+        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard);
 
         // Generate Announcement B
         _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, _identifierInvalid, _userBoard);

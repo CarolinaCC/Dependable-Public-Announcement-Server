@@ -47,13 +47,14 @@ public class PersistenceManagerTest {
 	
 	private PublicKey _serverKey;
 	
-	private static final String encodedServerKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCJep6WNVMVrBR/QIoH7l9rIDjWFW8Yft+pj5sDmhjh+29Hd/vt9l1QZ33KcKBJYHdyszhT3uyJC250Fg7ANwEfoVDasJoHxV7JOLruc/nFFQVpihPWNr3qTRdVoahIjkIbXc5ghElDMtoOKuwWTY9gX7NHse/5fopMrUwuHsSezQIDAQAB";
-	
-	private static final String encodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC5lfcC9gN8s8Wzrw0VXuELAVl64o/OFS29ai1azjzPukzg7YGzh9DHIXXih4/o19sjPu91trfU78htN9R0oqA11ZkuLCJkCD5sJaJyWaNSpsqI+/rYRjHJiOD8jx20GqX2POPN88p3E+CIUME6YBiIQ2IrswVozmOtgKbIUQYGtwIDAQAB";
-	private static final String secondEncodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7ZKw+7lztZKUyh65ikuaJqYe4aUpHww860DdJIrmBlxnQXUqkFOmFjNj372OxNRdOzzf6qhe4w+MM+YVkvK1aquUPc7INrHB8X8nygUJjPUZrxdA7F9sLmB/pJX2LZCtNDA9hO1vpWBe9Fu5q/xy8nY8/OhTInIVh4ogToI0wCQIDAQAB";
-	
-	private static final String firstIdentifier = "3325d344-2923-4262-9f69-40ada9231764";
-	private static final String secondIdentifier = "cd27b63e-962c-4c66-b537-37212f501942";
+	private static final String encodedServerKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCcATE5p/ULOs4ZA3zl4LIGv8BAQEVM8OJF74mhUDOvd8kHybQod18GrsAW1J9htfqtqwZo6MQr7FzBpv/14b7USWRU8ae0ZlZMWUOo9KsWX7kvkbkaV86xnm0ez2ZDlvJH+n3a7NKoroLDVurbqnZEO0hXu8wsJZdjbf0LpGq59wIDAQAB";
+
+	private static final String encodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTYwRzEpPRUmWCrbY91oK0z75nTtiopu+qjpOnxH8mimb6jqURTNomHsbsB4xGO00GuBK58omAeKS2JEt7Fp5kj2GBqU3Sm/3PJXnkqoUVP3wIatleA25vtG/H9zo0wMYRHjRD/p67VdTcOI+iVXvLBRC9TUgK/nQC8rFSTcB8awIDAQAB";
+	private static final String secondEncodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCg9dCJTjbki6HsswBebUUsVunayvP0WB4l8Wb/U4+41oG5HAALV5bJbff7XDcOYs6lPaR2+zUNm4X2RvSPap0x4S5/qlM72munFI36WtbQikjbu7J8q8/rd85QPat6IyFhoolT74pjyhK4flgq49MKQ5J3ucPEGkX9xtzXazklKwIDAQAB";
+
+
+	private static final String firstIdentifier = "QyAbdOlghm0CBzzAlpvf6FjzkpmtbABL1e82/8IPlg4=";
+	private static final String secondIdentifier = "8aFCYeCsgLBergGuzz7eG6V9Sc14lJV1n6VZyWDG1uQ=";
 	
 	@Before
 	public void setup() throws InvalidKeySpecException, NoSuchAlgorithmException {
@@ -205,6 +206,7 @@ public class PersistenceManagerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_6.json").getPath();
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
+
 		int sizeInitialJson = manager.readSaveFile().size();
 
 		/* SERVER SETUP */

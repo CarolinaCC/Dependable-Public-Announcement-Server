@@ -1,29 +1,6 @@
 package dpas.server.service;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import com.google.protobuf.ByteString;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -34,6 +11,18 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.io.IOException;
+import java.security.*;
+import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class ReadGeneralTest {
 
@@ -50,8 +39,6 @@ public class ReadGeneralTest {
 	private PrivateKey _privateKey;
 	
 	private byte[] _signature;
-	private String _identifier;
-	
 	private static final String host = "localhost";
 	private static final int port = 9000;
 	
@@ -70,9 +57,8 @@ public class ReadGeneralTest {
 		
 		keygen.generateKeyPair();
 		_serverKey = keyPair.getPublic();
-		
-		_identifier = UUID.randomUUID().toString();
-		_signature = Announcement.generateSignature(_privateKey, MESSAGE, _identifier, null, "DPAS-GENERAL-BOARD");
+
+		_signature = Announcement.generateSignature(_privateKey, MESSAGE, null, "DPAS-GENERAL-BOARD");
 		
 		// Start Server
 		final BindableService impl = new ServiceDPASImpl(_serverKey);
@@ -92,7 +78,6 @@ public class ReadGeneralTest {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature))
-				.setIdentifier(_identifier)
 				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
 				.build());
 	}
@@ -115,7 +100,6 @@ public class ReadGeneralTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}
@@ -130,7 +114,6 @@ public class ReadGeneralTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}
@@ -146,7 +129,6 @@ public class ReadGeneralTest {
 		
 		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
 		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertEquals(announcementsGRPC.get(0).getIdentifier(), _identifier);
 		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
 		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 	}

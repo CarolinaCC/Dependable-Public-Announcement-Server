@@ -8,7 +8,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -46,8 +45,7 @@ public class PostGeneralTest {
 	private PrivateKey _firstPrivateKey;
 	private PrivateKey _secondPrivateKey;
 	
-	private String _firstIdentifier;
-	private String _secondIdentifier;
+
 	
 	private byte[] _firstSignature;
 	private byte[] _secondSignature;
@@ -63,12 +61,7 @@ public class PostGeneralTest {
 	
 	@Before
 	public void setup() throws IOException, CommonDomainException, NoSuchAlgorithmException {
-		
-		//Identifiers
-		_firstIdentifier = UUID.randomUUID().toString();
-		_secondIdentifier = UUID.randomUUID().toString();
 
-		
 		// KeyPairs
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen = KeyPairGenerator.getInstance("RSA");
@@ -85,20 +78,18 @@ public class PostGeneralTest {
 		_secondPrivateKey = keyPair.getPrivate();
 		
 		//Signatures
-		_firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
+		_firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
+				new ArrayList<>(), "DPAS-GENERAL-BOARD");
 		
-		_secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
+		_secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
+				new ArrayList<>(), "DPAS-GENERAL-BOARD");
 		
-		_signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
+		_signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
+				new ArrayList<>(), "DPAS-GENERAL-BOARD");
+
 		
-		_secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, Collections.singletonList(_firstIdentifier), "DPAS-GENERAL-BOARD");
-		
-		_bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
+		_bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
+				new ArrayList<>(), "DPAS-GENERAL-BOARD");
 
 		
 		// Start server
@@ -133,7 +124,6 @@ public class PostGeneralTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 
@@ -142,52 +132,40 @@ public class PostGeneralTest {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-				.setIdentifier(_secondIdentifier)
 				.setMessage(SECOND_MESSAGE).setSignature(ByteString.copyFrom(_secondSignature))
 				.build());
 	}
 
 	@Test
-	public void twoPostsWithReference() {
+	public void twoPostsWithReference() throws CommonDomainException {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
 				.build());
+
+		var firstIdentifier = _stub.readGeneral(Contract.ReadRequest
+				.newBuilder()
+				.setNumber(1)
+				.build())
+				.getAnnouncements(0)
+				.getHash();
+
+		_secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
+				Collections.singletonList(firstIdentifier), "DPAS-GENERAL-BOARD");
 
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
-				.addReferences(_firstIdentifier)
-				.setIdentifier(_secondIdentifier)
+				.addReferences(firstIdentifier)
 				.setSignature(ByteString.copyFrom(_secondSignatureWithRef))
 				.build());
 	}
 
-	@Test
-	public void twoPostsSameIdentifier() {
-		_stub.postGeneral(Contract.PostRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(_firstIdentifier)
-				.build());
-
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: Post Identifier Already Exists");
-
-		_stub.postGeneral(Contract.PostRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-				.setMessage(SECOND_MESSAGE)
-				.setIdentifier(_firstIdentifier)
-				.setSignature(ByteString.copyFrom(_signatureForSameId))
-				.build());
-	}
 	
 	@Test
 	public void postNullPublicKey() {
@@ -196,7 +174,6 @@ public class PostGeneralTest {
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
-				.setIdentifier(UUID.randomUUID().toString())
 				.setSignature(ByteString.copyFrom(_firstSignature))
 				.build());
 	}
@@ -209,7 +186,6 @@ public class PostGeneralTest {
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(INVALID_MESSAGE)
-				.setIdentifier(UUID.randomUUID().toString())
 				.setSignature(ByteString.copyFrom(_bigMessageSignature))
 				.build());
 	}
@@ -221,7 +197,6 @@ public class PostGeneralTest {
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setIdentifier(UUID.randomUUID().toString())
 				.setMessage(MESSAGE)
 				.build());
 	}
@@ -233,7 +208,6 @@ public class PostGeneralTest {
 
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setIdentifier(UUID.randomUUID().toString())
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
 				.build());

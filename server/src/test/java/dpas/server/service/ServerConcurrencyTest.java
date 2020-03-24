@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -39,10 +38,6 @@ public class ServerConcurrencyTest {
 
 
     private PrivateKey _firstPrivateKey;
-
-
-    private String _firstIdentifier;
-    private String _secondIdentifier;
 
     private byte[] _firstSignature;
 
@@ -80,7 +75,7 @@ public class ServerConcurrencyTest {
 
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                _firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
 
         final BindableService impl = new ServiceDPASImpl(_serverKey);
@@ -108,12 +103,10 @@ public class ServerConcurrencyTest {
         final AtomicInteger t = new AtomicInteger(50);
 
         for (int i = 0; i < 50; i++) {
-            _firstIdentifier = UUID.randomUUID().toString();
             // Signatures
             _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                    _firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                    new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
             _stub.post(Contract.PostRequest.newBuilder()
-                            .setIdentifier(_firstIdentifier)
                             .setMessage(MESSAGE)
                             .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                             .setSignature(ByteString.copyFrom(_firstSignature))
@@ -161,12 +154,10 @@ public class ServerConcurrencyTest {
         final AtomicInteger t = new AtomicInteger(50);
 
         for (int i = 0; i < 50; i++) {
-            _firstIdentifier = UUID.randomUUID().toString();
             // Signatures
             _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                    _firstIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
+                    new ArrayList<>(), "DPAS-GENERAL-BOARD");
             _stub.postGeneral(Contract.PostRequest.newBuilder()
-                            .setIdentifier(_firstIdentifier)
                             .setMessage(MESSAGE)
                             .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                             .setSignature(ByteString.copyFrom(_firstSignature))

@@ -1,11 +1,12 @@
 package dpas.common.domain;
 
-import dpas.common.domain.exception.*;
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidNumberOfPostsException;
+import dpas.common.domain.exception.NullAnnouncementException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -19,7 +20,7 @@ public class GeneralBoardTest {
     private String _identifier;
 
     @Before
-    public void setup() throws CommonDomainException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
+    public void setup() throws CommonDomainException, NoSuchAlgorithmException {
         // generate user
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
@@ -28,14 +29,12 @@ public class GeneralBoardTest {
         PublicKey publicKey = keyPair.getPublic();
         User userA = new User(publicKey);
 
-
         _identifier = UUID.randomUUID().toString();
        
         // Generate Board
         _generalBoard = new GeneralBoard();
         
-        byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", _identifier, null, _generalBoard);
-
+        byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard);
 
         // Generate Announcement
         _announcement = new Announcement(signature, userA, "MESSAGE", null, _identifier, _generalBoard);
@@ -47,18 +46,18 @@ public class GeneralBoardTest {
     }
 
     @Test
-    public void validPost() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
+    public void validPost() throws NullAnnouncementException, InvalidNumberOfPostsException {
         _generalBoard.post(_announcement);
         assertEquals(_generalBoard.read(1).get(0), _announcement);
     }
 
     @Test(expected = NullAnnouncementException.class)
-    public void nullAnnouncementPost() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
+    public void nullAnnouncementPost() throws NullAnnouncementException {
         _generalBoard.post(null);
     }
 
     @Test
-    public void validRead() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
+    public void validRead() throws NullAnnouncementException, InvalidNumberOfPostsException {
         _generalBoard.post( _announcement);
         _generalBoard.post( _announcement);
         ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
@@ -68,7 +67,7 @@ public class GeneralBoardTest {
     }
 
     @Test(expected = InvalidNumberOfPostsException.class)
-    public void invalidNumberOfPostsRead() throws NullUserException, NullAnnouncementException, InvalidNumberOfPostsException {
+    public void invalidNumberOfPostsRead() throws NullAnnouncementException, InvalidNumberOfPostsException {
         _generalBoard.post(_announcement);
         _generalBoard.read(-1);
     }

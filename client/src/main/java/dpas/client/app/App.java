@@ -166,7 +166,7 @@ public class App {
 	public static void printAnnouncements(Announcement[] announcements) {
 		System.out.println();
 		for(var announcement: announcements) {
-			System.out.println("Identifier: " + announcement.getIdentifier());
+			System.out.println("Identifier: " + announcement.getHash());
 			System.out.println("Message: " + announcement.getMessage());
 			for(var ref: announcement.getReferencesList()) {
 				System.out.println("References: " + ref);
@@ -216,7 +216,6 @@ public class App {
 			}
 
 			String message = split[2];
-			String identifier = UUID.randomUUID().toString();
 
 			char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
 			String keyPairAlias = System.console().readLine("Insert Certificate Alias: ");
@@ -238,14 +237,14 @@ public class App {
 			Contract.Announcement[] refs = new Contract.Announcement[numberOfReferences];
 			for (int i = 4, j = 0; i < 4 + numberOfReferences; i++, j++) {
 				refs[j] = Contract.Announcement.newBuilder()
-						.setIdentifier(split[i])
+						.setHash(split[i])
 						.build();
 			}
 
 			if (split[0].equals("post"))
-				lib.post(pubKey, message.toCharArray(), refs, identifier, priKey);
+				lib.post(pubKey, message.toCharArray(), refs, priKey);
 			else
-				lib.postGeneral(pubKey, message.toCharArray(), refs, identifier, priKey);
+				lib.postGeneral(pubKey, message.toCharArray(), refs, priKey);
 
 		} catch (KeyStoreException e) {
 			System.out.println("Invalid Argument: Could not load JKS keystore");
