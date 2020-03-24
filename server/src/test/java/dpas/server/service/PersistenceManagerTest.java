@@ -4,7 +4,11 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
@@ -68,12 +72,19 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void testServerPersistence() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException,
-			CommonDomainException, InvalidKeyException, SignatureException {
+			CommonDomainException, InvalidKeyException, SignatureException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_5.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_5.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();
+
+
+
 
 		impl = manager.load();
 
@@ -97,10 +108,13 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void invalidRegister() throws IOException, InterruptedException, InvalidKeySpecException,
-			NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException {
-
+			NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException, URISyntaxException {
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("no_operations_2.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("no_operations_2.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		/* SERVER SETUP */
@@ -136,10 +150,14 @@ public class PersistenceManagerTest {
 	}
 
 	@Test
-	public void validRegister() throws IOException, NoSuchAlgorithmException {
+	public void validRegister() throws IOException, NoSuchAlgorithmException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_4.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_4.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
@@ -167,10 +185,14 @@ public class PersistenceManagerTest {
 	}
 
 	@Test
-	public void validVariousRegister() throws IOException, NoSuchAlgorithmException {
+	public void validVariousRegister() throws IOException, NoSuchAlgorithmException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_4.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_4.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
@@ -200,10 +222,14 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void invalidPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
-			InvalidKeySpecException, CommonDomainException, InterruptedException {
+			InvalidKeySpecException, CommonDomainException, InterruptedException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_6.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_6.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		int sizeInitialJson = manager.readSaveFile().size();
 
@@ -249,10 +275,13 @@ public class PersistenceManagerTest {
 	}
 
 	@Test
-	public void validPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+	public void validPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_2.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_2.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
@@ -289,10 +318,14 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void validVariousPost()
-			throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+			throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_2.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_2.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
@@ -331,10 +364,14 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void invalidPostGeneral() throws IOException, InvalidKeyException, SignatureException,
-			NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+			NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_7.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_7.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		int sizeInitialJson = manager.readSaveFile().size();
 
@@ -384,10 +421,14 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void validPostGeneral()
-			throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+			throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_3.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_3.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
@@ -424,10 +465,14 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void validVariousPostGeneral()
-			throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+			throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
 
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_2.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_2.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
+
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
@@ -466,9 +511,12 @@ public class PersistenceManagerTest {
 
 	@Test(expected = JsonException.class)
 	public void loadInvalidFile() throws IOException, SignatureException, CommonDomainException,
-			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
+			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("empty.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("empty.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
 
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		manager.load();
@@ -476,9 +524,12 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void loadNoOperationsFile() throws IOException, SignatureException, CommonDomainException,
-			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
+			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("no_operations.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("no_operations.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
 
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();
@@ -488,9 +539,12 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void loadGeneralTest() throws IOException, SignatureException, CommonDomainException,
-			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
+			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
 
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();
@@ -500,9 +554,12 @@ public class PersistenceManagerTest {
 
 	@Test
 	public void loadGeneralTestWithSwap() throws IOException, SignatureException, CommonDomainException,
-			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
+			InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
 		ClassLoader classLoader = getClass().getClassLoader();
-		String path = classLoader.getResource("valid_load_target_with_swap.json").getPath();
+
+		URL res = getClass().getClassLoader().getResource("valid_load_target_with_swap.json");
+		File file = Paths.get(res.toURI()).toFile();
+		String path = file.getAbsolutePath();
 
 		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();

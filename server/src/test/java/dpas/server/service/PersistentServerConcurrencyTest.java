@@ -19,7 +19,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -65,7 +69,7 @@ public class PersistentServerConcurrencyTest {
     }
 
     @Before
-    public void setup() throws NoSuchAlgorithmException, CommonDomainException, IOException {
+    public void setup() throws NoSuchAlgorithmException, CommonDomainException, IOException, URISyntaxException {
 
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
@@ -79,7 +83,10 @@ public class PersistentServerConcurrencyTest {
         _serverKey = keyPair.getPublic();
 
         ClassLoader classLoader = getClass().getClassLoader();
-        String path = classLoader.getResource("no_operations_3.json").getPath();
+
+        URL res = getClass().getClassLoader().getResource("no_operations_3.json");
+        File file = Paths.get(res.toURI()).toFile();
+        String path = file.getAbsolutePath();
         PersistenceManager manager = new PersistenceManager(path, _serverKey);
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
