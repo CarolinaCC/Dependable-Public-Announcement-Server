@@ -5,9 +5,12 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +23,7 @@ import org.junit.rules.ExpectedException;
 
 import com.google.protobuf.ByteString;
 
+import dpas.common.domain.Announcement;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -37,10 +41,23 @@ public class PostTest {
 	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
 	private Server _server;
+	private PublicKey _serverKey;
+	
 	private PublicKey _firstPublicKey;
 	private PublicKey _secondPublicKey;
+	private PublicKey _thirdPublicKey;
+
+	private PrivateKey _firstPrivateKey;
+	private PrivateKey _secondPrivateKey;
+	private PrivateKey _thirdPrivateKey;
+	
+	private String _firstIdentifier;
+	private String _secondIdentifier;
+	
 	private byte[] _firstSignature;
 	private byte[] _secondSignature;
+	private byte[] _secondSignatureWithRef;
+	private byte[] _signatureForSameId;
 	private byte[] _bigMessageSignature;
 
 	private String _invalidReference;
@@ -49,63 +66,72 @@ public class PostTest {
 
 	private static final String MESSAGE = "Message";
 	private static final String SECOND_MESSAGE = "Second Message";
-	private static final String INVALID_MESSAGE = StringUtils.repeat("ThisMessageisInvalid", "", 15);
+	private static final String INVALID_MESSAGE = StringUtils.repeat("ThisMessageisInvalid", "", 15);	
+
+	private static final String host = "localhost";
+	private static final int port = 9000;
 	
 	@Before
 	public void setup() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+
+		// Identifiers
+		_firstIdentifier = UUID.randomUUID().toString();
+		_secondIdentifier = UUID.randomUUID().toString();
+
+		
+		// Keys
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);
+		
 		KeyPair keyPair = keygen.generateKeyPair();
 		_firstPublicKey = keyPair.getPublic();
-
-		// generate first signature
-		Signature sign = Signature.getInstance("SHA256withRSA");
-		sign.initSign(keyPair.getPrivate());
-		sign.update(MESSAGE.getBytes());
-		_firstSignature = sign.sign();
-
-		// second key pair
-		keygen = KeyPairGenerator.getInstance("RSA");
-		keygen.initialize(1024);
+		_firstPrivateKey = keyPair.getPrivate();
+		
 		keyPair = keygen.generateKeyPair();
 		_secondPublicKey = keyPair.getPublic();
-
-		// Generate second signature
-		sign = Signature.getInstance("SHA256withRSA");
-		sign.initSign(keyPair.getPrivate());
-		sign.update(SECOND_MESSAGE.getBytes());
-		_secondSignature = sign.sign();
-
-		// third key pair
-		keygen = KeyPairGenerator.getInstance("RSA");
-		keygen.initialize(1024);
+		_secondPrivateKey = keyPair.getPrivate();
+		
 		keyPair = keygen.generateKeyPair();
-
-		// Generate signature for too big message
-		sign = Signature.getInstance("SHA256withRSA");
-		sign.initSign(keyPair.getPrivate());
-		sign.update(INVALID_MESSAGE.getBytes());
-		_bigMessageSignature = sign.sign();
-
+		_thirdPublicKey = keyPair.getPublic();
+		_thirdPrivateKey = keyPair.getPrivate();
+		
+		keyPair = keygen.generateKeyPair();
+		_serverKey = keyPair.getPublic();
+		
+		// References
 		_invalidReference = "";
+		
+	
+		// Signatures
+		_firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, 
+				_firstIdentifier, new ArrayList<>(), _firstPublicKey);
 
-		final BindableService impl = new ServiceDPASImpl();
+		_secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
+				_secondIdentifier, new ArrayList<>(), _secondPublicKey);
 
-		// Start server
-		_server = NettyServerBuilder.forPort(9000).addService(impl).build();
+		_secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
+				_secondIdentifier, Collections.singletonList(_firstIdentifier), _secondPublicKey);
+		
+		_signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
+				_firstIdentifier, new ArrayList<>(), _secondPublicKey);
+		
+		_bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE, 
+				_firstIdentifier, new ArrayList<>(), _firstPublicKey);
+		
+		ClassLoader classLoader = getClass().getClassLoader();
+		String path = classLoader.getResource("valid_load_target.json").getPath();
+
+		final BindableService impl = new ServiceDPASImpl(_serverKey);
+		_server = NettyServerBuilder.forPort(port).addService(impl).build();
 		_server.start();
 
-		final String host = "localhost";
-		final int port = 9000;
 		_channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
 		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-		// create first user
+		//Register Users
 		_stub.register(Contract.RegisterRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.build());
-
-		// create second user
 		_stub.register(Contract.RegisterRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.build());
@@ -123,7 +149,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 
@@ -133,14 +159,14 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.build());
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_secondIdentifier)
 				.build());
 	}
 
@@ -150,24 +176,15 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.build());
-
-		Contract.ReadReply readReply = _stub.read(Contract.ReadRequest.newBuilder()
-				.setNumber(1)
-				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.build());
-
-		List<Contract.Announcement> announcementsGRPC = readReply.getAnnouncementsList();
-
-		String validReference = announcementsGRPC.get(0).getIdentifier();
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
-				.addReferences(validReference)
-				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.addReferences(_firstIdentifier)
+				.setSignature(ByteString.copyFrom(_secondSignatureWithRef))
+				.setIdentifier(_secondIdentifier)
 				.build());
 	}
 
@@ -177,7 +194,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.build());
 
 		exception.expect(StatusRuntimeException.class);
@@ -188,18 +205,17 @@ public class PostTest {
 				.setMessage(SECOND_MESSAGE)
 				.addReferences(_invalidReference)
 				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_secondIdentifier)
 				.build());
 	}
 
 	@Test
 	public void twoPostsSameIdentifier() {
-		String identifier = UUID.randomUUID().toString();
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(identifier)
+				.setIdentifier(_firstIdentifier)
 				.build());
 
 		exception.expect(StatusRuntimeException.class);
@@ -208,8 +224,8 @@ public class PostTest {
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
 				.setMessage(SECOND_MESSAGE)
-				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(identifier)
+				.setSignature(ByteString.copyFrom(_signatureForSameId))
+				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 	
@@ -221,7 +237,7 @@ public class PostTest {
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_firstSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 
@@ -234,7 +250,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(INVALID_MESSAGE)
 				.setSignature(ByteString.copyFrom(_bigMessageSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 
@@ -245,7 +261,7 @@ public class PostTest {
 
 		_stub.post(Contract.PostRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.setMessage(MESSAGE)
 				.build());
 	}
@@ -259,7 +275,7 @@ public class PostTest {
 				.setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_secondSignature))
-				.setIdentifier(UUID.randomUUID().toString())
+				.setIdentifier(_firstIdentifier)
 				.build());
 	}
 }

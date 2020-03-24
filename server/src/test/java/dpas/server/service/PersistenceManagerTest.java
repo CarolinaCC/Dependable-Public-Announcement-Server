@@ -44,10 +44,21 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 public class PersistenceManagerTest {
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
-
+	
+	private PublicKey _serverKey;
+	
+	private static final String encodedServerKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCJep6WNVMVrBR/QIoH7l9rIDjWFW8Yft+pj5sDmhjh+29Hd/vt9l1QZ33KcKBJYHdyszhT3uyJC250Fg7ANwEfoVDasJoHxV7JOLruc/nFFQVpihPWNr3qTRdVoahIjkIbXc5ghElDMtoOKuwWTY9gX7NHse/5fopMrUwuHsSezQIDAQAB";
+	
+	private static final String encodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC5lfcC9gN8s8Wzrw0VXuELAVl64o/OFS29ai1azjzPukzg7YGzh9DHIXXih4/o19sjPu91trfU78htN9R0oqA11ZkuLCJkCD5sJaJyWaNSpsqI+/rYRjHJiOD8jx20GqX2POPN88p3E+CIUME6YBiIQ2IrswVozmOtgKbIUQYGtwIDAQAB";
+	private static final String secondEncodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7ZKw+7lztZKUyh65ikuaJqYe4aUpHww860DdJIrmBlxnQXUqkFOmFjNj372OxNRdOzzf6qhe4w+MM+YVkvK1aquUPc7INrHB8X8nygUJjPUZrxdA7F9sLmB/pJX2LZCtNDA9hO1vpWBe9Fu5q/xy8nY8/OhTInIVh4ogToI0wCQIDAQAB";
+	
+	private static final String firstIdentifier = "3325d344-2923-4262-9f69-40ada9231764";
+	private static final String secondIdentifier = "cd27b63e-962c-4c66-b537-37212f501942";
+	
 	@Before
-	public void setup() {
-
+	public void setup() throws InvalidKeySpecException, NoSuchAlgorithmException {
+		byte[] encoded = Base64.getDecoder().decode(encodedServerKey);
+		_serverKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encoded));
 	}
 
 	@After
@@ -61,19 +72,17 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_5.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();
 
 		impl = manager.load();
 
-		assertEquals(impl.getAnnouncements().get("e248b5e6-b27e-47b9-8126-347f9fa8438b").getMessage(), "Message");
-		assertEquals(impl.getAnnouncements().get("863b7817-76d7-41b5-9186-0fd09d0aeec9").getMessage(),
+		assertEquals(impl.getAnnouncements().get(firstIdentifier).getMessage(), "Message");
+		assertEquals(impl.getAnnouncements().get(secondIdentifier).getMessage(),
 				"Second Message");
 
-		byte[] publicBytes = Base64.getDecoder().decode(
-				"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDO+8oHVgN36CalszTX/XdEtQZK5jnaW6F7LEMSbLUbpVPx9p8blQzT4RzKveINE3i6UeA4eHMKEi41loimbo0AQWvdvLzO4rSM36ttehmzMRRGI/s883uobTZai7MtCagmOnZaWk2YtwP3/5ozV+IgFljgsTwah93WoJOp6j//1wIDAQAB");
-		byte[] publicBytes2 = Base64.getDecoder().decode(
-				"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgUqYUhdfgAxafcqALwwRor9dy8/2HtTWFfY+51ywqZqpx4dljZkddKzVoZQh0Zgqx4oOU8NWNY5ibl1bGHYCfqF/6cSEo18+QaorBKZQeUG6b//Kqx0ESvfJJT9ny8MvKlnwTDhog/EfPGhX8O3MUCiWk+Nx/EqLcqR6YDkhqxwIDAQAB");
+		byte[] publicBytes = Base64.getDecoder().decode(encodedKey);
+		byte[] publicBytes2 = Base64.getDecoder().decode(secondEncodedKey);
 
 		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicBytes);
 		X509EncodedKeySpec keySpec2 = new X509EncodedKeySpec(publicBytes2);
@@ -92,7 +101,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("no_operations_2.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		/* SERVER SETUP */
 		ServiceDPASGrpc.ServiceDPASBlockingStub stub;
@@ -131,7 +140,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_4.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);
@@ -162,7 +171,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_4.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);
@@ -195,7 +204,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_6.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		int sizeInitialJson = manager.readSaveFile().size();
 
 		/* SERVER SETUP */
@@ -244,7 +253,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_2.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
 
@@ -284,7 +293,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_2.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
 
@@ -326,7 +335,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_7.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		int sizeInitialJson = manager.readSaveFile().size();
 
 		/* SERVER SETUP */
@@ -379,7 +388,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_3.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
 
@@ -419,7 +428,7 @@ public class PersistenceManagerTest {
 
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_2.json").getPath();
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
 		String message = "Hello World";
 
@@ -461,7 +470,7 @@ public class PersistenceManagerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("empty.json").getPath();
 
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		manager.load();
 	}
 
@@ -471,7 +480,7 @@ public class PersistenceManagerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("no_operations.json").getPath();
 
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();
 		assertEquals(impl._announcements.size(), 0);
 		assertEquals(impl._users.size(), 0);
@@ -483,7 +492,7 @@ public class PersistenceManagerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target.json").getPath();
 
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();
 		assertEquals(impl._announcements.size(), 2);
 		assertEquals(impl._users.size(), 2);
@@ -495,7 +504,7 @@ public class PersistenceManagerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target_with_swap.json").getPath();
 
-		PersistenceManager manager = new PersistenceManager(path);
+		PersistenceManager manager = new PersistenceManager(path, _serverKey);
 		ServiceDPASPersistentImpl impl = manager.load();
 		assertEquals(impl._announcements.size(), 2);
 		assertEquals(impl._users.size(), 2);

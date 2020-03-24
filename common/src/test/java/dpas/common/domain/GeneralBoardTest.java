@@ -24,21 +24,22 @@ public class GeneralBoardTest {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
+        PrivateKey privateKey = keyPair.getPrivate();
         PublicKey publicKey = keyPair.getPublic();
         User userA = new User(publicKey);
 
-        //Generate valid signature
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(keyPair.getPrivate());
-        sign.update("MESSAGE".getBytes());
-        byte[] signature = sign.sign();
-        
+
         _identifier = UUID.randomUUID().toString();
+       
+        // Generate Board
+        _generalBoard = new GeneralBoard(publicKey);
+        
+        byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", _identifier, null, _generalBoard);
+
 
         // Generate Announcement
-        _announcement = new Announcement(signature, userA, "MESSAGE", null, _identifier, publicKey);
-        // Generate Board
-        _generalBoard = new GeneralBoard();
+        _announcement = new Announcement(signature, userA, "MESSAGE", null, _identifier, _generalBoard);
+
     }
 
     @After

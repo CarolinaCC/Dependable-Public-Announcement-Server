@@ -69,15 +69,15 @@ public class ServerDPAS {
 		
 		
 		
-		Server server = startServer(Integer.parseInt(args[0]), args[1]);
+		Server server = startServer(Integer.parseInt(args[0]), args[1], pubKey);
 
 		// Do not exit the main thread. Wait until server is terminated.
 		server.awaitTermination();
 	}
 
-	public static Server startServer(int port, String saveFile) {
+	public static Server startServer(int port, String saveFile, PublicKey pubKey) {
 		try {
-			final BindableService impl = new PersistenceManager(saveFile).load();
+			final BindableService impl = new PersistenceManager(saveFile, pubKey).load();
 			final Server server = NettyServerBuilder.forPort(port).addService(impl).build();
 
 			server.start();

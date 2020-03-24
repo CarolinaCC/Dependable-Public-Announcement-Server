@@ -31,6 +31,8 @@ public class AnnouncementTest {
     
     private PublicKey _pubKey;
     private PrivateKey _privKey;
+    
+    private AnnouncementBoard _board;
 
     @Before
     public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException, CommonDomainException {
@@ -44,9 +46,10 @@ public class AnnouncementTest {
 
         //Generate user
         this._user = new User(_pubKey);
+        this._board = new UserBoard(_user);
 
         _identifier = UUID.randomUUID().toString();
-        this._signature = Announcement.generateSignature(_privKey, MESSAGE, _identifier, new ArrayList<String>(), _pubKey);
+        this._signature = Announcement.generateSignature(_privKey, MESSAGE, _identifier, new ArrayList<String>(), _board);
 
 
 
@@ -57,10 +60,10 @@ public class AnnouncementTest {
         PublicKey otherPublicKey = otherKeyPair.getPublic();
         PrivateKey otherPrivateKey = otherKeyPair.getPrivate();
 
-        byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, _identifier, new ArrayList<String>(), _pubKey);
+        byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, _identifier, new ArrayList<String>(), _board);
         	
         User otherUser = new User(otherPublicKey);
-        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, _identifier, _pubKey);
+        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, _identifier, _board);
 
         //Add it to references
         _references.add(ref);
@@ -75,9 +78,9 @@ public class AnnouncementTest {
     public void validAnnouncement() throws InvalidKeyException, NoSuchAlgorithmException,
             SignatureException, UnsupportedEncodingException, CommonDomainException {
     	List<String> refs = _references.stream().map(Announcement::getIdentifier).collect(Collectors.toList());
-    	byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, _identifier, refs, _pubKey);
+    	byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, _identifier, refs, _board);
     	
-        Announcement announcement = new Announcement(signature, _user, MESSAGE, _references, _identifier, _pubKey);
+        Announcement announcement = new Announcement(signature, _user, MESSAGE, _references, _identifier, _board);
         assertEquals(announcement.getSignature(), signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
@@ -88,7 +91,7 @@ public class AnnouncementTest {
     public void validAnnouncementNullReference() throws InvalidKeyException, NoSuchAlgorithmException,
             SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-        Announcement announcement = new Announcement(_signature, _user, MESSAGE, null, _identifier, _pubKey);
+        Announcement announcement = new Announcement(_signature, _user, MESSAGE, null, _identifier, _board);
         assertEquals(announcement.getSignature(), _signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
@@ -99,7 +102,7 @@ public class AnnouncementTest {
     public void nullSignature() throws InvalidKeyException, NoSuchAlgorithmException,
             SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-        new Announcement(null, _user, MESSAGE, _references, _identifier, _pubKey);
+        new Announcement((byte[])null, _user, MESSAGE, _references, _identifier, _board);
     }
 
 
@@ -107,14 +110,14 @@ public class AnnouncementTest {
     public void nullUser() throws InvalidKeyException, NoSuchAlgorithmException,
             SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-        new Announcement(_signature, null, MESSAGE, _references, _identifier, _pubKey);
+        new Announcement(_signature, null, MESSAGE, _references, _identifier, _board);
     }
 
     @Test(expected = NullMessageException.class)
     public void nullMessage() throws InvalidKeyException, NoSuchAlgorithmException,
             SignatureException, UnsupportedEncodingException, CommonDomainException {
 
-    	new Announcement(_signature, _user, null, _references, _identifier, _pubKey);
+    	new Announcement(_signature, _user, null, _references, _identifier, _board);
     }
 
     @Test(expected = NullAnnouncementException.class)
@@ -124,7 +127,7 @@ public class AnnouncementTest {
         ArrayList<Announcement> refNullElement = new ArrayList<>();
         refNullElement.add(null);
 
-        new Announcement(_signature, _user, MESSAGE, refNullElement, _identifier, _pubKey);
+        new Announcement(_signature, _user, MESSAGE, refNullElement, _identifier, _board);
     }
 
     @Test(expected = InvalidSignatureException.class)
@@ -132,14 +135,22 @@ public class AnnouncementTest {
             SignatureException, UnsupportedEncodingException, CommonDomainException {
 
         byte[] invalidSig = "InvalidSignature".getBytes();
-        new Announcement(invalidSig, _user, MESSAGE, _references, _identifier, _pubKey);
+        new Announcement(invalidSig, _user, MESSAGE, _references, _identifier, _board);
+    }
+    
+    @Test(expected = InvalidSignatureException.class)
+    public void wrongSignature() throws InvalidKeyException, NoSuchAlgorithmException,
+            SignatureException, UnsupportedEncodingException, CommonDomainException {
+    	
+        byte[] invalidSig = "InvalidSignature".getBytes();
+        new Announcement(_signature, _user, OTHER_MESSAGE, _references, _identifier, _board);
     }
 
     @Test(expected = InvalidMessageSizeException.class)
     public void invalidMessage() throws InvalidKeyException, NoSuchAlgorithmException, UnsupportedEncodingException,
             SignatureException, CommonDomainException {
 
-        new Announcement(_signature, _user, INVALID_MESSAGE, _references, _identifier, _pubKey);
+        new Announcement(_signature, _user, INVALID_MESSAGE, _references, _identifier, _board);
     }
 
 

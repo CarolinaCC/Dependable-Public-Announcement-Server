@@ -40,9 +40,10 @@ public class PersistenceManager {
     private String _path;
     private File _swapFile;
     private File _file;
+    private PublicKey _pubKey;
 
 
-    public PersistenceManager(String path) throws IOException {
+    public PersistenceManager(String path, PublicKey pubKey) throws IOException {
         if (Files.isDirectory(Paths.get(path))) {
             throw new RuntimeException();
         }
@@ -57,6 +58,7 @@ public class PersistenceManager {
         _swapFile = new File(file.getPath() + ".swap");
         _swapFile.createNewFile();
         _file = file;
+        _pubKey = pubKey;
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
@@ -67,7 +69,11 @@ public class PersistenceManager {
         arrayBuilder.add(operation);
 
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+        
+        String pubKey = Base64.getEncoder().encodeToString(_pubKey.getEncoded());
+        objectBuilder.add("PublicKey", pubKey);        
         objectBuilder.add("Operations", arrayBuilder.build());
+        
         try (JsonWriter jsonWriter = Json.createWriter(new BufferedWriter(new FileWriter(_swapFile, false)))) {
             jsonWriter.writeObject(objectBuilder.build());
         }
@@ -78,7 +84,7 @@ public class PersistenceManager {
 
         JsonArray jsonArray = readSaveFile();
 
-        ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
+        ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this, _pubKey);
 
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);

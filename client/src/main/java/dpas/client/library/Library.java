@@ -4,10 +4,9 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Signature;
 import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -15,6 +14,7 @@ import com.google.protobuf.ByteString;
 
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
+import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -39,9 +39,9 @@ public class Library {
 
 	}
 
-	public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
+	public void post(PublicKey key, char[] message, Announcement[] a, String identifier, PrivateKey privateKey) {
 		try {
-			_stub.post(createPostRequest(key, message, a, privateKey));
+			_stub.post(createPostRequest(key, message, a, identifier, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		} catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
@@ -49,29 +49,13 @@ public class Library {
 		}
 	}
 
-	public void post(PublicKey key, char[] message, Announcement[] a, byte[] signature) {
+	public void postGeneral(PublicKey key, char[] message, Announcement[] a, String identifier, PrivateKey privateKey) {
 		try {
-			_stub.post(createPostRequest(key, message, a, signature));
-		} catch (StatusRuntimeException e) {
-			System.out.println("An error ocurred: " + e.getMessage());
-		}
-	}
-
-	public void postGeneral(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
-		try {
-			_stub.postGeneral(createPostRequest(key, message, a, privateKey));
+			_stub.postGeneral(createPostRequest(key, message, a, identifier, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		} catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
 			System.out.println("Could not create signature from values provided");
-		}
-	}
-
-	public void postGeneral(PublicKey key, char[] message, Announcement[] a, byte[] signature) {
-		try {
-			_stub.postGeneral(createPostRequest(key, message, a, signature));
-		} catch (StatusRuntimeException e) {
-			System.out.println("An error ocurred: " + e.getMessage());
 		}
 	}
 
@@ -98,31 +82,22 @@ public class Library {
 		}
 	}
 
-	private Contract.PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a, byte[] signature) {
-		List<String> identifiers = Stream.of(a)
-				.map(Announcement::getIdentifier)
-				.collect(Collectors.toList());
 
-		Contract.PostRequest postRequest = Contract.PostRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(key.getEncoded()))
-				.setMessage(String.valueOf(message))
-				.setSignature(ByteString.copyFrom(signature))
-				.setIdentifier(UUID.randomUUID().toString())
-				.addAllReferences(identifiers)
-				.build();
-		return postRequest;
-	}
-
-	private Contract.PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a,
+	private PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a, String identifier,
 			PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
-		Signature signature = Signature.getInstance("SHA256withRSA");
-		signature.initSign(privateKey);
-		signature.update(String.valueOf(message).getBytes());
+		List<String> references = a == null ? new ArrayList<String>() 
+					: Stream.of(a).map(Announcement::getIdentifier).collect(Collectors.toList());
 
-		return null;
-		//return createPostRequest(key, message, a,
-		//		dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message), identifier, Stream.of(a).map(Announcement::getIdentifier), key ));
+		byte[] signature = dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message), identifier, references, key);
+		
+		return PostRequest.newBuilder()
+				.setIdentifier(identifier)
+				.setMessage(String.copyValueOf(message))
+				.setPublicKey(ByteString.copyFrom(key.getEncoded()))
+				.addAllReferences(references)
+				.setSignature(ByteString.copyFrom(signature))
+				.build();
 	}
 
 }

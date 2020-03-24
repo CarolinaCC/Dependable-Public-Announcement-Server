@@ -27,41 +27,44 @@ public class RegisterTest {
 
 	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 	private Server _server;
+	private PublicKey _serverKey;
 	private PublicKey _firstPublicKey;
 	private PublicKey _secondPublicKey;
 	private PublicKey _publicDSAKey;
 	private ManagedChannel _channel;
 
-
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
+	
+	private static final String host = "localhost";
+	private static final int port = 9000;
 
 	@Before
 	public void setup() throws IOException, NoSuchAlgorithmException {
 
+		//Keys 
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);
+		
 		KeyPair keyPair = keygen.generateKeyPair();
+		_serverKey = keyPair.getPublic();
+		
+		keyPair = keygen.generateKeyPair();
 		_firstPublicKey = keyPair.getPublic();
 
-		keygen = KeyPairGenerator.getInstance("RSA");
-		keygen.initialize(1024);
 		keyPair = keygen.generateKeyPair();
 		_secondPublicKey = keyPair.getPublic();
-
-		final BindableService impl = new ServiceDPASImpl();
-
-		// Start server
-		_server = NettyServerBuilder.forPort(9000).addService(impl).build();
-		_server.start();
 
 		keygen = KeyPairGenerator.getInstance("DSA");
 		keygen.initialize(1024);
 		keyPair = keygen.generateKeyPair();
 		_publicDSAKey = keyPair.getPublic();
+		
+		// Start server
+		final BindableService impl = new ServiceDPASImpl(_serverKey);
+		_server = NettyServerBuilder.forPort(port).addService(impl).build();
+		_server.start();
 
-		final String host = "localhost";
-		final int port = 9000;
 		_channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
 		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
 

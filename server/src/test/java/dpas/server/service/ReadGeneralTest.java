@@ -23,6 +23,7 @@ import org.junit.rules.ExpectedException;
 
 import com.google.protobuf.ByteString;
 
+import dpas.common.domain.Announcement;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -37,13 +38,21 @@ public class ReadGeneralTest {
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
 
-	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 	private Server _server;
-	private ManagedChannel _channel;
-	private PublicKey _publicKey;
-	private byte[] _signature;
+	private PublicKey _serverKey;
 	
+	private ManagedChannel _channel;
+	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+	
+	private PublicKey _publicKey;
+	private PrivateKey _privateKey;
+	
+	private byte[] _signature;
 	private String _identifier;
+	
+	private static final String host = "localhost";
+	private static final int port = 9000;
+	
 
 	private static final String MESSAGE = "Message to sign";
 
@@ -52,32 +61,32 @@ public class ReadGeneralTest {
 
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);
+		
 		KeyPair keyPair = keygen.generateKeyPair();
 		_publicKey = keyPair.getPublic();
-		PrivateKey privateKey = keyPair.getPrivate();
-
-		Signature sign = Signature.getInstance("SHA256withRSA");
-		sign.initSign(privateKey);
-		sign.update(MESSAGE.getBytes());
-		_signature = sign.sign();
+		_privateKey = keyPair.getPrivate();
+		
+		keygen.generateKeyPair();
+		_serverKey = keyPair.getPublic();
 		
 		_identifier = UUID.randomUUID().toString();
-
-		final BindableService impl = new ServiceDPASImpl();
-
-		// Start server
-		_server = NettyServerBuilder.forPort(9000).addService(impl).build();
+		_signature = Announcement.generateSignature(_privateKey, MESSAGE, _identifier, null, _serverKey);
+		
+		// Start Server
+		final BindableService impl = new ServiceDPASImpl(_serverKey);
+		_server = NettyServerBuilder.forPort(port).addService(impl).build();
 		_server.start();
-
-		final String host = "localhost";
-		final int port = 9000;
+		
+		// Connect to Server
 		_channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
 		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
+		// Register User
 		_stub.register(Contract.RegisterRequest.newBuilder()
 				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
 				.build());
-
+		
+		// Create Post To Read
 		_stub.postGeneral(Contract.PostRequest.newBuilder()
 				.setMessage(MESSAGE)
 				.setSignature(ByteString.copyFrom(_signature))

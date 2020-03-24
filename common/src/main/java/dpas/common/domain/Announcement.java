@@ -9,7 +9,6 @@ import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,7 +20,9 @@ import javax.json.JsonObjectBuilder;
 import com.google.protobuf.ByteString;
 
 import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidBoardException;
 import dpas.common.domain.exception.InvalidMessageSizeException;
+import dpas.common.domain.exception.InvalidReferenceException;
 import dpas.common.domain.exception.InvalidSignatureException;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullMessageException;
@@ -33,14 +34,14 @@ public class Announcement {
 	private byte[] _signature;
 	private User _user;
 	private String _message;
-	private ArrayList<Announcement> _references; // Can be null
+	private List<Announcement> _references; // Can be null
 	private String _identifier;
 	private AnnouncementBoard _board;
 
-	public Announcement(byte[] signature, User user, String message, ArrayList<Announcement> references,
-			String identifier, AnnouncementBoard board) throws CommonDomainException, InvalidSignatureException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+	public Announcement(byte[] signature, User user, String message, List<Announcement> references,
+			String identifier, AnnouncementBoard board) throws CommonDomainException{
 
-		checkArguments(signature, user, message, references);
+		checkArguments(signature, user, message, identifier, references, board);
 		checkSignature(signature, user, message, identifier , getReferenceStrings(references), board.getPublicKey());
 		this._message = message;
 		this._signature = signature;
@@ -48,12 +49,17 @@ public class Announcement {
 		this._references = references;
 		this._identifier = identifier;
 		this._board = board;
-
 	}
+	
+	public Announcement(PrivateKey signatureKey, User user, String message, List<Announcement> references,
+			String identifier, AnnouncementBoard board) throws CommonDomainException, InvalidKeyException, NoSuchAlgorithmException, SignatureException{
+		this(generateSignature(signatureKey, message, identifier, getReferenceStrings(references), board),
+			user, message, references, identifier, board);
+	}
+	
 
-	public void checkArguments(byte[] signature, User user, String message, ArrayList<Announcement> references)
-			throws NullSignatureException, NullMessageException, NullAnnouncementException, NullUserException,
-			InvalidMessageSizeException {
+	public void checkArguments(byte[] signature, User user, String message, String identifier, 
+			List<Announcement> references, AnnouncementBoard board) throws CommonDomainException  {
 
 		if (signature == null) {
 			throw new NullSignatureException("Invalid Signature provided: null");
@@ -68,6 +74,14 @@ public class Announcement {
 		if (message.length() > 255) {
 			throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
 		}
+		
+		if (identifier == null) {
+			throw new InvalidReferenceException("Invalid Announcement: Reference can't be null");
+		}
+		
+		if (board == null) {
+			throw new InvalidBoardException("Invalid Board Provided: can't be null");
+		}
 
 		if (references != null) {
 			if (references.contains(null)) {
@@ -76,28 +90,28 @@ public class Announcement {
 		}
 	}
 
-	public void checkSignature(byte[] signature, User user, String message, String identifier, List<String> references, PublicKey boardKey)
-			throws InvalidSignatureException, InvalidKeyException, NoSuchAlgorithmException, SignatureException {
-
-		var builder = new StringBuilder();
-		builder.append(message);
-		builder.append(identifier);
-		references.forEach(ref -> builder.append(ref));
-		
-		builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
-		
-		
-		byte[] messageBytes = builder.toString().getBytes();
-		PublicKey publicKey = user.getPublicKey();
-
-		Signature sign = Signature.getInstance("SHA256withRSA");
-		sign.initVerify(publicKey);
-		sign.update(messageBytes);
-
+	public void checkSignature(byte[] signature, User user, String message, String identifier, 
+			List<String> references, PublicKey boardKey) throws CommonDomainException{
 		try {
+			var builder = new StringBuilder();
+			builder.append(message);
+			builder.append(identifier);
+			references.forEach(ref -> builder.append(ref));
+		
+			builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
+		
+		
+			byte[] messageBytes = builder.toString().getBytes();
+			PublicKey publicKey = user.getPublicKey();
+
+			Signature sign = Signature.getInstance("SHA256withRSA");
+			sign.initVerify(publicKey);
+			sign.update(messageBytes);
+
 			if (!sign.verify(signature))
 				throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
-		} catch (SignatureException e) {
+		
+		}catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e ) {
 			throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
 		}
 	}
@@ -110,7 +124,7 @@ public class Announcement {
 		return this._signature;
 	}
 
-	public ArrayList<Announcement> getReferences() {
+	public List<Announcement> getReferences() {
 		return this._references;
 	}
 
@@ -156,21 +170,15 @@ public class Announcement {
 
 		return jsonBuilder.build();
 	}
-	
-	public static List<String> getReferenceStrings(List<Announcement> references) {
-		return references == null ? new ArrayList<String>() 
-				: references.stream().map(Announcement::getIdentifier).collect(Collectors.toList());
-	}
-	
-	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, List<String> references, PublicKey boardKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+		
+	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, List<String> references, PublicKey boardKey)
+																	throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 		var builder = new StringBuilder();
 		builder.append(message);
 		builder.append(identifier);
-		
 		if (references != null) {
 			references.forEach(ref -> builder.append(ref));
 		}
-		
 		builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
 		
 		byte[] messageBytes = builder.toString().getBytes();
@@ -180,4 +188,17 @@ public class Announcement {
 		sign.update(messageBytes);
 		return sign.sign();
 	}
+	
+
+	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, List<String> references, AnnouncementBoard board)
+																			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+		return generateSignature(privKey, message, identifier, references, board.getPublicKey());
+	}
+	
+	public static List<String> getReferenceStrings(List<Announcement> references) {
+		return references == null ? new ArrayList<String>() 
+				: references.stream().map(Announcement::getIdentifier).collect(Collectors.toList());
+	}
+	
+	
 }

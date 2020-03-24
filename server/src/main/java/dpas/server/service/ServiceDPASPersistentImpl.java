@@ -27,8 +27,8 @@ import io.grpc.stub.StreamObserver;
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 	private PersistenceManager _manager;
 
-	public ServiceDPASPersistentImpl(PersistenceManager manager) {
-		super();
+	public ServiceDPASPersistentImpl(PersistenceManager manager, PublicKey pubKey) {
+		super(pubKey);
 		_manager = manager;
 	}
 
@@ -126,15 +126,23 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 	public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier) 
 			throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
 
-		var announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references), identifier);
-		_users.get(key).getUserBoard().post(announcement);
+		var refs = getListOfReferences(references);
+		var user = _users.get(key);
+		var board = user.getUserBoard();
+		
+		var announcement = new Announcement(signature, user, message, refs, identifier, board);
+		board.post(announcement);
 		_announcements.put(announcement.getIdentifier(), announcement);
 	}
 
 	public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier)
 			throws InvalidKeyException, NoSuchAlgorithmException, CommonDomainException, SignatureException {
-
-		var announcement = new Announcement(signature, _users.get(key), message, getListOfReferences(references), identifier);
+		
+		var refs = getListOfReferences(references);
+		var user = _users.get(key);
+		var board = _generalBoard;
+		
+		var announcement = new Announcement(signature, user, message, refs, identifier, board);
 		_generalBoard.post(announcement);
 		_announcements.put(announcement.getIdentifier(), announcement);
 	}

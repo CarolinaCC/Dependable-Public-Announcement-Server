@@ -2,22 +2,25 @@ package dpas.common.domain;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.Signature;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
-import dpas.common.domain.exception.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidNumberOfPostsException;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullAnnouncementException;
 
 public class UserBoardTest {
 
@@ -46,16 +49,22 @@ public class UserBoardTest {
         KeyPair keyPair = keygen.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         User user = new User(publicKey);
+        
+        _userBoard = user.getUserBoard();
 
-        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifier, null, publicKey);
+        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifier, null, _userBoard);
 
         // Generate Announcement A
-        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, _identifier ,publicKey);
+        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, _identifier ,_userBoard);
 
+        //Generate References
+        ArrayList<Announcement> references = new ArrayList<>(Collections.singletonList(_announcementValid));
+        List<String> referenceIds = Announcement.getReferenceStrings(references);
+        
         //Generate valid signature for second message
-        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, _identifier2, null, publicKey);
+        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, _identifier2, referenceIds, _userBoard);
 
-        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, new ArrayList<Announcement>(Collections.singletonList(_announcementValid)), _identifier2, publicKey);
+        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, references, _identifier2, _userBoard);
 
         // Get UserBoard
         _userBoard = user.getUserBoard();
@@ -67,10 +76,10 @@ public class UserBoardTest {
         publicKey = keyPair.getPublic();
         user = new User(publicKey);
 
-        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifierInvalid, null, publicKey);
+        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, _identifierInvalid, null, _userBoard);
 
         // Generate Announcement B
-        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, _identifierInvalid, publicKey);
+        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, _identifierInvalid, _userBoard);
     }
 
     @After
