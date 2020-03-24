@@ -86,19 +86,19 @@ public class PostGeneralTest {
 		
 		//Signatures
 		_firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), _serverKey);
+				_firstIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
 		
 		_secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, new ArrayList<>(), _serverKey);
+				_secondIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
 		
 		_signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), _serverKey);
+				_firstIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
 		
 		_secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, Collections.singletonList(_firstIdentifier), _serverKey);
+				_secondIdentifier, Collections.singletonList(_firstIdentifier), "DPAS-GENERAL-BOARD");
 		
 		_bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), _firstPublicKey);
+				_firstIdentifier, new ArrayList<>(), "DPAS-GENERAL-BOARD");
 
 		
 		// Start server

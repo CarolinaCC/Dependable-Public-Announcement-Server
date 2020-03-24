@@ -1,11 +1,15 @@
 package dpas.common.domain;
 
+import java.security.PublicKey;
+import java.util.Base64;
+
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
 public class UserBoard extends AnnouncementBoard {
 	private User _owner;
+	protected PublicKey _publicKey;
 
 	public UserBoard(User user) throws NullUserException {
 		if (user == null)
@@ -27,6 +31,11 @@ public class UserBoard extends AnnouncementBoard {
 		if (post.getUser() != _owner) {
 			throw new InvalidUserException("Invalid User: User is not owner of this board");
 		}
+	}
+
+	@Override
+	public String getIdentifier() {
+		return Base64.getEncoder().encodeToString(_publicKey.getEncoded());
 	}
 
 }

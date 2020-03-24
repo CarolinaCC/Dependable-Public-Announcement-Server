@@ -39,7 +39,7 @@ public class Announcement {
 			String identifier, AnnouncementBoard board) throws CommonDomainException{
 
 		checkArguments(signature, user, message, identifier, references, board);
-		checkSignature(signature, user, message, identifier , getReferenceStrings(references), board.getPublicKey());
+		checkSignature(signature, user, message, identifier , getReferenceStrings(references), board.getIdentifier());
 		_message = message;
 		_signature = signature;
 		_user = user;
@@ -89,10 +89,10 @@ public class Announcement {
 	}
 	
 	public void checkSignature(byte[] signature, User user, String message, String identifier, 
-			List<String> references, PublicKey boardKey) throws CommonDomainException{
+			List<String> references, String boardIdentifier) throws CommonDomainException{
 		try {
 			
-			byte[] messageBytes = generateMessageBytes(message, identifier, references, boardKey);
+			byte[] messageBytes = generateMessageBytes(message, identifier, references, boardIdentifier);
 			PublicKey publicKey = user.getPublicKey();
 
 			Signature sign = Signature.getInstance("SHA256withRSA");
@@ -164,9 +164,9 @@ public class Announcement {
 	}
 		
 	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, 
-			List<String> references, PublicKey boardKey) throws CommonDomainException {
+			List<String> references, String boadIdentifier) throws CommonDomainException {
 		try {
-			var messageBytes = generateMessageBytes(message, identifier, references, boardKey);
+			var messageBytes = generateMessageBytes(message, identifier, references, boadIdentifier);
 			var sign = Signature.getInstance("SHA256withRSA");
 			sign.initSign(privKey);
 			sign.update(messageBytes);
@@ -180,7 +180,7 @@ public class Announcement {
 	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, 
 			List<String> references, AnnouncementBoard board) throws CommonDomainException {
 		
-		return generateSignature(privKey, message, identifier, references, board.getPublicKey());
+		return generateSignature(privKey, message, identifier, references, board.getIdentifier());
 	}
 	
 	public static List<String> getReferenceStrings(List<Announcement> references) {
@@ -188,14 +188,14 @@ public class Announcement {
 				: references.stream().map(Announcement::getIdentifier).collect(Collectors.toList());
 	}
 	
-	private static byte[] generateMessageBytes(String message, String identifier, List<String> references, PublicKey boardKey) {
+	private static byte[] generateMessageBytes(String message, String identifier, List<String> references, String boardIdentifier) {
 		var builder = new StringBuilder();
 		builder.append(message);
 		builder.append(identifier);
 		if (references != null) {
 			references.forEach(ref -> builder.append(ref));
 		}
-		builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
+		builder.append(boardIdentifier);
 		return builder.toString().getBytes();
 	}
 	

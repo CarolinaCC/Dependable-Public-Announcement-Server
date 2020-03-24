@@ -5,10 +5,6 @@ import java.security.PublicKey;
 import dpas.common.domain.exception.NullAnnouncementException;
 
 public class GeneralBoard extends AnnouncementBoard {
-
-	public GeneralBoard(PublicKey key) {
-		_publicKey = key;
-	}
 	
 	@Override
 	public synchronized void post(Announcement announcement) throws NullAnnouncementException {
@@ -17,6 +13,11 @@ public class GeneralBoard extends AnnouncementBoard {
 		}
 		_posts.add(announcement);
 
+	}
+
+	@Override
+	public String getIdentifier() {
+		return "DPAS-GENERAL-BOARD";
 	}
 
 }

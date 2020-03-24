@@ -32,7 +32,7 @@ public class GeneralBoardTest {
         _identifier = UUID.randomUUID().toString();
        
         // Generate Board
-        _generalBoard = new GeneralBoard(publicKey);
+        _generalBoard = new GeneralBoard();
         
         byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", _identifier, null, _generalBoard);
 

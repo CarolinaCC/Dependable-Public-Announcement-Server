@@ -6,6 +6,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,7 +53,7 @@ public class Library {
 
 	public void postGeneral(PublicKey key, char[] message, Announcement[] a, String identifier, PrivateKey privateKey) {
 		try {
-			_stub.postGeneral(createPostRequest(key, message, a, identifier, privateKey));
+			_stub.postGeneral(createPostGeneralRequest(key, message, a, identifier, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 		} catch (CommonDomainException e) {
@@ -83,22 +84,31 @@ public class Library {
 		}
 	}
 
+	private PostRequest createPostRequest(String boardIdentifier, PublicKey key, char[] message, Announcement[] a,
+			String identifier, PrivateKey privateKey) throws CommonDomainException {
+	
+		List<String> references = a == null ? new ArrayList<String>() 
+				: Stream.of(a).map(Announcement::getIdentifier).collect(Collectors.toList());
+
+	byte[] signature = dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message), 
+			identifier, references, boardIdentifier);
+	
+	return PostRequest.newBuilder()
+			.setIdentifier(identifier)
+			.setMessage(String.copyValueOf(message))
+			.setPublicKey(ByteString.copyFrom(key.getEncoded()))
+			.addAllReferences(references)
+			.setSignature(ByteString.copyFrom(signature))
+			.build();
+	}
+			
+	private PostRequest createPostGeneralRequest(PublicKey key, char[] message, Announcement[] a, String identifier,
+			PrivateKey privateKey) throws CommonDomainException {
+		return createPostRequest("DPAS-GENERAL-BOARD", key, message, a, identifier, privateKey);
+	}
 
 	private PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a, String identifier,
 			PrivateKey privateKey) throws CommonDomainException {
-
-		List<String> references = a == null ? new ArrayList<String>() 
-					: Stream.of(a).map(Announcement::getIdentifier).collect(Collectors.toList());
-
-		byte[] signature = dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message), identifier, references, key);
-		
-		return PostRequest.newBuilder()
-				.setIdentifier(identifier)
-				.setMessage(String.copyValueOf(message))
-				.setPublicKey(ByteString.copyFrom(key.getEncoded()))
-				.addAllReferences(references)
-				.setSignature(ByteString.copyFrom(signature))
-				.build();
+		return createPostRequest(Base64.getEncoder().encodeToString(key.getEncoded()), key, message, a, identifier, privateKey);
 	}
-
 }

@@ -12,6 +12,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -88,8 +89,8 @@ public class ReadTest {
 		_identifier2 =UUID.randomUUID().toString();
 
 		//Signatures
-		_signature = Announcement.generateSignature(_privateKey, MESSAGE, _identifier, null, _publicKey);
-		_signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, _identifier2, null, _publicKey);
+		_signature = Announcement.generateSignature(_privateKey, MESSAGE, _identifier, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
+		_signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, _identifier2, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
 		
 		//Start Server
 		final BindableService impl = new ServiceDPASImpl(_serverKey);

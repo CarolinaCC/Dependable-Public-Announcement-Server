@@ -34,7 +34,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         super();
         _announcements = new ConcurrentHashMap<>();
         _users = new ConcurrentHashMap<>();
-        _generalBoard = new GeneralBoard(pubKey);
+        _generalBoard = new GeneralBoard();
     }
 
     @Override
@@ -122,10 +122,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
         try {
             var announcements = _generalBoard.read(request.getNumber());
-
-            var announcementsGRPC = announcements.stream()
-                    .map(Announcement::toContract)
-                    .collect(Collectors.toList());
+            var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
             responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
             responseObserver.onCompleted();

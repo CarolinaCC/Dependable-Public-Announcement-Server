@@ -12,9 +12,7 @@ public abstract class AnnouncementBoard {
 	protected ArrayList<Announcement> _posts = new ArrayList<>();
 	protected PublicKey _publicKey;
 	
-	public PublicKey getPublicKey() {
-		return _publicKey;
-	}
+	public abstract String getIdentifier();
 
 	public abstract void post(Announcement announcement)
 			throws NullAnnouncementException, NullUserException, InvalidUserException;

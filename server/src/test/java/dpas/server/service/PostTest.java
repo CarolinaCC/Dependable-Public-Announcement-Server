@@ -10,6 +10,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -105,19 +106,19 @@ public class PostTest {
 	
 		// Signatures
 		_firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), _firstPublicKey);
+				_firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
 		_secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, new ArrayList<>(), _secondPublicKey);
+				_secondIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 
 		_secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_secondIdentifier, Collections.singletonList(_firstIdentifier), _secondPublicKey);
+				_secondIdentifier, Collections.singletonList(_firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 		
 		_signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), _secondPublicKey);
+				_firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 		
 		_bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE, 
-				_firstIdentifier, new ArrayList<>(), _firstPublicKey);
+				_firstIdentifier, new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 		
 		ClassLoader classLoader = getClass().getClassLoader();
 		String path = classLoader.getResource("valid_load_target.json").getPath();

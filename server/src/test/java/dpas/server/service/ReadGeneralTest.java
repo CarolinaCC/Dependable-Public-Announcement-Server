@@ -12,6 +12,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,7 +72,7 @@ public class ReadGeneralTest {
 		_serverKey = keyPair.getPublic();
 		
 		_identifier = UUID.randomUUID().toString();
-		_signature = Announcement.generateSignature(_privateKey, MESSAGE, _identifier, null, _serverKey);
+		_signature = Announcement.generateSignature(_privateKey, MESSAGE, _identifier, null, "DPAS-GENERAL-BOARD");
 		
 		// Start Server
 		final BindableService impl = new ServiceDPASImpl(_serverKey);
