@@ -1,3 +1,9 @@
 {
-  "Operations": []
+	"PublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAozLLhXeIzPiIG07stibsPX7HDdkgYjugQCwX87fasHv2BduuKvpGXRR3A0jFZkG1tr+JnIsOy7t/W6BksqkwDxuh3tdDWz2S5jv8Tsw9flQXbDmXslzvDIlF6w9t0NW5rbOJKJOPQlOaBEUWJcbH9zn5DqbEk13x1tLmcqly6UKG9cqbtrHUQjR2JZ3pVGiRfuzD8cJEWcae0WO5N4cIkn1PyKPm/lJwycLivocpVWr7WvJ/qMU5irABUxlEh8h2czEZoOsBio6a5pFNQevFqHTz+t6g9rr6wigHFTKmObvWf8wZMbqp7QmiKLxCN3ep7XfRJnhHStEUCQpvwI/ENQIDAQAB",
+	"Operations": [
+		{
+			"Type": "Register",
+			"Public Key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnePrqmgO9cdZbfmmLVcOZbxOvadJloAykD22VQt5AhmRPBTbTptprloe1iu5y3tOICLGPYQ+daHUZPmfYuQkDrP6niRsl+ngmhApgr5nE9Hl1Bg0dd3URnfKQ0RAuk/aTiQGcs0rjPtywJ2hp/jjFnMkO3jZvtMlLw49d5Y8Kz4U0Cbzba6hrJf9SEiB0r7GvObhve0oGvPN4sNAipI9rh9sKXnN+6CoGAzQNDROnDxFMqQPn7TwrIeb6GIRj2DFMKGzMet1e0R/wPWIPFsnvNC5josEY0aH6yAjRUeMZlJXPGzzyQJ7P5u4H/EhSwzX8FPXV+D/KfHuYUNDMtOBZwIDAQAB"
+		}
+	]
 }

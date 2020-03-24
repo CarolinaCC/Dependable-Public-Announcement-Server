@@ -33,6 +33,7 @@ public class App {
 			String line = System.console().readLine("Enter Command: ");
 			String[] split = line.split(" ");
 			if(split.length == 0) {
+				printHelp();
 				continue;
 			}
 			switch(split[0]) {
@@ -50,7 +51,7 @@ public class App {
 				case "postGeneral":
 					break;
 				default:
-					break;
+					printHelp();
 			}
 		}
 	}
@@ -99,10 +100,12 @@ public class App {
 			//Should never happen
 			System.out.println("Invalid Argument: File provided does not exist");
 		} catch (IOException e) {
-			System.out.println("Error: An Error Occurred while reading the keystore");			
+			System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");			
 		} catch (NoSuchAlgorithmException e) {
 			//Should never happen
 			System.out.println("Error: JKS does not exist");		
+		} catch (NullPointerException e) {
+			System.out.println("Invalid Argument: Key with that alias does not exist");
 		}
 	}
 
@@ -136,7 +139,7 @@ public class App {
 			printAnnouncements(a);
 		}
 		catch (IOException e) {
-			System.out.println("Error: Could not open KeyStore for reading");
+			System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
 		} catch (KeyStoreException e) {
 			System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
 		} catch (CertificateException e) {
@@ -168,6 +171,17 @@ public class App {
 			System.out.println("Signature: "+ Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
 			System.out.println("Author: " + Base64.getEncoder().encodeToString(announcement.getPublicKey().toByteArray()));
 		}
+		System.out.println();
+	}
+	
+	public static void printHelp() {
+		System.out.println();
+		System.out.println("Avaliable commands:");
+		System.out.println("register <KeyStorePath>");
+		System.out.println("post <KeyStorePath> <message> <numReferences> <references...>");
+		System.out.println("postGeneral <KeyStorePath> <message> <numReferences> <references...>");
+		System.out.println("read <KeyStorePath> <number>");
+		System.out.println("readGeneral <number>");
 		System.out.println();
 	}
 }
