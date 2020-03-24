@@ -64,7 +64,9 @@ public class Library {
 							.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
 							.setNumber(number)
 							.build());
-			return (Announcement[]) reply.getAnnouncementsList().toArray();
+			var a = new Announcement[reply.getAnnouncementsCount()];
+			reply.getAnnouncementsList().toArray(a);
+			return a;
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 			return new Announcement[0];
@@ -74,7 +76,9 @@ public class Library {
 	public Announcement[] readGeneral(int number) {
 		try {
 			Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(number).build());
-			return (Announcement[]) reply.getAnnouncementsList().toArray();
+			var a = new Announcement[reply.getAnnouncementsCount()];
+			reply.getAnnouncementsList().toArray(a);
+			return a;
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
 			return new Announcement[0];
