@@ -10,12 +10,9 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.json.Json;
-import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 
 import com.google.protobuf.ByteString;
 
@@ -43,16 +40,17 @@ public class Announcement {
 
 		checkArguments(signature, user, message, identifier, references, board);
 		checkSignature(signature, user, message, identifier , getReferenceStrings(references), board.getPublicKey());
-		this._message = message;
-		this._signature = signature;
-		this._user = user;
-		this._references = references;
-		this._identifier = identifier;
-		this._board = board;
+		_message = message;
+		_signature = signature;
+		_user = user;
+		_references = references;
+		_identifier = identifier;
+		_board = board;
 	}
 	
 	public Announcement(PrivateKey signatureKey, User user, String message, List<Announcement> references,
-			String identifier, AnnouncementBoard board) throws CommonDomainException, InvalidKeyException, NoSuchAlgorithmException, SignatureException{
+			String identifier, AnnouncementBoard board) throws CommonDomainException {
+		
 		this(generateSignature(signatureKey, message, identifier, getReferenceStrings(references), board),
 			user, message, references, identifier, board);
 	}
@@ -89,19 +87,12 @@ public class Announcement {
 			}
 		}
 	}
-
+	
 	public void checkSignature(byte[] signature, User user, String message, String identifier, 
 			List<String> references, PublicKey boardKey) throws CommonDomainException{
 		try {
-			var builder = new StringBuilder();
-			builder.append(message);
-			builder.append(identifier);
-			references.forEach(ref -> builder.append(ref));
-		
-			builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
-		
-		
-			byte[] messageBytes = builder.toString().getBytes();
+			
+			byte[] messageBytes = generateMessageBytes(message, identifier, references, boardKey);
 			PublicKey publicKey = user.getPublicKey();
 
 			Signature sign = Signature.getInstance("SHA256withRSA");
@@ -116,82 +107,79 @@ public class Announcement {
 		}
 	}
 
+
 	public String getMessage() {
-		return this._message;
+		return _message;
 	}
 
 	public byte[] getSignature() {
-		return this._signature;
+		return _signature;
 	}
 
 	public List<Announcement> getReferences() {
-		return this._references;
+		return _references;
 	}
 
 	public User getUser() {
-		return this._user;
+		return _user;
 	}
 
 
 	public String getIdentifier() {
 		return _identifier;
 	}
-
+	
 	public Contract.Announcement toContract() {
 
-		Stream<Announcement> myStream = _references.stream();
-		List<String> announcementToIdentifier = myStream.map(Announcement::getIdentifier).collect(Collectors.toList());
-
-		return Contract.Announcement.newBuilder()
-				.setMessage(_message)
-				.addAllReferences(announcementToIdentifier)
-				.setIdentifier(_identifier)
-				.setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
-				.setSignature(ByteString.copyFrom(_signature))
-				.build();
+		var references = getReferenceStrings(_references);
+		
+		var announcement = Contract.Announcement.newBuilder()
+		.setMessage(_message)
+		.addAllReferences(references)
+		.setIdentifier(_identifier)
+		.setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
+		.setSignature(ByteString.copyFrom(_signature))
+		.build();
+		
+		return announcement;
 	}
 
 	public JsonObject toJson(String type) {
-		JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
+		var jsonBuilder = Json.createObjectBuilder();
+		
 		String pubKey = Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded());
 		String sign = Base64.getEncoder().encodeToString(_signature);
-		final JsonArrayBuilder builder = Json.createArrayBuilder();
-
-		for (Announcement reference : _references) {
-			builder.add(reference.getIdentifier());
-		}
+		
+		final var arrayBuilder = Json.createArrayBuilder();		
+		getReferenceStrings(_references).forEach(ref -> arrayBuilder.add(ref));
 
 		jsonBuilder.add("Type", type);
 		jsonBuilder.add("Public Key", pubKey);
 		jsonBuilder.add("Message", _message);
 		jsonBuilder.add("Signature", sign);
 		jsonBuilder.add("Identifier", _identifier);
-		jsonBuilder.add("References", builder.build());
+		jsonBuilder.add("References", arrayBuilder.build());
 
 		return jsonBuilder.build();
 	}
 		
-	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, List<String> references, PublicKey boardKey)
-																	throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-		var builder = new StringBuilder();
-		builder.append(message);
-		builder.append(identifier);
-		if (references != null) {
-			references.forEach(ref -> builder.append(ref));
+	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, 
+			List<String> references, PublicKey boardKey) throws CommonDomainException {
+		try {
+			var messageBytes = generateMessageBytes(message, identifier, references, boardKey);
+			var sign = Signature.getInstance("SHA256withRSA");
+			sign.initSign(privKey);
+			sign.update(messageBytes);
+			return sign.sign();
+		} catch(NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+			throw new InvalidSignatureException("Invalid Signature: could not be created");
 		}
-		builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
-		
-		byte[] messageBytes = builder.toString().getBytes();
-		
-		Signature sign = Signature.getInstance("SHA256withRSA");
-		sign.initSign(privKey);
-		sign.update(messageBytes);
-		return sign.sign();
 	}
 	
 
-	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, List<String> references, AnnouncementBoard board)
-																			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+	public static byte[] generateSignature(PrivateKey privKey, String message, String identifier, 
+			List<String> references, AnnouncementBoard board) throws CommonDomainException {
+		
 		return generateSignature(privKey, message, identifier, references, board.getPublicKey());
 	}
 	
@@ -199,6 +187,18 @@ public class Announcement {
 		return references == null ? new ArrayList<String>() 
 				: references.stream().map(Announcement::getIdentifier).collect(Collectors.toList());
 	}
+	
+	private static byte[] generateMessageBytes(String message, String identifier, List<String> references, PublicKey boardKey) {
+		var builder = new StringBuilder();
+		builder.append(message);
+		builder.append(identifier);
+		if (references != null) {
+			references.forEach(ref -> builder.append(ref));
+		}
+		builder.append(Base64.getEncoder().encodeToString(boardKey.getEncoded()));
+		return builder.toString().getBytes();
+	}
+	
 	
 	
 }

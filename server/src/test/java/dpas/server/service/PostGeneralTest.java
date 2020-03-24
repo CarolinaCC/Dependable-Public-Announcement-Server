@@ -1,17 +1,13 @@
 package dpas.server.service;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +20,7 @@ import org.junit.rules.ExpectedException;
 import com.google.protobuf.ByteString;
 
 import dpas.common.domain.Announcement;
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -65,7 +62,7 @@ public class PostGeneralTest {
 	private static final String INVALID_MESSAGE = StringUtils.repeat("ThisMessageisInvalid", "", 15);
 	
 	@Before
-	public void setup() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+	public void setup() throws IOException, CommonDomainException, NoSuchAlgorithmException {
 		
 		//Identifiers
 		_firstIdentifier = UUID.randomUUID().toString();

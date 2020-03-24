@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import com.google.protobuf.ByteString;
 
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.Contract.PostRequest;
@@ -44,7 +45,7 @@ public class Library {
 			_stub.post(createPostRequest(key, message, a, identifier, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
-		} catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
+		} catch (CommonDomainException e) {
 			System.out.println("Could not create signature from values provided");
 		}
 	}
@@ -54,7 +55,7 @@ public class Library {
 			_stub.postGeneral(createPostRequest(key, message, a, identifier, privateKey));
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
-		} catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
+		} catch (CommonDomainException e) {
 			System.out.println("Could not create signature from values provided");
 		}
 	}
@@ -84,7 +85,7 @@ public class Library {
 
 
 	private PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a, String identifier,
-			PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+			PrivateKey privateKey) throws CommonDomainException {
 
 		List<String> references = a == null ? new ArrayList<String>() 
 					: Stream.of(a).map(Announcement::getIdentifier).collect(Collectors.toList());

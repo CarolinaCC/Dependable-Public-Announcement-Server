@@ -24,6 +24,7 @@ import org.junit.rules.ExpectedException;
 import com.google.protobuf.ByteString;
 
 import dpas.common.domain.Announcement;
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -72,7 +73,7 @@ public class PostTest {
 	private static final int port = 9000;
 	
 	@Before
-	public void setup() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+	public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException {
 
 		// Identifiers
 		_firstIdentifier = UUID.randomUUID().toString();

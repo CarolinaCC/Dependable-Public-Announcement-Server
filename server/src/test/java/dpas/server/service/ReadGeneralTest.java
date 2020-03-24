@@ -24,6 +24,7 @@ import org.junit.rules.ExpectedException;
 import com.google.protobuf.ByteString;
 
 import dpas.common.domain.Announcement;
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.BindableService;
@@ -57,7 +58,7 @@ public class ReadGeneralTest {
 	private static final String MESSAGE = "Message to sign";
 
 	@Before
-	public void setup() throws IOException, InvalidKeyException, NoSuchAlgorithmException, SignatureException {
+	public void setup() throws IOException, CommonDomainException, NoSuchAlgorithmException {
 
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);
