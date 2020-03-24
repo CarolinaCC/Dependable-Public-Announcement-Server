@@ -70,7 +70,7 @@ public class Library {
 			return (Announcement[]) reply.getAnnouncementsList().toArray();
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
-			return null;
+			return new Announcement[0];
 		}
 	}
 
@@ -80,7 +80,7 @@ public class Library {
 			return (Announcement[]) reply.getAnnouncementsList().toArray();
 		} catch (StatusRuntimeException e) {
 			System.out.println("An error ocurred: " + e.getMessage());
-			return null;
+			return new Announcement[0];
 		}
 	}
 
