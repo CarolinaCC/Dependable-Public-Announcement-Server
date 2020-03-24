@@ -11,10 +11,12 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Scanner;
 
 import dpas.client.library.Library;		
 
 public class App {
+
 	public static void main(String[] args) throws FileNotFoundException, IOException, KeyStoreException,
 			NoSuchAlgorithmException, UnrecoverableKeyException, CertificateException {
 
@@ -101,5 +103,46 @@ public class App {
 			System.out.println("Error: JKS does not exist");	
 			
 		}
+	}
+
+	public void parseReadLine(String read, Library lib) throws KeyStoreException {
+
+		Scanner readInput = new Scanner(System.in);  // Create a Scanner object
+		System.out.println("Please enter KeyStore alias");
+		String keyAlias = readInput.nextLine();  // Read user input
+
+		String[] readSplit = read.split(" ");
+		int number = Integer.parseInt(readSplit[2]);
+		String jksPath = readSplit[1];
+		String username = "USERNAME"; //Já não precisamos disto right?
+
+		if (!jksPath.endsWith(".jks")) {
+			System.out.println("Invalid argument: Client key store must be a JKS file!");
+			System.exit(-1);
+		}
+
+		File jksFile = new File(jksPath);
+		if (!jksFile.exists() || jksFile.isDirectory()) {
+			System.out.println("Invalid Argument: Client Key Store File must exist and must not be a directory!");
+			System.exit(-1);
+		}
+
+		KeyStore ks = KeyStore.getInstance("JKS");
+		try (FileInputStream fis = new FileInputStream(jksFile)) {
+			PublicKey pubKey = ks.getCertificate(keyAlias).getPublicKey();
+			lib.read(pubKey, username, number);
+		} catch (IOException e) {
+			System.out.println(
+					"Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
+			System.exit(-1);
+		}
+
+	}
+
+	public void parseReadGeneralLine(String readGeneral, Library lib) {
+
+		String[] readSplit = readGeneral.split(" ");
+		int number = Integer.parseInt(readSplit[1]);
+		lib.readGeneral(number);
 	}
 }
