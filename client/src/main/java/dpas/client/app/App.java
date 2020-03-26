@@ -68,27 +68,9 @@ public class App {
                 return;
             }
 
-            String jksPath = split[1];
+            File jksFile = openKeyStore(split);
+            PublicKey pubKey = loadPublicKey(jksFile);
 
-            if (!jksPath.endsWith(".jks")) {
-                System.out.println("Invalid argument: Client key store must be a JKS file!");
-                return;
-            }
-            File jksFile = new File(jksPath);
-            if (!jksFile.exists() || jksFile.isDirectory()) {
-                System.out.println("Invalid Argument: Client Key Store File must exist and must not be a directory!");
-                return;
-            }
-
-            char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
-            String alias = System.console().readLine("Insert Certificate Alias: ");
-            KeyStore ks = KeyStore.getInstance("JKS");
-
-            PublicKey pubKey;
-            try (FileInputStream fis = new FileInputStream(jksFile)) {
-                ks.load(fis, jksPassword);
-                pubKey = ks.getCertificate(alias).getPublicKey();
-            }
             if (!pubKey.getAlgorithm().equals("RSA")) {
                 System.out.println("Error: Client key must be an RSA key");
                 return;
@@ -109,6 +91,8 @@ public class App {
             System.out.println("Error: JKS does not exist");
         } catch (NullPointerException e) {
             System.out.println("Invalid Argument: Key with that alias does not exist");
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
         }
     }
 
@@ -120,34 +104,16 @@ public class App {
                 return;
             }
             int number = Integer.parseInt(readSplit[2]);
-            String jksPath = readSplit[1];
-
-            if (!jksPath.endsWith(".jks")) {
-                System.out.println("Invalid argument: Client key store must be a JKS file!");
-                System.exit(-1);
-            }
-
-            File jksFile = new File(jksPath);
-            if (!jksFile.exists() || jksFile.isDirectory()) {
-                System.out.println("Invalid Argument: Client Key Store File must exist and must not be a directory!");
-                System.exit(-1);
-            }
-            char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
-            String alias = System.console().readLine("Insert Certificate Alias: ");
-            KeyStore ks = KeyStore.getInstance("JKS");
-
-            PublicKey pubKey;
-
-            try (FileInputStream fis = new FileInputStream(jksFile)) {
-                ks.load(fis, jksPassword);
-                pubKey = ks.getCertificate(alias).getPublicKey();
-            }
+            File jksFile = openKeyStore(readSplit);
+            PublicKey pubKey = loadPublicKey(jksFile);
             Announcement[] a = lib.read(pubKey, number);
             printAnnouncements(a);
         } catch (IOException | KeyStoreException | NoSuchAlgorithmException e) {
             System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
-        } catch (CertificateException e) {
-            System.out.println("Error: Could not load key store (Wrong password)!");
+        } catch (CertificateException | NullPointerException e) {
+            System.out.println("Error: Could not load key store (Wrong alias)!");
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
         }
     }
 
@@ -199,24 +165,12 @@ public class App {
                 System.out.println("Invalid argument: Must be post/postGeneral <KeyStorePath> <message> <numReferences <references...>");
                 return;
             }
-
             if (split.length != 4 + Integer.parseInt(split[3])) {
                 System.out.println("Invalid Argument: Number of references provided does not match real value");
                 return;
             }
 
-            String jksPath = split[1];
-
-            if (!jksPath.endsWith(".jks")) {
-                System.out.println("Invalid argument: Client key store must be a JKS file!");
-                System.exit(-1);
-            }
-
-            File jksFile = new File(jksPath);
-            if (!jksFile.exists() || jksFile.isDirectory()) {
-                System.out.println("Invalid Argument: Client Key Store File must exist and must not be a directory!");
-                System.exit(-1);
-            }
+            File jksFile = openKeyStore(split);
 
             String message = split[2];
 
@@ -228,7 +182,6 @@ public class App {
 
             PublicKey pubKey;
             PrivateKey priKey;
-
             try (FileInputStream fis = new FileInputStream(jksFile)) {
                 ks.load(fis, jksPassword);
                 pubKey = ks.getCertificate(keyPairAlias).getPublicKey();
@@ -256,15 +209,42 @@ public class App {
             System.out.println("Invalid Argument: File provided does not exist");
         } catch (IOException e) {
             System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
-        } catch (CertificateException e) {
+        } catch (CertificateException | NullPointerException e) {
             System.out.println("Invalid Argument: Could not get certificate with that alias");
         } catch (UnrecoverableKeyException e) {
             System.out.println("Error: Probably mistake in key alias");
         } catch (NoSuchAlgorithmException e) {
             //Should never happen
             System.out.println("Error: JKS does not exist");
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
         }
     }
 
+    private static File openKeyStore(String[] split) throws IllegalArgumentException {
+        String jksPath = split[1];
 
+        if (!jksPath.endsWith(".jks")) {
+            throw new IllegalArgumentException("Invalid argument: Client key store must be a JKS file!");
+        }
+
+        File jksFile = new File(jksPath);
+        if (!jksFile.exists() || jksFile.isDirectory()) {
+            throw new IllegalArgumentException("Invalid Argument: Client Key Store File must exist and must not be a directory!");
+        }
+        return jksFile;
+    }
+
+    private static PublicKey loadPublicKey(File jksFile) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NullPointerException {
+        char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
+        String alias = System.console().readLine("Insert Certificate Alias: ");
+        KeyStore ks = KeyStore.getInstance("JKS");
+
+        PublicKey pubKey;
+        try (FileInputStream fis = new FileInputStream(jksFile)) {
+            ks.load(fis, jksPassword);
+            pubKey = ks.getCertificate(alias).getPublicKey();
+        }
+        return pubKey;
+    }
 }
