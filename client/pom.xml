@@ -20,22 +20,13 @@
         <server.PublicKeyAlias>server</server.PublicKeyAlias>
         <mainclass>dpas.client.app.App</mainclass>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>SEC.T18</groupId>
-            <artifactId>DPAS-contract</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>SEC.T18</groupId>
-            <artifactId>DPAS-common</artifactId>
+            <artifactId>DPAS-library</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.9</version>
         </dependency>
     </dependencies>
 

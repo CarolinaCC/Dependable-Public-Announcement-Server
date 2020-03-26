@@ -1,4 +1,4 @@
-package dpas.client.library;
+package dpas.library;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;

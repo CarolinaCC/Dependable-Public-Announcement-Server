@@ -89,5 +89,6 @@
         <module>server</module>
         <module>contract</module>
         <module>client</module>
+        <module>library</module>
     </modules>
 </project>

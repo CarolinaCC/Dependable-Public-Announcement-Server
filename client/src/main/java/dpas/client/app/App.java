@@ -1,8 +1,8 @@
 package dpas.client.app;
 
-import dpas.client.library.Library;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
+import dpas.library.Library;
 
 import java.io.File;
 import java.io.FileInputStream;
