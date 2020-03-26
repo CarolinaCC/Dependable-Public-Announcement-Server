@@ -31,8 +31,8 @@ public class App {
 		int port = Integer.parseInt(args[1]);
 		
 		Library lib = new Library(serverAddr, port);
+		printHelp();
 		while(true) {
-
 			String line = System.console().readLine("Enter Command: ");
 			String[] split = line.split(" ");
 			if(split.length == 0) {
@@ -42,17 +42,23 @@ public class App {
 			switch(split[0]) {
 				case "register":
 					parseRegisterLine(line, lib);
+					printHelp();
 					break;
 				case "read":
 					parseReadLine(line, lib);
+					printHelp();
 					break;
 				case "readGeneral":
 					parseReadGeneralLine(line, lib);
+					printHelp();
 					break;
 				case "post":
 				case "postGeneral":
 					parsePostLine(line, lib);
+					printHelp();
 					break;
+				case "quit":
+					return;
 				default:
 					printHelp();
 			}
@@ -115,6 +121,10 @@ public class App {
 	public static void parseReadLine(String read, Library lib) {
 		try {
 			String[] readSplit = read.split(" ");
+			if (readSplit.length != 3) {
+				System.out.println("Invalid argument: Must be read <KeystorePath> <number>");
+				return;
+			}
 			int number = Integer.parseInt(readSplit[2]);
 			String jksPath = readSplit[1];
 
@@ -166,13 +176,16 @@ public class App {
 	public static void printAnnouncements(Announcement[] announcements) {
 		System.out.println();
 		for(var announcement: announcements) {
-			System.out.println("Identifier: " + announcement.getHash());
-			System.out.println("Message: " + announcement.getMessage());
+			System.out.println("Identifier:\t" + announcement.getHash());
+			System.out.println("Sequencer:\t" + announcement.getSequencer());
+			System.out.println("Message:\t" + announcement.getMessage());
+			System.out.print("References:");
 			for(var ref: announcement.getReferencesList()) {
-				System.out.println("References: " + ref);
+				System.out.print("\t" + ref);
 			}
-			System.out.println("Signature: "+ Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
-			System.out.println("Author: " + Base64.getEncoder().encodeToString(announcement.getPublicKey().toByteArray()));
+			System.out.println();
+			System.out.println("Signature:\t"+ Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
+			System.out.println("Author:\t" + Base64.getEncoder().encodeToString(announcement.getPublicKey().toByteArray()));
 			System.out.println();
 		}
 	}
@@ -180,11 +193,12 @@ public class App {
 	public static void printHelp() {
 		System.out.println();
 		System.out.println("Avaliable commands:");
-		System.out.println("register <KeyStorePath>");
-		System.out.println("post <KeyStorePath> <message> <numReferences> <references...>");
-		System.out.println("postGeneral <KeyStorePath> <message> <numReferences> <references...>");
-		System.out.println("read <KeyStorePath> <number>");
-		System.out.println("readGeneral <number>");
+		System.out.println("\tregister <KeyStorePath>");
+		System.out.println("\tpost <KeyStorePath> <message> <numReferences> <references...>");
+		System.out.println("\tpostGeneral <KeyStorePath> <message> <numReferences> <references...>");
+		System.out.println("\tread <KeyStorePath> <number>");
+		System.out.println("\treadGeneral <number>");
+		System.out.println("\tquit");
 		System.out.println();
 	}
 

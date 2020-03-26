@@ -44,6 +44,9 @@ public class PersistenceManager {
 
 
     public PersistenceManager(String path, PublicKey pubKey) throws IOException {
+        if (path == null || pubKey == null) {
+            throw new RuntimeException();
+        }
         if (Files.isDirectory(Paths.get(path))) {
             throw new RuntimeException();
         }
@@ -80,7 +83,9 @@ public class PersistenceManager {
         Files.move(Paths.get(_swapFile.getPath()), Paths.get(_path), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public synchronized ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, SignatureException, InvalidKeyException, IOException {
+    public synchronized ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, IOException {
+
+        int counter = 0;
 
         JsonArray jsonArray = readSaveFile();
 
@@ -103,14 +108,16 @@ public class PersistenceManager {
                 for (int j = 0; j < jsonReferences.size(); j++) {
                     references.add(jsonReferences.getString(j));
                 }
-                String identifier = operation.getString("Identifier");
+                int identifier = operation.getInt("Sequencer");
 
                 if (operation.getString("Type").equals("Post"))
                     service.addAnnouncement(operation.getString("Message"), key, signature, references, identifier);
                 else
                     service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, identifier);
+                counter++;
             }
         }
+        service.setCounter(counter);
         return service;
     }
 
@@ -118,5 +125,10 @@ public class PersistenceManager {
         try (JsonReader reader = Json.createReader(new BufferedInputStream(new FileInputStream(_file)))) {
             return reader.readObject().getJsonArray("Operations");
         }
+    }
+
+    //testing purposes only
+    public void clearSaveFile() throws IOException {
+        FileUtils.writeStringToFile(_file, "{ \"Operations\" : [] }", StandardCharsets.UTF_8);
     }
 }

@@ -51,14 +51,13 @@ public class PersistenceManagerTest {
 	
 	private PublicKey _serverKey;
 	
-	private static final String encodedServerKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCcATE5p/ULOs4ZA3zl4LIGv8BAQEVM8OJF74mhUDOvd8kHybQod18GrsAW1J9htfqtqwZo6MQr7FzBpv/14b7USWRU8ae0ZlZMWUOo9KsWX7kvkbkaV86xnm0ez2ZDlvJH+n3a7NKoroLDVurbqnZEO0hXu8wsJZdjbf0LpGq59wIDAQAB";
+	private static final String encodedServerKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCjjcgcWE6gIo11rgDwn5Al1P/U68HV6aTvabmmDzhb0xngRKbqxplMtH58QRiq8VerruCuFccmFXtsl505SvgimC9s1QmEpyuXoACYiirlPJPhSlrrNBk2dgSo9lDAW3iAmm2jrnyuOjEnkjkSybok4lNsV9UjPwCtixs9wj3dvwIDAQAB";
+	private static final String encodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCFtJcLhRw+6TkWS1VKAHjiOvtxF9giZrKqS+wc9J4aqrzIduyhljuGByAWMQ3uG3lvsTF/ibmIvuHtsPmjT2lk+kW9h63W+iREng98boLij5LUttG7jAN7gEfkpqSBJlHrUmJNk0tpbo9bDCZW7UlpyF9Z1dbghFF+1if+6+1viwIDAQAB";
+	private static final String secondEncodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCF9x8XZWs8SDgtCk0NQR3wiROsstV6iB+PPQTslRoZPOo/2hPjGw/8s0lBbCglJu+QEh6A6PhxNJcCIf5jsu2f4RkqmB2/giqfJj05AN/ToUsyiBPHAk/rBDJPQjmLryyfCO47UKai3YC5Cdwc0rZ9M2F97hFYvIS3OGIL6DteMwIDAQAB";
 
-	private static final String encodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTYwRzEpPRUmWCrbY91oK0z75nTtiopu+qjpOnxH8mimb6jqURTNomHsbsB4xGO00GuBK58omAeKS2JEt7Fp5kj2GBqU3Sm/3PJXnkqoUVP3wIatleA25vtG/H9zo0wMYRHjRD/p67VdTcOI+iVXvLBRC9TUgK/nQC8rFSTcB8awIDAQAB";
-	private static final String secondEncodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCg9dCJTjbki6HsswBebUUsVunayvP0WB4l8Wb/U4+41oG5HAALV5bJbff7XDcOYs6lPaR2+zUNm4X2RvSPap0x4S5/qlM72munFI36WtbQikjbu7J8q8/rd85QPat6IyFhoolT74pjyhK4flgq49MKQ5J3ucPEGkX9xtzXazklKwIDAQAB";
 
-
-	private static final String firstIdentifier = "QyAbdOlghm0CBzzAlpvf6FjzkpmtbABL1e82/8IPlg4=";
-	private static final String secondIdentifier = "8aFCYeCsgLBergGuzz7eG6V9Sc14lJV1n6VZyWDG1uQ=";
+	private static final String firstIdentifier = "f8cHn6BTMtPv3JpsdYsiOxUP3o3Tk8ydPSGEKDAX3E0=";
+	private static final String secondIdentifier = "x9rTI230HpUf8JCDp9s8MEdtFBGOkfKN3mBuk5LVe7Y=";
 	
 	@Before
 	public void setup() throws InvalidKeySpecException, NoSuchAlgorithmException {

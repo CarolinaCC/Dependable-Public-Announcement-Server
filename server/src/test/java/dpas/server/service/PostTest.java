@@ -5,6 +5,7 @@ import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.server.persistence.PersistenceManager;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -18,8 +19,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -54,7 +60,7 @@ public class PostTest {
 	private static final int port = 9000;
 	
 	@Before
-	public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException {
+	public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException, URISyntaxException, InvalidKeySpecException {
 		// Keys
 		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
 		keygen.initialize(1024);

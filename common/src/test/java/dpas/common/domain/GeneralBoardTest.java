@@ -37,7 +37,7 @@ public class GeneralBoardTest {
         byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard);
 
         // Generate Announcement
-        _announcement = new Announcement(signature, userA, "MESSAGE", null, _identifier, _generalBoard);
+        _announcement = new Announcement(signature, userA, "MESSAGE", null, 0, _generalBoard);
 
     }
 

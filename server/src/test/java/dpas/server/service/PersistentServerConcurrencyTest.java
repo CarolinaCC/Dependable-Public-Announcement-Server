@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.UUID;
@@ -44,6 +45,8 @@ public class PersistentServerConcurrencyTest {
 
 
     private PrivateKey _firstPrivateKey;
+
+    private PersistenceManager _manager;
 
 
     private String _firstIdentifier;
@@ -82,18 +85,18 @@ public class PersistentServerConcurrencyTest {
         keyPair = keygen.generateKeyPair();
         _serverKey = keyPair.getPublic();
 
-        ClassLoader classLoader = getClass().getClassLoader();
 
         URL res = getClass().getClassLoader().getResource("no_operations_3.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
-        PersistenceManager manager = new PersistenceManager(path, _serverKey);
+        _manager = new PersistenceManager(path, _serverKey);
+        _manager.clearSaveFile();
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
                 new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
 
-        final BindableService impl = new ServiceDPASPersistentImpl(manager, _serverKey);
+        final BindableService impl = new ServiceDPASPersistentImpl(_manager, _serverKey);
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 
@@ -114,7 +117,7 @@ public class PersistentServerConcurrencyTest {
     }
 
     @Test
-    public void concurrencyPostTest() throws CommonDomainException, InterruptedException {
+    public void concurrencyPostTest() throws CommonDomainException, InterruptedException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         final AtomicInteger t = new AtomicInteger(50);
 
         for (int i = 0; i < 50; i++) {
@@ -162,11 +165,15 @@ public class PersistentServerConcurrencyTest {
                         .setNumber(100)
                         .build());
         assertEquals(reply.getAnnouncementsCount(), 50);
+
+        //reload save
+        var impl = _manager.load();
+        assertEquals(impl.getAnnouncements().size(), 50);
     }
 
 
     @Test
-    public void concurrencyPostGeneralTest() throws CommonDomainException, InterruptedException {
+    public void concurrencyPostGeneralTest() throws CommonDomainException, InterruptedException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         final AtomicInteger t = new AtomicInteger(50);
 
         for (int i = 0; i < 50; i++) {
@@ -213,5 +220,9 @@ public class PersistentServerConcurrencyTest {
                         .setNumber(100)
                         .build());
         assertEquals(reply.getAnnouncementsCount(), 50);
+
+        //reload save
+        var impl = _manager.load();
+        assertEquals(impl.getAnnouncements().size(), 50);
     }
 }

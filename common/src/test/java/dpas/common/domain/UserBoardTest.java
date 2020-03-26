@@ -15,7 +15,6 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,9 +25,6 @@ public class UserBoardTest {
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
 
-    private String _identifier;
-    private String _identifier2;
-    private String _identifierInvalid;
 
     private static final String FIRST_MESSAGE = "Message";
     private static final String SECOND_MESSAGE = "Second Message";
@@ -36,11 +32,6 @@ public class UserBoardTest {
     @Before
     public void setup() throws CommonDomainException, NoSuchAlgorithmException {
         // generate user A
-
-        _identifier = UUID.randomUUID().toString();
-        _identifier2 = UUID.randomUUID().toString();
-        _identifierInvalid = UUID.randomUUID().toString();
-
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
@@ -52,7 +43,7 @@ public class UserBoardTest {
         byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard);
 
         // Generate Announcement A
-        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, _identifier, _userBoard);
+        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, 0, _userBoard);
 
         //Generate References
         ArrayList<Announcement> references = new ArrayList<>(Collections.singletonList(_announcementValid));
@@ -61,7 +52,7 @@ public class UserBoardTest {
         //Generate valid signature for second message
         byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, referenceIds, _userBoard);
 
-        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, references, _identifier2, _userBoard);
+        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, references, 1, _userBoard);
 
         // Get UserBoard
         _userBoard = user.getUserBoard();
@@ -76,7 +67,7 @@ public class UserBoardTest {
         byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard);
 
         // Generate Announcement B
-        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, _identifierInvalid, _userBoard);
+        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, 2, _userBoard);
     }
 
     @After
@@ -105,7 +96,8 @@ public class UserBoardTest {
     public void validRead() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
         _userBoard.post(_announcementValid);
         _userBoard.post(_announcementValid2);
-        ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
+        ArrayList<Announcement> expectedAnnouncements;
+        expectedAnnouncements = new ArrayList<>();
         expectedAnnouncements.add(_announcementValid);
         expectedAnnouncements.add(_announcementValid2);
         assertEquals(_userBoard.read(2), expectedAnnouncements);
@@ -115,7 +107,7 @@ public class UserBoardTest {
     public void valueZeroRead() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
         _userBoard.post(_announcementValid);
         _userBoard.post(_announcementValid2);
-        ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
+        ArrayList<Announcement> expectedAnnouncements = new ArrayList<>();
         expectedAnnouncements.add(_announcementValid);
         expectedAnnouncements.add(_announcementValid2);
         assertEquals(_userBoard.read(0), expectedAnnouncements);
@@ -125,7 +117,7 @@ public class UserBoardTest {
     public void valueHigherThanPostsRead() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
         _userBoard.post(_announcementValid);
         _userBoard.post(_announcementValid2);
-        ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
+        ArrayList<Announcement> expectedAnnouncements = new ArrayList<>();
         expectedAnnouncements.add(_announcementValid);
         expectedAnnouncements.add(_announcementValid2);
         assertEquals(_userBoard.read(7), expectedAnnouncements);
@@ -135,7 +127,7 @@ public class UserBoardTest {
     public void readSubsetOfPosts() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
         _userBoard.post(_announcementValid);
         _userBoard.post(_announcementValid2);
-        ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
+        ArrayList<Announcement> expectedAnnouncements = new ArrayList<>();
         expectedAnnouncements.add(_announcementValid2);
         assertEquals(_userBoard.read(1), expectedAnnouncements);
     }

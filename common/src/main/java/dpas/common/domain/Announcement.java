@@ -17,33 +17,33 @@ public class Announcement {
     private User _user;
     private String _message;
     private List<Announcement> _references; // Can be null
-    private String _identifier;
+    private int _sequencer;
     private String _hash;
     private AnnouncementBoard _board;
 
     public Announcement(byte[] signature, User user, String message, List<Announcement> references,
-                        String identifier, AnnouncementBoard board) throws CommonDomainException {
+                        int sequencer, AnnouncementBoard board) throws CommonDomainException {
 
-        checkArguments(signature, user, message, identifier, references, board);
+        checkArguments(signature, user, message, sequencer, references, board);
         checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier());
         _message = message;
         _signature = signature;
         _user = user;
         _references = references;
-        _identifier = identifier;
+        _sequencer = sequencer;
         _board = board;
         generateHash();
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, List<Announcement> references,
-                        String identifier, AnnouncementBoard board) throws CommonDomainException {
+                        int sequencer, AnnouncementBoard board) throws CommonDomainException {
 
         this(generateSignature(signatureKey, message, getReferenceStrings(references), board),
-                user, message, references, identifier, board);
+                user, message, references, sequencer, board);
     }
 
 
-    public void checkArguments(byte[] signature, User user, String message, String identifier,
+    public void checkArguments(byte[] signature, User user, String message, int identifier,
                                List<Announcement> references, AnnouncementBoard board) throws CommonDomainException {
 
         if (signature == null) {
@@ -55,19 +55,12 @@ public class Announcement {
         if (message == null) {
             throw new NullMessageException("Invalid Message Provided: null");
         }
-
         if (message.length() > 255) {
             throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
         }
-
-        if (identifier == null) {
-            throw new InvalidReferenceException("Invalid Announcement: Reference can't be null");
-        }
-
         if (board == null) {
             throw new InvalidBoardException("Invalid Board Provided: can't be null");
         }
-
         if (references != null) {
             if (references.contains(null)) {
                 throw new NullAnnouncementException("Invalid Reference: A reference cannot be null");
@@ -110,8 +103,8 @@ public class Announcement {
         return _user;
     }
 
-    public String getIdentifier() {
-        return _identifier;
+    public int getSequencer() {
+        return _sequencer;
     }
 
     public String getHash() {
@@ -123,7 +116,7 @@ public class Announcement {
         try {
             var builder = new StringBuilder();
             builder.append(_message)
-                    .append(_identifier)
+                    .append(_sequencer)
                     .append(Base64.getEncoder().encodeToString(_signature))
                     .append(_board.getIdentifier())
                     .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
@@ -148,6 +141,7 @@ public class Announcement {
                 .addAllReferences(references)
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setSignature(ByteString.copyFrom(_signature))
+                .setSequencer(_sequencer)
                 .setHash(_hash)
                 .build();
     }
@@ -165,7 +159,7 @@ public class Announcement {
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("Message", _message);
         jsonBuilder.add("Signature", sign);
-        jsonBuilder.add("Identifier", _identifier);
+        jsonBuilder.add("Sequencer", _sequencer);
         jsonBuilder.add("References", arrayBuilder.build());
 
         return jsonBuilder.build();

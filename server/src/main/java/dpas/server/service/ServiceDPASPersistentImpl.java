@@ -76,13 +76,13 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                 responseObserver.onNext(Empty.newBuilder().build());
                 responseObserver.onCompleted();	
             }
-		} catch (CommonDomainException | SignatureException e) {
+		} catch (CommonDomainException e) {
 			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
 		} catch (IOException e) {
 			// Should never happen
 			responseObserver
 					.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
-		} catch (NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 			responseObserver
 					.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
 		}
@@ -101,17 +101,16 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             } else {
             	_manager.save(announcement.toJson("PostGeneral"));
                 _generalBoard.post(announcement);
-                _announcements.put(announcement.getIdentifier(), announcement);
                 responseObserver.onNext(Empty.newBuilder().build());
                 responseObserver.onCompleted();
             }
-		} catch (CommonDomainException | SignatureException e) {
+		} catch (CommonDomainException e) {
 			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
 		} catch (IOException e) {
 			// Should never happen
 			responseObserver
 					.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
-		} catch (NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 			responseObserver
 					.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
 		}
@@ -123,28 +122,32 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 		_users.put(key, user);
 	}
 	
-	public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier) 
+	public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int sequencer)
 			throws CommonDomainException {
 
 		var refs = getListOfReferences(references);
 		var user = _users.get(key);
 		var board = user.getUserBoard();
 		
-		var announcement = new Announcement(signature, user, message, refs, identifier, board);
+		var announcement = new Announcement(signature, user, message, refs, sequencer, board);
 		board.post(announcement);
 		_announcements.put(announcement.getHash(), announcement);
 	}
 
-	public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, String identifier)
+	public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int sequencer)
 			throws CommonDomainException {
 		
 		var refs = getListOfReferences(references);
 		var user = _users.get(key);
 		var board = _generalBoard;
 		
-		var announcement = new Announcement(signature, user, message, refs, identifier, board);
+		var announcement = new Announcement(signature, user, message, refs, sequencer, board);
 		_generalBoard.post(announcement);
 		_announcements.put(announcement.getHash(), announcement);
+	}
+
+	public void setCounter(int counter) {
+		_counter.set(counter);
 	}
 
 	public ConcurrentHashMap<PublicKey, User> getUsers() {
