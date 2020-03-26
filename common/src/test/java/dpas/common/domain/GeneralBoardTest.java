@@ -30,10 +30,10 @@ public class GeneralBoardTest {
         User userA = new User(publicKey);
 
         _identifier = UUID.randomUUID().toString();
-       
+
         // Generate Board
         _generalBoard = new GeneralBoard();
-        
+
         byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard);
 
         // Generate Announcement
@@ -58,8 +58,8 @@ public class GeneralBoardTest {
 
     @Test
     public void validRead() throws NullAnnouncementException, InvalidNumberOfPostsException {
-        _generalBoard.post( _announcement);
-        _generalBoard.post( _announcement);
+        _generalBoard.post(_announcement);
+        _generalBoard.post(_announcement);
         ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
         expectedAnnouncements.add(_announcement);
         expectedAnnouncements.add(_announcement);

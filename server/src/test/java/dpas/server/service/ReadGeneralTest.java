@@ -26,120 +26,120 @@ import static org.junit.Assert.assertEquals;
 
 public class ReadGeneralTest {
 
-	@Rule
-	public ExpectedException exception = ExpectedException.none();
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
-	private Server _server;
-	private PublicKey _serverKey;
-	
-	private ManagedChannel _channel;
-	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-	
-	private PublicKey _publicKey;
-	private PrivateKey _privateKey;
-	
-	private byte[] _signature;
-	private static final String host = "localhost";
-	private static final int port = 9000;
-	
+    private Server _server;
+    private PublicKey _serverKey;
 
-	private static final String MESSAGE = "Message to sign";
+    private ManagedChannel _channel;
+    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
-	@Before
-	public void setup() throws IOException, CommonDomainException, NoSuchAlgorithmException {
+    private PublicKey _publicKey;
+    private PrivateKey _privateKey;
 
-		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-		keygen.initialize(1024);
-		
-		KeyPair keyPair = keygen.generateKeyPair();
-		_publicKey = keyPair.getPublic();
-		_privateKey = keyPair.getPrivate();
-		
-		keygen.generateKeyPair();
-		_serverKey = keyPair.getPublic();
+    private byte[] _signature;
+    private static final String host = "localhost";
+    private static final int port = 9000;
 
-		_signature = Announcement.generateSignature(_privateKey, MESSAGE, null, "DPAS-GENERAL-BOARD");
-		
-		// Start Server
-		final BindableService impl = new ServiceDPASImpl(_serverKey);
-		_server = NettyServerBuilder.forPort(port).addService(impl).build();
-		_server.start();
-		
-		// Connect to Server
-		_channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
-		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-		// Register User
-		_stub.register(Contract.RegisterRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.build());
-		
-		// Create Post To Read
-		_stub.postGeneral(Contract.PostRequest.newBuilder()
-				.setMessage(MESSAGE)
-				.setSignature(ByteString.copyFrom(_signature))
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.build());
-	}
+    private static final String MESSAGE = "Message to sign";
 
-	@After
-	public void tearDown() {
+    @Before
+    public void setup() throws IOException, CommonDomainException, NoSuchAlgorithmException {
 
-		_server.shutdown();
-		_channel.shutdown();
-	}
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
 
-	@Test
-	public void readSuccessAllWith0() {
+        KeyPair keyPair = keygen.generateKeyPair();
+        _publicKey = keyPair.getPublic();
+        _privateKey = keyPair.getPrivate();
 
-		Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(0).build());
+        keygen.generateKeyPair();
+        _serverKey = keyPair.getPublic();
 
-		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, "DPAS-GENERAL-BOARD");
 
-		assertEquals(announcementsGRPC.size(), 1);
-		
-		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
-	}
+        // Start Server
+        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        _server = NettyServerBuilder.forPort(port).addService(impl).build();
+        _server.start();
 
-	@Test
-	public void readSuccessAll() {
-		Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(3).build());
+        // Connect to Server
+        _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
+        _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+        // Register User
+        _stub.register(Contract.RegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
 
-		assertEquals(announcementsGRPC.size(), 1);
-		
-		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
-	}
+        // Create Post To Read
+        _stub.postGeneral(Contract.PostRequest.newBuilder()
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_signature))
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
+    }
 
-	@Test
-	public void readSuccess() {
+    @After
+    public void tearDown() {
 
-		Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(1).build());
+        _server.shutdown();
+        _channel.shutdown();
+    }
 
-		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+    @Test
+    public void readSuccessAllWith0() {
 
-		assertEquals(announcementsGRPC.size(), 1);
-		
-		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
-	}
+        Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(0).build());
 
-	@Test
-	public void readInvalidNumberOfPosts() {
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: Invalid number of posts to read: number cannot be negative");
+        assertEquals(announcementsGRPC.size(), 1);
 
-		_stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(-1).build());
-	}
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+    }
+
+    @Test
+    public void readSuccessAll() {
+        Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(3).build());
+
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+
+        assertEquals(announcementsGRPC.size(), 1);
+
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+    }
+
+    @Test
+    public void readSuccess() {
+
+        Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(1).build());
+
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+
+        assertEquals(announcementsGRPC.size(), 1);
+
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+    }
+
+    @Test
+    public void readInvalidNumberOfPosts() {
+
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid number of posts to read: number cannot be negative");
+
+        _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(-1).build());
+    }
 
 }

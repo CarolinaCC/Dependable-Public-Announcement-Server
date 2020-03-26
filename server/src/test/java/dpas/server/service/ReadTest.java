@@ -1,27 +1,6 @@
 package dpas.server.service;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SignatureException;
-import java.util.Base64;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import com.google.protobuf.ByteString;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -32,220 +11,233 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.io.IOException;
+import java.security.*;
+import java.util.Base64;
+import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class ReadTest {
 
-	@Rule
-	public ExpectedException exception = ExpectedException.none();
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
-	private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-	private Server _server;
-	private ManagedChannel _channel;
+    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+    private Server _server;
+    private ManagedChannel _channel;
 
-	private PublicKey _serverKey;
-	private PublicKey _publicKey;
-	private PrivateKey _privateKey;
+    private PublicKey _serverKey;
+    private PublicKey _publicKey;
+    private PrivateKey _privateKey;
 
-	private byte[] _signature;
-	private byte[] _signature2;
+    private byte[] _signature;
+    private byte[] _signature2;
 
 
-	private static final String MESSAGE = "Message to sign";
-	private static final String SECOND_MESSAGE = "Second message to sign";
-	
-	private static final String host = "localhost";
-	private static final int port = 9000;
+    private static final String MESSAGE = "Message to sign";
+    private static final String SECOND_MESSAGE = "Second message to sign";
 
-	@Before
-	public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException {
-		// Keys
-		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-		keygen.initialize(1024);
-		
-		KeyPair keyPair = keygen.generateKeyPair();
-		_publicKey = keyPair.getPublic();
-		_privateKey = keyPair.getPrivate();
-		
-		keyPair = keygen.generateKeyPair();
-		_serverKey = keyPair.getPublic();
+    private static final String host = "localhost";
+    private static final int port = 9000;
 
-		//Signatures
-		_signature = Announcement.generateSignature(_privateKey, MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
-		_signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
-		
-		//Start Server
-		final BindableService impl = new ServiceDPASImpl(_serverKey);
-		_server = NettyServerBuilder.forPort(port).addService(impl).build();
-		_server.start();
+    @Before
+    public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException {
+        // Keys
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
 
-		//Connect to Server
-		_channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
-		_stub = ServiceDPASGrpc.newBlockingStub(_channel);
+        KeyPair keyPair = keygen.generateKeyPair();
+        _publicKey = keyPair.getPublic();
+        _privateKey = keyPair.getPrivate();
 
-		// Register User
-		_stub.register(Contract.RegisterRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.build());
+        keyPair = keygen.generateKeyPair();
+        _serverKey = keyPair.getPublic();
 
-		// Posts to Read
-		_stub.post(Contract.PostRequest.newBuilder()
-				.setMessage(MESSAGE)
-				.setSignature(ByteString.copyFrom(_signature))
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.build());
-		_stub.post(Contract.PostRequest.newBuilder()
-				.setMessage(SECOND_MESSAGE)
-				.setSignature(ByteString.copyFrom(_signature2))
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.build());
-	}
+        //Signatures
+        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
+        _signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
 
-	@After
-	public void teardown() {
+        //Start Server
+        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        _server = NettyServerBuilder.forPort(port).addService(impl).build();
+        _server.start();
 
-		_server.shutdown();
-		_channel.shutdown();
-	}
+        //Connect to Server
+        _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
+        _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-	@Test
-	public void readSuccessAllWith0() {
+        // Register User
+        _stub.register(Contract.RegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
 
-		Contract.ReadReply reply = _stub.read(
-				Contract.ReadRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.setNumber(0)
-				.build());
-		
-		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
-		
-		assertEquals(announcementsGRPC.size(), 2);
-		
-		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+        // Posts to Read
+        _stub.post(Contract.PostRequest.newBuilder()
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_signature))
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
+        _stub.post(Contract.PostRequest.newBuilder()
+                .setMessage(SECOND_MESSAGE)
+                .setSignature(ByteString.copyFrom(_signature2))
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .build());
+    }
 
-		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
-		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
-	}
+    @After
+    public void teardown() {
 
-	@Test
-	public void readSuccessAll() {
+        _server.shutdown();
+        _channel.shutdown();
+    }
 
-		Contract.ReadReply reply = _stub.read(
-				Contract.ReadRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.setNumber(2)
-				.build());
+    @Test
+    public void readSuccessAllWith0() {
 
-		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+        Contract.ReadReply reply = _stub.read(
+                Contract.ReadRequest.newBuilder()
+                        .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                        .setNumber(0)
+                        .build());
 
-		assertEquals(announcementsGRPC.size(), 2);
-		
-		assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
-		assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
-		assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
-	}
+        assertEquals(announcementsGRPC.size(), 2);
 
-	@Test
-	public void readSuccess() {
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
-		var reply = _stub.read(Contract.ReadRequest.newBuilder()
-						.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-						.setNumber(1)
-						.build());
+        assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
+    }
 
-		List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+    @Test
+    public void readSuccessAll() {
 
-		assertEquals(announcementsGRPC.size(), 1);
-		
-		assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
-		assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-		assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
-		assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature2);
-	}
+        Contract.ReadReply reply = _stub.read(
+                Contract.ReadRequest.newBuilder()
+                        .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                        .setNumber(2)
+                        .build());
 
-	@Test
-	public void readInvalidNumberOfPosts() {
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: Invalid number of posts to read: number cannot be negative");
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
-		_stub.read(Contract.ReadRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-				.setNumber(-1)
-				.build());
-	}
+        assertEquals(announcementsGRPC.size(), 2);
 
-	@Test
-	public void readNullKey() {
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
-		_stub.read(Contract.ReadRequest.newBuilder().setNumber(0).build());
-	}
+        assertEquals(announcementsGRPC.get(1).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcementsGRPC.get(1).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(1).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(1).getSignature().toByteArray(), _signature2);
+    }
 
-	@Test
-	public void readEmptyKey() {
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
+    @Test
+    public void readSuccess() {
 
-		_stub.read(Contract.ReadRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(new byte[0]))
-				.setNumber(0)
-				.build());
-	}
+        var reply = _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .setNumber(1)
+                .build());
 
-	@Test
-	public void readArbitraryKey() {
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: invalid key format");
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
 
-		_stub.read(Contract.ReadRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(new byte[] { 12, 2, 12, 5 }))
-				.setNumber(0)
-				.build());
-	}
+        assertEquals(announcementsGRPC.size(), 1);
 
-	@Test
-	public void readWrongAlgorithmKey() throws NoSuchAlgorithmException {
+        assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature2);
+    }
 
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Invalid RSA public key");
+    @Test
+    public void readInvalidNumberOfPosts() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid number of posts to read: number cannot be negative");
 
-		KeyPairGenerator keygen = KeyPairGenerator.getInstance("DSA");
-		keygen.initialize(1024);
-		KeyPair keyPair = keygen.generateKeyPair();
-		PublicKey publicKey = keyPair.getPublic();
+        _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .setNumber(-1)
+                .build());
+    }
 
-		_stub.read(Contract.ReadRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-				.setNumber(0)
-				.build());
-	}
+    @Test
+    public void readNullKey() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
-	@Test
-	public void readUserNotRegistered() throws NoSuchAlgorithmException {
-		exception.expect(StatusRuntimeException.class);
-		exception.expectMessage("INVALID_ARGUMENT: User with public key does not exist");
+        _stub.read(Contract.ReadRequest.newBuilder().setNumber(0).build());
+    }
 
-		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-		keygen.initialize(1024);
-		KeyPair keyPair = keygen.generateKeyPair();
-		PublicKey publicKey = keyPair.getPublic();
+    @Test
+    public void readEmptyKey() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Missing key encoding");
 
-		_stub.read(Contract.ReadRequest.newBuilder()
-				.setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-				.setNumber(0)
-				.build());
+        _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(new byte[0]))
+                .setNumber(0)
+                .build());
+    }
 
-	}
+    @Test
+    public void readArbitraryKey() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: invalid key format");
+
+        _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(new byte[]{12, 2, 12, 5}))
+                .setNumber(0)
+                .build());
+    }
+
+    @Test
+    public void readWrongAlgorithmKey() throws NoSuchAlgorithmException {
+
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: java.security.InvalidKeyException: Invalid RSA public key");
+
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("DSA");
+        keygen.initialize(1024);
+        KeyPair keyPair = keygen.generateKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+
+        _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                .setNumber(0)
+                .build());
+    }
+
+    @Test
+    public void readUserNotRegistered() throws NoSuchAlgorithmException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: User with public key does not exist");
+
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
+        KeyPair keyPair = keygen.generateKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+
+        _stub.read(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                .setNumber(0)
+                .build());
+
+    }
 
 }
