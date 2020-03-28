@@ -111,6 +111,9 @@ public class Announcement {
         return _hash;
     }
 
+    public AnnouncementBoard getBoard() {
+        return _board;
+    }
 
     private void generateHash() throws CommonDomainException {
         try {

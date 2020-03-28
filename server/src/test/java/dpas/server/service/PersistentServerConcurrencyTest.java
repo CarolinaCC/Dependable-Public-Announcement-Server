@@ -28,10 +28,11 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class PersistentServerConcurrencyTest {
@@ -48,20 +49,18 @@ public class PersistentServerConcurrencyTest {
 
     private PersistenceManager _manager;
 
-
-    private String _firstIdentifier;
-    private String _secondIdentifier;
-
     private byte[] _firstSignature;
 
 
     private ManagedChannel _channel;
 
     private static final String MESSAGE = "Message";
-    private static final String SECOND_MESSAGE = "Second Message";
 
     private static final String host = "localhost";
     private static final int port = 9000;
+
+    private static final int NUMBER_THREADS = 10;
+    private static final int NUMBER_POSTS = NUMBER_THREADS * 50;
 
     @Parameterized.Parameters
     public static Object[][] data() {
@@ -116,15 +115,9 @@ public class PersistentServerConcurrencyTest {
         _channel.shutdown();
     }
 
-    @Test
-    public void concurrencyPostTest() throws CommonDomainException, InterruptedException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        final AtomicInteger t = new AtomicInteger(50);
-
-        for (int i = 0; i < 50; i++) {
-
-            // Signatures
-            _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                    new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+    private void postRun() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(NUMBER_POSTS / NUMBER_THREADS);
+        for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
             _stub.post(Contract.PostRequest.newBuilder()
                             .setMessage(MESSAGE)
                             .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
@@ -133,54 +126,24 @@ public class PersistentServerConcurrencyTest {
                     new StreamObserver<>() {
                         @Override
                         public void onNext(Empty value) {
-
                         }
 
                         @Override
                         public void onError(Throwable t) {
-
                         }
 
                         @Override
                         public void onCompleted() {
-                            synchronized (this) {
-                                int k = t.decrementAndGet();
-                                if (k == 0) {
-                                    synchronized (t) {
-                                        t.notify();
-                                    }
-                                }
-                            }
+                            latch.countDown();
                         }
                     });
         }
-        synchronized (t) {
-            if (t.get() != 0) {
-                t.wait();
-            }
-        }
-        Contract.ReadReply reply = _blockingStub.read(
-                Contract.ReadRequest.newBuilder()
-                        .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                        .setNumber(100)
-                        .build());
-        assertEquals(reply.getAnnouncementsCount(), 50);
-
-        //reload save
-        var impl = _manager.load();
-        assertEquals(impl.getAnnouncements().size(), 50);
+        latch.await();
     }
 
-
-    @Test
-    public void concurrencyPostGeneralTest() throws CommonDomainException, InterruptedException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        final AtomicInteger t = new AtomicInteger(50);
-
-        for (int i = 0; i < 50; i++) {
-            _firstIdentifier = UUID.randomUUID().toString();
-            // Signatures
-            _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                    new ArrayList<>(), "DPAS-GENERAL-BOARD");
+    private void postGeneralRun() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(NUMBER_POSTS / NUMBER_THREADS);
+        for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
             _stub.postGeneral(Contract.PostRequest.newBuilder()
                             .setMessage(MESSAGE)
                             .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
@@ -189,40 +152,136 @@ public class PersistentServerConcurrencyTest {
                     new StreamObserver<>() {
                         @Override
                         public void onNext(Empty value) {
-
                         }
 
                         @Override
                         public void onError(Throwable t) {
-
                         }
 
                         @Override
                         public void onCompleted() {
-                            synchronized (this) {
-                                int k = t.decrementAndGet();
-                                if (k == 0) {
-                                    synchronized (t) {
-                                        t.notify();
-                                    }
-                                }
-                            }
+                            latch.countDown();
                         }
-                    });
+                    }
+            );
         }
-        synchronized (t) {
-            if (t.get() != 0) {
-                t.wait();
-            }
+        latch.await();
+    }
+
+    @Test
+    public void concurrencyPostTest() throws CommonDomainException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, InterruptedException {
+        _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
+                new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+        HashSet<Integer> sequencers = new HashSet<>();
+        Thread[] threads = new Thread[NUMBER_THREADS];
+
+        for (int i = 0; i < NUMBER_THREADS; i++) {
+            threads[i] = new Thread(() -> {
+                try {
+                    postRun();
+                } catch (InterruptedException e) {
+                    fail();
+                }
+            });
         }
-        Contract.ReadReply reply = _blockingStub.readGeneral(
+
+        Stream.of(threads).forEach(Thread::start);
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        Contract.ReadReply reply = _blockingStub.read(
                 Contract.ReadRequest.newBuilder()
-                        .setNumber(100)
+                        .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                        .setNumber(NUMBER_POSTS * 2)
                         .build());
-        assertEquals(reply.getAnnouncementsCount(), 50);
+        //Check that each announcement was posted correctly
+        assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS);
+
+        //Check that each announcement was posted correctly
+        for (var announcement : reply.getAnnouncementsList()) {
+            assertEquals(announcement.getMessage(), MESSAGE);
+            assertArrayEquals(announcement.getPublicKey().toByteArray(), _firstPublicKey.getEncoded());
+            assertArrayEquals(announcement.getSignature().toByteArray(), _firstSignature);
+            assertTrue(announcement.getSequencer() >= 0);
+            assertTrue(announcement.getSequencer() < NUMBER_POSTS);
+            assertFalse(sequencers.contains(announcement.getSequencer()));
+            sequencers.add(announcement.getSequencer());
+        }
 
         //reload save
         var impl = _manager.load();
-        assertEquals(impl.getAnnouncements().size(), 50);
+        assertEquals(impl.getAnnouncements().size(), NUMBER_POSTS);
+
+        sequencers = new HashSet<>();
+        for (var announcement : impl.getAnnouncements().values()) {
+            assertEquals(announcement.getMessage(), MESSAGE);
+            assertArrayEquals(announcement.getUser().getPublicKey().getEncoded(), _firstPublicKey.getEncoded());
+            assertArrayEquals(announcement.getSignature(), _firstSignature);
+            assertTrue(announcement.getSequencer() >= 0);
+            assertTrue(announcement.getSequencer() < NUMBER_POSTS);
+            assertFalse(sequencers.contains(announcement.getSequencer()));
+            assertEquals(announcement.getBoard().getIdentifier(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+            sequencers.add(announcement.getSequencer());
+        }
+    }
+
+
+    @Test
+    public void concurrencyPostGeneralTest() throws CommonDomainException, InterruptedException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, new ArrayList<>(), "DPAS-GENERAL-BOARD");
+        HashSet<Integer> sequencers = new HashSet<>();
+        Thread[] threads = new Thread[NUMBER_THREADS];
+
+        for (int i = 0; i < NUMBER_THREADS; i++) {
+            threads[i] = new Thread(() -> {
+                try {
+                    postGeneralRun();
+                } catch (InterruptedException e) {
+                    fail();
+                }
+            });
+        }
+
+        Stream.of(threads).forEach(Thread::start);
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+
+        Contract.ReadReply reply = _blockingStub.readGeneral(Contract.ReadRequest.newBuilder()
+                .setNumber(NUMBER_POSTS * 2)
+                .build());
+
+        assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS);
+
+        //Check that each announcement was posted correctly
+        for (var announcement : reply.getAnnouncementsList()) {
+            assertEquals(announcement.getMessage(), MESSAGE);
+            assertArrayEquals(announcement.getPublicKey().toByteArray(), _firstPublicKey.getEncoded());
+            assertArrayEquals(announcement.getSignature().toByteArray(), _firstSignature);
+            assertTrue(announcement.getSequencer() >= 0);
+            assertTrue(announcement.getSequencer() < NUMBER_POSTS);
+            assertFalse(sequencers.contains(announcement.getSequencer()));
+            sequencers.add(announcement.getSequencer());
+        }
+
+        //reload save
+        var impl = _manager.load();
+        assertEquals(impl.getAnnouncements().size(), NUMBER_POSTS);
+
+        sequencers = new HashSet<>();
+        for (var announcement : impl.getAnnouncements().values()) {
+            assertEquals(announcement.getMessage(), MESSAGE);
+            assertArrayEquals(announcement.getUser().getPublicKey().getEncoded(), _firstPublicKey.getEncoded());
+            assertArrayEquals(announcement.getSignature(), _firstSignature);
+            assertTrue(announcement.getSequencer() >= 0);
+            assertTrue(announcement.getSequencer() < NUMBER_POSTS);
+            assertFalse(sequencers.contains(announcement.getSequencer()));
+            assertEquals(announcement.getBoard().getIdentifier(), "DPAS-GENERAL-BOARD");
+            sequencers.add(announcement.getSequencer());
+        }
     }
 }
