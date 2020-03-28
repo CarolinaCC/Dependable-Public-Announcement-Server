@@ -24,7 +24,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     private PersistenceManager _manager;
 
     public ServiceDPASPersistentImpl(PersistenceManager manager, PublicKey pubKey) {
-        super(pubKey);
+        super();
         _manager = manager;
     }
 

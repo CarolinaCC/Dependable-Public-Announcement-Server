@@ -34,7 +34,6 @@ public class ReadTest {
     private Server _server;
     private ManagedChannel _channel;
 
-    private PublicKey _serverKey;
     private PublicKey _publicKey;
     private PrivateKey _privateKey;
 
@@ -48,6 +47,7 @@ public class ReadTest {
     private static final String host = "localhost";
     private static final int port = 9000;
 
+
     @Before
     public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException {
         // Keys
@@ -58,15 +58,13 @@ public class ReadTest {
         _publicKey = keyPair.getPublic();
         _privateKey = keyPair.getPrivate();
 
-        keyPair = keygen.generateKeyPair();
-        _serverKey = keyPair.getPublic();
 
         //Signatures
         _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
         _signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
 
         //Start Server
-        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 

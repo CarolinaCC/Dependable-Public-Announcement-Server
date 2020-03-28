@@ -69,9 +69,6 @@ public class PostTest {
         _secondPublicKey = keyPair.getPublic();
         _secondPrivateKey = keyPair.getPrivate();
 
-        keyPair = keygen.generateKeyPair();
-        PublicKey _serverKey = keyPair.getPublic();
-
         // References
         _invalidReference = "";
 
@@ -88,7 +85,7 @@ public class PostTest {
                 new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
 
-        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 

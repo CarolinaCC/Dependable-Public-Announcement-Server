@@ -35,7 +35,6 @@ public class ServerConcurrencyTest {
     private ServiceDPASGrpc.ServiceDPASStub _stub;
     private ServiceDPASGrpc.ServiceDPASBlockingStub _blockingStub;
     private Server _server;
-    private PublicKey _serverKey;
 
     private PublicKey _firstPublicKey;
 
@@ -74,15 +73,12 @@ public class ServerConcurrencyTest {
         _firstPublicKey = keyPair.getPublic();
         _firstPrivateKey = keyPair.getPrivate();
 
-        keyPair = keygen.generateKeyPair();
-        _serverKey = keyPair.getPublic();
-
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
                 new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
 
-        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 

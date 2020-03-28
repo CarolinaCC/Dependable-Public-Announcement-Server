@@ -25,7 +25,6 @@ public class RegisterTest {
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
-    private PublicKey _serverKey;
     private PublicKey _firstPublicKey;
     private PublicKey _secondPublicKey;
     private PublicKey _publicDSAKey;
@@ -45,7 +44,6 @@ public class RegisterTest {
         keygen.initialize(1024);
 
         KeyPair keyPair = keygen.generateKeyPair();
-        _serverKey = keyPair.getPublic();
 
         keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
@@ -59,7 +57,7 @@ public class RegisterTest {
         _publicDSAKey = keyPair.getPublic();
 
         // Start server
-        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 

@@ -55,11 +55,11 @@ public class PersistenceManager {
         arrayBuilder.add(operation);
 
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-        
+
         String pubKey = Base64.getEncoder().encodeToString(_pubKey.getEncoded());
-        objectBuilder.add("PublicKey", pubKey);        
+        objectBuilder.add("PublicKey", pubKey);
         objectBuilder.add("Operations", arrayBuilder.build());
-        
+
         try (JsonWriter jsonWriter = Json.createWriter(new BufferedWriter(new FileWriter(_swapFile, false)))) {
             jsonWriter.writeObject(objectBuilder.build());
         }
@@ -67,7 +67,6 @@ public class PersistenceManager {
     }
 
     public synchronized ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, IOException {
-
         int counter = 0;
 
         JsonArray jsonArray = readSaveFile();
@@ -110,7 +109,6 @@ public class PersistenceManager {
         }
     }
 
-    //testing purposes only
     public void clearSaveFile() throws IOException {
         FileUtils.writeStringToFile(_file, "{ \"Operations\" : [] }", StandardCharsets.UTF_8);
     }

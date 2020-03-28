@@ -11,7 +11,6 @@ import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import java.security.KeyFactory;
@@ -25,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static io.grpc.Status.INVALID_ARGUMENT;
+
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
@@ -34,7 +35,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     protected AtomicInteger _counter = new AtomicInteger(0);
 
 
-    public ServiceDPASImpl(PublicKey pubKey) {
+    public ServiceDPASImpl() {
         super();
         _announcements = new ConcurrentHashMap<>();
         _users = new ConcurrentHashMap<>();
@@ -49,13 +50,13 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
                 //User with public key already exists
-                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 responseObserver.onNext(Empty.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -68,14 +69,14 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
                 //Announcement with that identifier already exists
-                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 announcement.getUser().getUserBoard().post(announcement);
                 responseObserver.onNext(Empty.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -87,14 +88,14 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
                 //Announcement with that identifier already exists
-                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 _generalBoard.post(announcement);
                 responseObserver.onNext(Empty.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
 
     }
@@ -105,7 +106,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(_users.containsKey(key))) {
-                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User with public key does not exist")
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("User with public key does not exist")
                         .asRuntimeException());
             } else {
 
@@ -116,7 +117,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asRuntimeException());
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -131,10 +132,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
             responseObserver.onCompleted();
 
         } catch (Exception e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asRuntimeException());
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 

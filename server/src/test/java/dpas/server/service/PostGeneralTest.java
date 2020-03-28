@@ -2,7 +2,6 @@ package dpas.server.service;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
-import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -34,7 +33,6 @@ public class PostGeneralTest {
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
     private Server _server;
-    private PublicKey _serverKey;
 
     private PublicKey _firstPublicKey;
     private PublicKey _secondPublicKey;
@@ -62,7 +60,7 @@ public class PostGeneralTest {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
-        _serverKey = keyPair.getPublic();
+        PublicKey _serverKey = keyPair.getPublic();
 
         keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
@@ -88,7 +86,7 @@ public class PostGeneralTest {
 
 
         // Start server
-        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(9000).addService(impl).build();
         _server.start();
 

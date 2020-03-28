@@ -31,7 +31,6 @@ public class ReadGeneralTest {
     public ExpectedException exception = ExpectedException.none();
 
     private Server _server;
-    private PublicKey _serverKey;
 
     private ManagedChannel _channel;
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
@@ -57,12 +56,12 @@ public class ReadGeneralTest {
         _privateKey = keyPair.getPrivate();
 
         keygen.generateKeyPair();
-        _serverKey = keyPair.getPublic();
+        PublicKey _serverKey = keyPair.getPublic();
 
         _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, GENERAL_BOARD_IDENTIFIER);
 
         // Start Server
-        final BindableService impl = new ServiceDPASImpl(_serverKey);
+        final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 
