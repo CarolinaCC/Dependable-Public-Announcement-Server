@@ -6,7 +6,8 @@ import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
-import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.Contract.PostRequest;
+import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.server.persistence.PersistenceManager;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -29,7 +30,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void register(Contract.RegisterRequest request, StreamObserver<Empty> responseObserver) {
+    public void register(RegisterRequest request, StreamObserver<Empty> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -58,7 +59,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void post(PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             var announcement = generateAnnouncement(request);
 
@@ -86,7 +87,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void postGeneral(PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             Announcement announcement = generateAnnouncement(request, _generalBoard);
 

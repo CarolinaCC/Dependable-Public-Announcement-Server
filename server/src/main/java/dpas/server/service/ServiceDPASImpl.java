@@ -8,7 +8,9 @@ import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidReferenceException;
 import dpas.common.domain.exception.InvalidUserException;
-import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.Contract.PostRequest;
+import dpas.grpc.contract.Contract.ReadReply;
+import dpas.grpc.contract.Contract.ReadRequest;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.stub.StreamObserver;
@@ -61,7 +63,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void post(PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
 
             var announcement = generateAnnouncement(request);
@@ -81,7 +83,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void postGeneral(PostRequest request, StreamObserver<Empty> responseObserver) {
         try {
             var announcement = generateAnnouncement(request, _generalBoard);
 
@@ -101,7 +103,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+    public void read(ReadRequest request, StreamObserver<ReadReply> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
@@ -113,7 +115,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 var announcements = _users.get(key).getUserBoard().read(request.getNumber());
                 var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
-                responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
+                responseObserver.onNext(ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
@@ -122,13 +124,13 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+    public void readGeneral(ReadRequest request, StreamObserver<ReadReply> responseObserver) {
 
         try {
             var announcements = _generalBoard.read(request.getNumber());
             var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
-            responseObserver.onNext(Contract.ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
+            responseObserver.onNext(ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
             responseObserver.onCompleted();
 
         } catch (Exception e) {
@@ -150,7 +152,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         return references;
     }
 
-    protected Announcement generateAnnouncement(Contract.PostRequest request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+    protected Announcement generateAnnouncement(PostRequest request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
@@ -158,7 +160,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
     }
 
-    protected Announcement generateAnnouncement(Contract.PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+    protected Announcement generateAnnouncement(PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
