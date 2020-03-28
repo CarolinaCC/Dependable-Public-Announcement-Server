@@ -4,6 +4,8 @@ import dpas.common.domain.exception.NullAnnouncementException;
 
 public class GeneralBoard extends AnnouncementBoard {
 
+    public static final String GENERAL_BOARD_IDENTIFIER = "DPAS-GENERAL-BOARD";
+
     @Override
     public synchronized void post(Announcement announcement) throws NullAnnouncementException {
         if (announcement == null) {
@@ -15,7 +17,7 @@ public class GeneralBoard extends AnnouncementBoard {
 
     @Override
     public String getIdentifier() {
-        return "DPAS-GENERAL-BOARD";
+        return GENERAL_BOARD_IDENTIFIER;
     }
 
 }

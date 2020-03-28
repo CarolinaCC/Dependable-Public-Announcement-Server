@@ -60,9 +60,7 @@ public class PersistenceManagerTest {
 
     @Test
     public void testServerPersistence() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException,
-            CommonDomainException, InvalidKeyException, SignatureException, URISyntaxException {
-
-        ClassLoader classLoader = getClass().getClassLoader();
+            CommonDomainException, URISyntaxException {
 
         URL res = getClass().getClassLoader().getResource("valid_load_target_5.json");
         File file = Paths.get(res.toURI()).toFile();
@@ -93,9 +91,8 @@ public class PersistenceManagerTest {
     }
 
     @Test
-    public void invalidRegister() throws IOException, InterruptedException, InvalidKeySpecException,
-            NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException, URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
+    public void invalidRegister() throws IOException, InvalidKeySpecException,
+            NoSuchAlgorithmException, CommonDomainException, URISyntaxException {
 
         URL res = getClass().getClassLoader().getResource("no_operations_2.json");
         File file = Paths.get(res.toURI()).toFile();
@@ -138,8 +135,6 @@ public class PersistenceManagerTest {
     @Test
     public void validRegister() throws IOException, NoSuchAlgorithmException, URISyntaxException {
 
-        ClassLoader classLoader = getClass().getClassLoader();
-
         URL res = getClass().getClassLoader().getResource("valid_load_target_4.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
@@ -151,15 +146,13 @@ public class PersistenceManagerTest {
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         String userName = "USERNAME";
 
-        JsonArray jsonArray = manager.readSaveFile();
-
         JsonObject json = Json.createObjectBuilder().add("Type", "Register")
                 .add("Public Key", Base64.getEncoder().encodeToString(pubKey.getEncoded())).add("User", userName)
                 .build();
 
         manager.save(json);
 
-        jsonArray = manager.readSaveFile();
+        JsonArray jsonArray = manager.readSaveFile();
 
         for (int i = jsonArray.size() - 1; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
@@ -173,8 +166,6 @@ public class PersistenceManagerTest {
     @Test
     public void validVariousRegister() throws IOException, NoSuchAlgorithmException, URISyntaxException {
 
-        ClassLoader classLoader = getClass().getClassLoader();
-
         URL res = getClass().getClassLoader().getResource("valid_load_target_4.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
@@ -186,8 +177,6 @@ public class PersistenceManagerTest {
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         String userName = "USERNAME";
 
-        JsonArray jsonArray = manager.readSaveFile();
-
         JsonObject json = Json.createObjectBuilder().add("Type", "Register")
                 .add("Public Key", Base64.getEncoder().encodeToString(pubKey.getEncoded())).add("User", userName)
                 .build();
@@ -196,7 +185,7 @@ public class PersistenceManagerTest {
             manager.save(json);
         }
 
-        jsonArray = manager.readSaveFile();
+        JsonArray jsonArray = manager.readSaveFile();
 
         for (int i = jsonArray.size() - 5; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
@@ -208,9 +197,7 @@ public class PersistenceManagerTest {
 
     @Test
     public void invalidPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException,
-            InvalidKeySpecException, CommonDomainException, InterruptedException, URISyntaxException {
-
-        ClassLoader classLoader = getClass().getClassLoader();
+            InvalidKeySpecException, CommonDomainException, URISyntaxException {
 
         URL res = getClass().getClassLoader().getResource("valid_load_target_6.json");
         File file = Paths.get(res.toURI()).toFile();
@@ -410,8 +397,6 @@ public class PersistenceManagerTest {
     public void validPostGeneral()
             throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
 
-        ClassLoader classLoader = getClass().getClassLoader();
-
         URL res = getClass().getClassLoader().getResource("valid_load_target_3.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
@@ -454,8 +439,6 @@ public class PersistenceManagerTest {
     public void validVariousPostGeneral()
             throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
 
-        ClassLoader classLoader = getClass().getClassLoader();
-
         URL res = getClass().getClassLoader().getResource("valid_load_target_2.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
@@ -497,9 +480,8 @@ public class PersistenceManagerTest {
     }
 
     @Test(expected = JsonException.class)
-    public void loadInvalidFile() throws IOException, SignatureException, CommonDomainException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
+    public void loadInvalidFile() throws IOException, CommonDomainException,
+            InvalidKeySpecException, NoSuchAlgorithmException, URISyntaxException {
 
         URL res = getClass().getClassLoader().getResource("empty.json");
         File file = Paths.get(res.toURI()).toFile();
@@ -510,9 +492,8 @@ public class PersistenceManagerTest {
     }
 
     @Test
-    public void loadNoOperationsFile() throws IOException, SignatureException, CommonDomainException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
+    public void loadNoOperationsFile() throws IOException, CommonDomainException,
+            InvalidKeySpecException, NoSuchAlgorithmException, URISyntaxException {
 
         URL res = getClass().getClassLoader().getResource("no_operations.json");
         File file = Paths.get(res.toURI()).toFile();
@@ -525,9 +506,8 @@ public class PersistenceManagerTest {
     }
 
     @Test
-    public void loadGeneralTest() throws IOException, SignatureException, CommonDomainException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
+    public void loadGeneralTest() throws IOException, CommonDomainException,
+            InvalidKeySpecException, NoSuchAlgorithmException, URISyntaxException {
 
         URL res = getClass().getClassLoader().getResource("valid_load_target.json");
         File file = Paths.get(res.toURI()).toFile();
@@ -540,9 +520,8 @@ public class PersistenceManagerTest {
     }
 
     @Test
-    public void loadGeneralTestWithSwap() throws IOException, SignatureException, CommonDomainException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException, URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
+    public void loadGeneralTestWithSwap() throws IOException, CommonDomainException,
+            InvalidKeySpecException, NoSuchAlgorithmException, URISyntaxException {
 
         URL res = getClass().getClassLoader().getResource("valid_load_target_with_swap.json");
         File file = Paths.get(res.toURI()).toFile();

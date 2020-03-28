@@ -250,7 +250,6 @@ public class PersistentServerConcurrencyTest {
             thread.join();
         }
 
-
         Contract.ReadReply reply = _blockingStub.readGeneral(Contract.ReadRequest.newBuilder()
                 .setNumber(NUMBER_POSTS * 2)
                 .build());

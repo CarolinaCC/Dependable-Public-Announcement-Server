@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.security.*;
 import java.util.List;
 
+import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -58,7 +59,7 @@ public class ReadGeneralTest {
         keygen.generateKeyPair();
         _serverKey = keyPair.getPublic();
 
-        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, "DPAS-GENERAL-BOARD");
+        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, GENERAL_BOARD_IDENTIFIER);
 
         // Start Server
         final BindableService impl = new ServiceDPASImpl(_serverKey);

@@ -48,7 +48,6 @@ public class ServerConcurrencyTest {
     private ManagedChannel _channel;
 
     private static final String MESSAGE = "Message";
-    private static final String SECOND_MESSAGE = "Second Message";
 
     private static final String host = "localhost";
     private static final int port = 9000;
@@ -66,7 +65,6 @@ public class ServerConcurrencyTest {
 
     @Before
     public void setup() throws NoSuchAlgorithmException, CommonDomainException, IOException {
-
 
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");

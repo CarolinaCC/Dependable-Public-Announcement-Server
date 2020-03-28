@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
+
 public class Library {
 
     public ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
@@ -103,7 +105,7 @@ public class Library {
 
     private PostRequest createPostGeneralRequest(PublicKey key, char[] message, Announcement[] a,
                                                  PrivateKey privateKey) throws CommonDomainException {
-        return createPostRequest("DPAS-GENERAL-BOARD", key, message, a, privateKey);
+        return createPostRequest(GENERAL_BOARD_IDENTIFIER, key, message, a, privateKey);
     }
 
     private PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a,

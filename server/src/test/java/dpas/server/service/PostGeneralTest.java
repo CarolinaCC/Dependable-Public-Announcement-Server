@@ -2,6 +2,7 @@ package dpas.server.service;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -22,6 +23,8 @@ import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
 public class PostGeneralTest {
 
@@ -57,32 +60,31 @@ public class PostGeneralTest {
 
         // KeyPairs
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
-        keyPair = keygen.generateKeyPair();
         _serverKey = keyPair.getPublic();
-        keygen.generateKeyPair();
+
         keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
         _firstPrivateKey = keyPair.getPrivate();
+
         keyPair = keygen.generateKeyPair();
         _secondPublicKey = keyPair.getPublic();
         _secondPrivateKey = keyPair.getPrivate();
 
         //Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                new ArrayList<>(), "DPAS-GENERAL-BOARD");
+                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
 
         _secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new ArrayList<>(), "DPAS-GENERAL-BOARD");
+                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
 
         _signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new ArrayList<>(), "DPAS-GENERAL-BOARD");
+                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
 
 
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
-                new ArrayList<>(), "DPAS-GENERAL-BOARD");
+                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
 
 
         // Start server
@@ -148,7 +150,7 @@ public class PostGeneralTest {
                 .getHash();
 
         _secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                Collections.singletonList(firstIdentifier), "DPAS-GENERAL-BOARD");
+                Collections.singletonList(firstIdentifier), GENERAL_BOARD_IDENTIFIER);
 
 
         _stub.postGeneral(Contract.PostRequest.newBuilder()
