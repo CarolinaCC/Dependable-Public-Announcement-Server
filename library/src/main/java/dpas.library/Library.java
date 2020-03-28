@@ -6,6 +6,7 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
@@ -34,17 +35,19 @@ public class Library {
                     .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                     .build());
         } catch (StatusRuntimeException e) {
-            System.out.println("An error ocurred: " + e.getMessage());
+            Status status = e.getStatus();
+            System.out.println("An error occurred: " + status.getDescription());
         }
-
     }
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
             _stub.post(createPostRequest(key, message, a, privateKey));
         } catch (StatusRuntimeException e) {
-            System.out.println("An error ocurred: " + e.getMessage());
+            Status status = e.getStatus();
+            System.out.println("An error occurred: " + status.getDescription());
         } catch (CommonDomainException e) {
+            //Should never happen
             System.out.println("Could not create signature from values provided");
         }
     }
@@ -53,7 +56,8 @@ public class Library {
         try {
             _stub.postGeneral(createPostGeneralRequest(key, message, a, privateKey));
         } catch (StatusRuntimeException e) {
-            System.out.println("An error ocurred: " + e.getMessage());
+            Status status = e.getStatus();
+            System.out.println("An error occurred: " + status.getDescription());
         } catch (CommonDomainException e) {
             System.out.println("Could not create signature from values provided");
         }
@@ -69,7 +73,8 @@ public class Library {
             reply.getAnnouncementsList().toArray(a);
             return a;
         } catch (StatusRuntimeException e) {
-            System.out.println("An error ocurred: " + e.getMessage());
+            Status status = e.getStatus();
+            System.out.println("An error occurred: " + status.getDescription());
             return new Announcement[0];
         }
     }
@@ -81,7 +86,8 @@ public class Library {
             reply.getAnnouncementsList().toArray(a);
             return a;
         } catch (StatusRuntimeException e) {
-            System.out.println("An error ocurred: " + e.getMessage());
+            Status status = e.getStatus();
+            System.out.println("An error occurred: " + status.getDescription());
             return new Announcement[0];
         }
     }
