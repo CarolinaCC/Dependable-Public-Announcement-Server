@@ -229,6 +229,7 @@ public class SessionManagerTest {
 
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
         assertNotEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 2);
     }
 
     @Test

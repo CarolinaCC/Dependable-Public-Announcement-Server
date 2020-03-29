@@ -120,7 +120,8 @@ public class ServiceSafeImplTest {
     @Test
     public void validRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         byte[] requestMac = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
-        Contract.SafeRegisterReply regReply = _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+
+        var regReply = _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                         .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                         .setMac(ByteString.copyFrom(requestMac))
                         .setSessionNonce(SESSION_NONCE)

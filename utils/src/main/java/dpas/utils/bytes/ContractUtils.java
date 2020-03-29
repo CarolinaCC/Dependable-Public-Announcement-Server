@@ -32,7 +32,8 @@ public class ContractUtils {
             for(var ref: references) {
                 stream.writeBytes(ref);
             }
-            return stream.toByteArray();
+            byte[] res = stream.toByteArray();
+            return res;
         }
     }
 
@@ -93,11 +94,12 @@ public class ContractUtils {
     public static byte[] generateMac(Contract.SafePostRequest request, PrivateKey privKey) throws IOException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         byte[] content = toByteArray(request);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] encodedhash = digest.digest(content);
+        byte[] hash = digest.digest(content);
 
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, privKey);
-        return cipher.doFinal(encodedhash);
+        byte[] mac = cipher.doFinal(hash);
+        return mac;
     }
 
     public static byte[] generateMac(String sessionNonce, long seq, PrivateKey privKey) throws IOException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {

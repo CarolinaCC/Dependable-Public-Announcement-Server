@@ -53,10 +53,10 @@ public class SessionManager {
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
         if (session == null)
-            throw new SessionException("Invalid SessionId");
+            throw new SessionException("Invalid Session");
 
         if (session.isInvalid())
-            throw new SessionException("Invalid session");
+            throw new SessionException("Session Expired");
 
         if (session.getSequenceNumber() + 1 != sequenceNumber)
             throw new SessionException("Invalid sequence number");

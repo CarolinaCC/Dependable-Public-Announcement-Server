@@ -216,11 +216,12 @@ public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
     }
 
     private long validatePostRequest(Contract.SafePostRequest request) throws IOException, GeneralSecurityException, SessionException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] content = ContractUtils.toByteArray(request);
         byte[] mac = request.getMac().toByteArray();
         String sessionNonce = request.getSessionNonce();
         long seq = request.getSeq();
-        return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
+        return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq, key);
     }
 
     private Contract.SafePostReply generatePostReply(String sessionNonce, long seq) throws GeneralSecurityException, IOException {
