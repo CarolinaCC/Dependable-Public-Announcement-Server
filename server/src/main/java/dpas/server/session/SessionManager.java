@@ -15,24 +15,24 @@ public class SessionManager {
     /**
      * Relationship between keyId and current valid sessionKey
      */
-    private Map<String, Session> _sessionKeys;
+    private Map<String, Session> _sessions;
     private long _keyValidity;
 
     public SessionManager(long keyValidity) {
-        _sessionKeys = new ConcurrentHashMap<>();
+        _sessions = new ConcurrentHashMap<>();
         _keyValidity = keyValidity;
         new Thread(new SessionCleanup(this, keyValidity)).start();
     }
 
     //Testing only
     public SessionManager() {
-        _sessionKeys = new ConcurrentHashMap<>();
+        _sessions = new ConcurrentHashMap<>();
     }
 
     public long createSession(PublicKey pubKey, String sessionNonce) {
 
         Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusMinutes(_keyValidity));
-        var session = _sessionKeys.putIfAbsent(sessionNonce, s);
+        var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
             throw new IllegalArgumentException("Saession alredy exists!");
         }
@@ -42,9 +42,9 @@ public class SessionManager {
     /**
      * Validates an hmac for a valid session
      */
-    public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public void validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
 
-        Session session = _sessionKeys.getOrDefault(keyId, null);
+        Session session = _sessions.getOrDefault(sessionNonce, null);
 
         if (session == null)
             throw new IllegalArgumentException("Invalid SessionId");
@@ -57,7 +57,7 @@ public class SessionManager {
 
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, session.get_publicKey());
-        byte[] decriptedMac = cipher.doFinal(hmac);
+        byte[] decriptedMac = cipher.doFinal(mac);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] encodedhash = digest.digest(content);
@@ -69,12 +69,12 @@ public class SessionManager {
     }
 
     public void cleanup() {
-        _sessionKeys.keySet().stream()
-                .filter(k -> _sessionKeys.get(k).isInvalid())
-                .forEach(k -> _sessionKeys.remove(k));
+        _sessions.keySet().stream()
+                .filter(k -> _sessions.get(k).isInvalid())
+                .forEach(k -> _sessions.remove(k));
     }
 
     public Map<String, Session> getSessionKeys() {
-        return _sessionKeys;
+        return _sessions;
     }
 }
