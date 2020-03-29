@@ -29,4 +29,17 @@ public class ContractUtils {
             return stream.toByteArray();
         }
     }
+
+    public static byte[] toByteArray(Contract.SafeRegisterRequest request) throws IOException {
+        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] nonce = request.getSessionNonce().getBytes();
+        byte[] pubKey = request.getPublicKey().toByteArray();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
+            stream.writeBytes(nonce);
+            stream.writeBytes(nonce);
+            stream.writeBytes(pubKey);
+            return stream.toByteArray();
+        }
+    }
 }

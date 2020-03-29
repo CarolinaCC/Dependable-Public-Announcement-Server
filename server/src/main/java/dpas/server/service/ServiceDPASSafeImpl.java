@@ -104,7 +104,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             long seq = request.getSeq();
             _sessionManager.validateSessionRequest(nonce,
                                                     request.getMac().toByteArray(),
-                                                    toContent(request),
+                                                    ContractUtils.toByteArray(request),
                                                     seq);
 
 
@@ -120,6 +120,8 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
         } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
