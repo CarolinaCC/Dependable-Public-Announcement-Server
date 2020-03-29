@@ -7,10 +7,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SessionManager {
     /**Relationship between keyId and current valid sessionKey*/
     private Map<String, Session> _sessionKeys;
-
-    public SessionManager() {
+    private long _keyValidity;
+    public SessionManager(long keyValidity) {
         _sessionKeys = new ConcurrentHashMap<>();
-        new SessionCleanup()
+        _keyValidity = keyValidity;
+        new SessionCleanup(this, keyValidity).run();
     }
 
     public long createSession() {
@@ -24,7 +25,6 @@ public class SessionManager {
     public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, int sequenceNumber) {
         //TODO CAROLINA
     }
-
 
     public void cleanup() {
         _sessionKeys.keySet().stream()
