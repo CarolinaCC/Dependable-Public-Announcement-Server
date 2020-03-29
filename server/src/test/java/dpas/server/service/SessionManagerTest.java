@@ -134,6 +134,7 @@ public class SessionManagerTest {
         manager.createSession( _pubKey, SESSION_NONCE);
     }
 
+    @Test
     public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
