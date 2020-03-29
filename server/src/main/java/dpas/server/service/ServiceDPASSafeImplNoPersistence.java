@@ -8,7 +8,6 @@ import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
-import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
 import dpas.utils.bytes.ContractUtils;
@@ -25,14 +24,13 @@ import java.util.Base64;
 
 import static io.grpc.Status.*;
 
-public class ServiceDPASSafeImpl extends ServiceDPASImpl {
+//For testing purposes only
+public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
     private PublicKey _publicKey;
     private PrivateKey _privateKey;
-    private PersistenceManager _persistenceManager;
     private SessionManager _sessionManager;
 
-    public ServiceDPASSafeImpl(PersistenceManager manager, PublicKey pubKey, PrivateKey privKey, SessionManager sessionManager) {
-        _persistenceManager = manager;
+    public ServiceDPASSafeImplNoPersistence(PublicKey pubKey, PrivateKey privKey, SessionManager sessionManager) {
         _publicKey = pubKey;
         _privateKey = privKey;
         _sessionManager = sessionManager;
@@ -101,7 +99,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 //Announcement with that identifier already	 exists
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-                _persistenceManager.save(announcement.toJson("Post"));
                 announcement.getUser().getUserBoard().post(announcement);
                 responseObserver.onNext(generatePostReply(sessionNonce, seq));
                 responseObserver.onCompleted();
@@ -129,7 +126,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 //Announcement with that identifier already exists
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-                _persistenceManager.save(announcement.toJson("PostGeneral"));
                 _generalBoard.post(announcement);
                 responseObserver.onNext(generatePostReply(sessionNonce, seq));
                 responseObserver.onCompleted();
@@ -162,7 +158,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 //User with public key already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
-                _persistenceManager.save(user.toJson());
                 byte[] replyMac = ContractUtils.generateMac(nonce, nextSeq, _privateKey);
 
                 responseObserver.onNext(Contract.SafeRegisterReply.newBuilder()

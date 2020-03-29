@@ -8,10 +8,9 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -130,6 +129,27 @@ public class ContractUtils {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, privKey);
         return cipher.doFinal(encodedhash);
+    }
+
+    public static byte[] generateMac(String content, PrivateKey privKey) throws IOException, NoSuchAlgorithmException,
+            NoSuchPaddingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content.getBytes());
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, privKey);
+        return cipher.doFinal(encodedhash);
+    }
+
+    public static byte[] obtainMac(Contract.ClientHello request) throws NoSuchAlgorithmException, InvalidKeySpecException,
+            NoSuchPaddingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        String sessionNonce = request.getSessionNonce();
+        PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] clientMac = request.getMac().toByteArray();
+
+        Cipher cipherClient = Cipher.getInstance("RSA");
+        cipherClient.init(Cipher.DECRYPT_MODE, publicKey);
+        return cipherClient.doFinal(clientMac);
     }
 
 }
