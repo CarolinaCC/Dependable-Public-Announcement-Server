@@ -139,11 +139,11 @@ public class ServiceSafeImplTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("UNAUTHENTICATED: Could not validate request");
 
-        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 5, _privKey );
         Contract.SafeRegisterReply regReply =_stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce("invalid")
-                .setSeq(1)
+                .setSeq(5)
                 .setMac(ByteString.copyFrom(requestMAC))
                 .build());
     }
