@@ -160,6 +160,10 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
+    @Override
+    public void goodbye(Contract.GoodByeRequest request, StreamObserver<Empty> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
 
     protected ArrayList<Announcement> getListOfReferences(List<String> referenceIDs) throws InvalidReferenceException {
         // add all references to lists of references

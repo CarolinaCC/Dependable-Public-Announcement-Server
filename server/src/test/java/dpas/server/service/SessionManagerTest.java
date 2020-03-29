@@ -49,7 +49,7 @@ public class SessionManagerTest {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
-        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+        LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE2, LocalDateTime.now().minusHours(1));
@@ -68,7 +68,7 @@ public class SessionManagerTest {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
-        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+        LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
@@ -117,26 +117,26 @@ public class SessionManagerTest {
     public void createSessionValid() {
 
         SessionManager manager = new SessionManager(5);
-        manager.createSession( _pubKey, SESSION_NONCE);
+        manager.createSession(_pubKey, SESSION_NONCE);
 
         assertEquals(manager.getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
         assertArrayEquals(manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void createSameSessionNonce() {
 
         SessionManager manager = new SessionManager(5);
         manager.createSession(_pubKey, SESSION_NONCE);
-        manager.createSession( _pubKey, SESSION_NONCE);
+        manager.createSession(_pubKey, SESSION_NONCE);
     }
 
     @Test
-    public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
+    public void validateSessionRequestTest() throws GeneralSecurityException, SessionException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
-        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+        LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
@@ -156,14 +156,14 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSessionIdValidateSessionRequestTest () throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
-        exception.expect(IllegalArgumentException.class);
+    public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+        exception.expect(GeneralSecurityException.class);
         exception.expectMessage("Invalid SessionId");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
-        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+        LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
@@ -183,14 +183,14 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSeqNumbergvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
-        exception.expect(IllegalArgumentException.class);
+    public void invalidSeqNumbergvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+        exception.expect(GeneralSecurityException.class);
         exception.expectMessage("Invalid sequence number");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
-        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+        LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
 
@@ -207,18 +207,18 @@ public class SessionManagerTest {
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
         byte[] hmac = cipher.doFinal(encodedhash);
 
-        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -1);
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber - 1);
     }
 
     @Test
-    public void invalidHMACvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
-        exception.expect(IllegalArgumentException.class);
+    public void invalidHMACvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+        exception.expect(GeneralSecurityException.class);
         exception.expectMessage("Invalid hmac");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
-        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+        LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
 
@@ -240,8 +240,8 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSessionvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
-        exception.expect(IllegalArgumentException.class);
+    public void invalidSessionvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+        exception.expect(GeneralSecurityException.class);
         exception.expectMessage("Invalid session");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
@@ -265,6 +265,4 @@ public class SessionManagerTest {
 
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
     }
-
-
-    }
+}

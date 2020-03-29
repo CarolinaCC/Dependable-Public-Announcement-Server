@@ -95,10 +95,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             responseObserver.onError(ALREADY_EXISTS.withDescription("Session already exists").asRuntimeException());
         } catch (GeneralSecurityException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Key").asRuntimeException());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
         }
     }
 

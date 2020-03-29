@@ -27,7 +27,6 @@ import java.security.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
 public class ServiceSafeImplTest {
 
     private PublicKey _pubKey;
@@ -59,6 +58,7 @@ public class ServiceSafeImplTest {
 
         _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
+        _sessionManager = new SessionManager(5000);
 
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
@@ -88,8 +88,8 @@ public class ServiceSafeImplTest {
 
         _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
 
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
     @Test (expected = IllegalArgumentException.class)
