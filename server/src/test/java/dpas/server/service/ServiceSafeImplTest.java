@@ -100,7 +100,6 @@ public class ServiceSafeImplTest {
 
     @Test
     public void validNewSession() {
-
         _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE2).build());
         assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
         assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
@@ -137,30 +136,36 @@ public class ServiceSafeImplTest {
 
     @Test
     public void invalidSessionNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
-        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
-        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setSessionNonce("invalido")
-                .setSeq(1)
-                .setMac(ByteString.copyFrom(requestMAC))
-                .build());
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("UNAUTHENTICATED: Could not validate request");
 
-    }
-
-    @Test
-    public void invalidSeqNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
-        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+        Contract.SafeRegisterReply regReply =_stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setSessionNonce("invalido")
+                .setSessionNonce("invalid")
                 .setSeq(1)
                 .setMac(ByteString.copyFrom(requestMAC))
                 .build());
     }
 
     @Test
-    public void invalidMacNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
-        //_stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
+    public void invalidSeqRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("UNAUTHENTICATED: Could not validate request");
+
+        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce(SESSION_NONCE)
+                .setSeq(1)
+                .setMac(ByteString.copyFrom(requestMAC))
+                .build());
+    }
+
+    @Test
+    public void invalidMacRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("UNAUTHENTICATED: Could not validate request");
 
         byte[] requestMAC = ContractUtils.generateMac("ola", 1, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
