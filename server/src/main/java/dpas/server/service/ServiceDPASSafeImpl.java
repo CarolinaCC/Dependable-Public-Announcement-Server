@@ -5,6 +5,7 @@ import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionManager;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -12,8 +13,10 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static io.grpc.Status.UNAVAILABLE;
 
@@ -60,10 +63,8 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
          */
     }
 
-
     @Override
     public void safePost(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
-        //TODO
     }
 
     @Override
