@@ -22,23 +22,25 @@ message ClientHello {
     bytes signature = 3;
 }
 
-message ClientProof {
-    bytes content = 1;
-    bytes hmac = 2;
-}
-
-
-message ServerProof {
-    bytes content = 1;
-    bytes hmac = 2;
-}
-
 
 message ServerHello {
     bytes seq = 1;
     bytes dhKey = 2;
     string keyId = 3;
     bytes signature = 4;
+}
+
+
+message ClientProof {
+    bytes serverSeq = 1;
+    bytes clientSeq = 2;
+    bytes hmac = 3;
+}
+
+
+message ServerProof {
+    bytes clientSeq = 1;
+    bytes hmac = 2;
 }
 
 

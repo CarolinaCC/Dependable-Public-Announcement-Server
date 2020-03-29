@@ -3,6 +3,7 @@ package dpas.server.service;
 import com.google.protobuf.Empty;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
+import dpas.server.session.SessionManager;
 import io.grpc.stub.StreamObserver;
 
 import java.security.PrivateKey;
@@ -13,12 +14,14 @@ import static io.grpc.Status.UNAVAILABLE;
 public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     private PublicKey _publicKey;
     private PrivateKey _privateKey;
-    private PersistenceManager _manager;
+    private PersistenceManager _persistenceManager;
+    private SessionManager _sessionManager;
 
-    public ServiceDPASSafeImpl(PersistenceManager manager, PublicKey pubKey, PrivateKey privKey) {
-        this._manager = manager;
-        this._publicKey = pubKey;
-        this._privateKey = privKey;
+    public ServiceDPASSafeImpl(PersistenceManager manager, PublicKey pubKey, PrivateKey privKey, SessionManager sessionManager) {
+        _persistenceManager = manager;
+        _publicKey = pubKey;
+        _privateKey = privKey;
+        _sessionManager = sessionManager;
     }
 
     @Override
@@ -39,7 +42,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
     @Override
     public void dhKeyExchange(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
-        //TODO
+        //TODO CATARINA
     }
 
     @Override
