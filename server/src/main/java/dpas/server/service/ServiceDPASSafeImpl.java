@@ -77,7 +77,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             String replyContent = sessionNonce + seqNumber;
             byte[] serverMac = ContractUtils.generateMac(replyContent, _privateKey);
 
-            responseObserver.onNext(Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setSeq((int)seqNumber).setMac(ByteString.copyFrom(serverMac)).build());
+            responseObserver.onNext(Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setSeq(seqNumber).setMac(ByteString.copyFrom(serverMac)).build());
             responseObserver.onCompleted();
 
         } catch (IllegalArgumentException e) {
