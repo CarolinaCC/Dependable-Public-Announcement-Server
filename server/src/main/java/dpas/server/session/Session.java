@@ -16,6 +16,8 @@ public class Session {
         this._validity = _validity;
     }
 
+    public void incr_sequenceNumber() {_sequenceNumber++;}
+
     public long get_sequenceNumber() {
         return _sequenceNumber;
     }

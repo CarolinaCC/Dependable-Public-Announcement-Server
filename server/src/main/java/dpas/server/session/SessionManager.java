@@ -21,7 +21,7 @@ public class SessionManager {
     public SessionManager(long keyValidity) {
         _sessionKeys = new ConcurrentHashMap<>();
         _keyValidity = keyValidity;
-        new SessionCleanup(this, keyValidity).run();
+        new Thread(new SessionCleanup(this, keyValidity)).start();
     }
 
     //Testing only
@@ -43,18 +43,16 @@ public class SessionManager {
      * Validates an hmac for a valid session
      */
     public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        //FIXME RACE CONDITIONS
-        //FIXME UPDATE SEQUENCE NUMBER
 
-        if (!_sessionKeys.containsKey(keyId))
+        Session session = _sessionKeys.getOrDefault(keyId, null);
+
+        if (session == null)
             throw new IllegalArgumentException("Invalid SessionId");
-
-        Session session = _sessionKeys.get(keyId);
 
         if (session.isInvalid())
             throw new IllegalArgumentException("Invalid session");
 
-        if (session.get_sequenceNumber() != sequenceNumber + 1)
+        if (session.get_sequenceNumber() + 1 != sequenceNumber)
             throw new IllegalArgumentException("Invalid sequence number");
 
         Cipher cipher = Cipher.getInstance("RSA");
@@ -66,6 +64,8 @@ public class SessionManager {
 
         if (!Arrays.equals(encodedhash, decriptedMac))
             throw new IllegalArgumentException("Invalid hmac");
+
+        session.incr_sequenceNumber();
     }
 
     public void cleanup() {
