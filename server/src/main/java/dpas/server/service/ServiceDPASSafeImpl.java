@@ -145,10 +145,12 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         try {
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             String nonce = request.getSessionNonce();
-            long nextSeq = _sessionManager.validateSessionRequest(nonce,
-                    request.getMac().toByteArray(),
-                    ContractUtils.toByteArray(request),
-                    request.getSeq());
+            long nextSeq = _sessionManager.validateSessionRequest(
+                                nonce,
+                                request.getMac().toByteArray(),
+                                ContractUtils.toByteArray(request),
+                                request.getSeq());
+
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
