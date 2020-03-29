@@ -10,11 +10,14 @@ import dpas.utils.bytes.ContractUtils;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -25,18 +28,24 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
+import java.util.Base64;
 
 import static org.junit.Assert.*;
 
 public class ServiceSafeImplTest {
 
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
     private PublicKey _pubKey;
     private PrivateKey _privKey;
     private static final String SESSION_NONCE = "NONCE";
+    private static final String SESSION_NONCE2 = "NONCE2";
+    private static final String SESSION_NONCE3 = "NONCE3";
     private static final String MESSAGE = "Message";
     private byte[] _clientMac;
 
-    private static final int port = 9000;
+    private static final int port = 9001;
     private static final String host = "localhost";
 
     private static ServiceDPASSafeImplNoPersistence _impl;
@@ -67,7 +76,12 @@ public class ServiceSafeImplTest {
 
         Cipher cipherServer = Cipher.getInstance("RSA");
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
-        _clientMac = cipherServer.doFinal(MESSAGE.getBytes());
+
+        String content = SESSION_NONCE2 + Base64.getEncoder().encodeToString(_pubKey.getEncoded());
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedHashClient = digest.digest(content.getBytes());
+        _clientMac = cipherServer.doFinal(encodedHashClient);
 
         _impl = new ServiceDPASSafeImplNoPersistence(_serverPKey, _serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -87,17 +101,19 @@ public class ServiceSafeImplTest {
     @Test
     public void validNewSession() {
 
-        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
-
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE2).build());
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
+        assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void newSessionWrongClientMac() {
 
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid Client HMAC");
+
         byte[] invalidMac = "ThisIsInvalid".getBytes();
-        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
+        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE3).build());
 
     }
 
