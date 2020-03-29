@@ -44,7 +44,6 @@ public class SessionManager {
      */
     public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         //FIXME RACE CONDITIONS
-        //FIXME UPDATE SEQUENCE NUMBER
 
         if (!_sessionKeys.containsKey(keyId))
             throw new IllegalArgumentException("Invalid SessionId");
@@ -66,6 +65,8 @@ public class SessionManager {
 
         if (!Arrays.equals(encodedhash, decriptedMac))
             throw new IllegalArgumentException("Invalid hmac");
+
+        session.incr_sequenceNumber();
     }
 
     public void cleanup() {
