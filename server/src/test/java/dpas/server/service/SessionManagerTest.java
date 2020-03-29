@@ -203,5 +203,30 @@ public class SessionManagerTest {
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -1);
     }
 
+    @Test
+    public void invalidSessionvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Invalid session");
 
-}
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+
+        Session invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
+
+        long sequenceNumber = invalidSession.get_sequenceNumber() + 1;
+        String keyId = invalidSession.get_sessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
+    }
+
+
+    }
