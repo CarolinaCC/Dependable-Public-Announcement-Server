@@ -175,8 +175,9 @@ public class SessionManagerTest {
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
         byte[] hmac = cipher.doFinal(encodedhash);
 
-        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -);
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -1);
     }
 
 
-    }
+
+}
