@@ -29,16 +29,14 @@ public class SessionManager {
         _sessionKeys = new ConcurrentHashMap<>();
     }
 
-    public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, int validity) {
+    public long createSession(PublicKey pubKey, String sessionNonce) {
 
-        LocalDateTime val = LocalDateTime.now().plusSeconds(validity / 1000);
-        Session s = new Session(seqNumber, pubKey, sessionNonce, val);
-        String keyId = new SecureRandom().toString();
-        var session = _sessionKeys.putIfAbsent(keyId, s);
+        Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusMinutes(_keyValidity));
+        var session = _sessionKeys.putIfAbsent(sessionNonce, s);
         if (session != null) {
             throw new IllegalArgumentException("Session already exists!");
         }
-        return keyId;
+        return s.get_sequenceNumber();
     }
 
     /**
