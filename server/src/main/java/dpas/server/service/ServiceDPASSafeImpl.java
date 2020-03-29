@@ -41,14 +41,10 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void dhKeyExchange(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
+    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
         //TODO CATARINA
     }
 
-    @Override
-    public void dhFreshnessProof(Contract.ClientProof request, StreamObserver<Contract.ServerProof> responseObserver) {
-        //TODO CAROLINA
-    }
 
     @Override
     public void safePost(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {

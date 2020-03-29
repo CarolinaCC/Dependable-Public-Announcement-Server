@@ -8,6 +8,8 @@ service ServiceDPAS {
     rpc postGeneral (PostRequest) returns (google.protobuf.Empty);
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
+
+
     rpc newSession(ClientHello) returns (ServerHello);
     rpc safePost(SafePostRequest) returns (SafePostReply);
     rpc safePostGeneral(SafePostRequest) returns (SafePostReply);

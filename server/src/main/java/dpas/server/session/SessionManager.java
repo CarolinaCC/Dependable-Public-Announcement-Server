@@ -17,14 +17,7 @@ public class SessionManager {
      * Validates an hmac for a valid session
      */
     public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, int sequenceNumber) {
-
-    }
-
-    /**
-     * Validates an hmac for a future session
-     */
-    public void validateHmacForNewSession(String keyId, byte[] hmac, byte[] content, int sequenceNumber) {
-
+        //TODO CAROLINA
     }
 
     //TODO: CLEANUP DAS SESSIONKEYS
