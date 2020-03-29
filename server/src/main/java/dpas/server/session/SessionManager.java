@@ -34,7 +34,7 @@ public class SessionManager {
         Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusMinutes(_keyValidity));
         var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
-            throw new IllegalArgumentException("Session already exists!");
+            throw new IllegalArgumentException("Saession alredy exists!");
         }
         return s.getSequenceNumber();
     }
@@ -42,18 +42,18 @@ public class SessionManager {
     /**
      * Validates an hmac for a valid session
      */
-    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, SessionException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
         if (session == null)
-            throw new IllegalArgumentException("Invalid SessionId");
+            throw new SessionException("Invalid SessionId");
 
         if (session.isInvalid())
-            throw new IllegalArgumentException("Invalid session");
+            throw new SessionException("Invalid session");
 
         if (session.getSequenceNumber() + 1 != sequenceNumber)
-            throw new IllegalArgumentException("Invalid sequence number");
+            throw new SessionException("Invalid sequence number");
 
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, session.getPublicKey());

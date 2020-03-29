@@ -10,26 +10,23 @@ import dpas.common.domain.exception.InvalidUserException;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
+import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
 import dpas.utils.bytes.ContractUtils;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.SerializationUtils;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 
-import static io.grpc.Status.UNAVAILABLE;
+import static io.grpc.Status.*;
 
 public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     private PublicKey _publicKey;
@@ -62,16 +59,45 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
     @Override
     public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
-        /*
-        String sessionNonce = request.getSessionNonce();
-        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] mac = request.getMac().toByteArray();
 
-        Random rand = new Random();
-        int seqNumber = rand.nextInt();
+        try {
+            String sessionNonce = request.getSessionNonce();
+            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            byte[] clientMac = request.getMac().toByteArray();
+            _sessionManager.createSession(pubKey, sessionNonce);
 
-        Contract.ServerHello reply = Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac().setSeq(seqNumber).build()
-         */
+            //Verify client's mac with its public key
+            String contentClient = sessionNonce + pubKey;
+            Cipher cipherClient = Cipher.getInstance("RSA");
+            cipherClient.init(Cipher.DECRYPT_MODE, pubKey);
+            byte[] plaintextBytes = cipherClient.doFinal(clientMac);
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encodedHashClient = digest.digest(contentClient.getBytes());
+
+            if (!Arrays.equals(encodedHashClient, plaintextBytes))
+                throw new IllegalArgumentException("Invalid hmac");
+
+            //Generate server's mac with its private key
+            long seqNumber = new SecureRandom().nextLong();
+            String reply = sessionNonce + seqNumber;
+
+            Cipher cipherServer = Cipher.getInstance("RSA");
+            cipherServer.init(Cipher.ENCRYPT_MODE, _privateKey);
+            byte[] serverMac = cipherServer.doFinal(reply.getBytes());
+
+            responseObserver.onNext(Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac(ByteString.copyFrom(serverMac)).setSeq((int) seqNumber).build());
+            responseObserver.onCompleted();
+
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(ALREADY_EXISTS.withDescription("Session already exists").asRuntimeException());
+        } catch (NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException | InvalidKeyException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Key").asRuntimeException());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -100,26 +126,12 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                         .build());
                 responseObserver.onCompleted();
             }
-        } catch (IOException e) {
-            //TODO
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (NullAnnouncementException e) {
-            e.printStackTrace();
-        } catch (InvalidUserException e) {
-            e.printStackTrace();
+        } catch (IOException | GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
         } catch (CommonDomainException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
         }
     }
 
@@ -135,10 +147,9 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             String nonce = request.getSessionNonce();
             long seq = request.getSeq();
             _sessionManager.validateSessionRequest(nonce,
-                                                    request.getMac().toByteArray(),
-                                                    ContractUtils.toByteArray(request),
-                                                    seq);
-
+                    request.getMac().toByteArray(),
+                    ContractUtils.toByteArray(request),
+                    seq);
 
 
         } catch (InvalidKeySpecException e) {
