@@ -122,8 +122,8 @@ public class SessionManagerTest {
         SessionManager manager = new SessionManager(5);
         manager.createSession( _pubKey, SESSION_NONCE);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(manager.getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
+        assertArrayEquals(manager.getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), _pubKey.getEncoded());
     }
 
     @Test (expected = IllegalArgumentException.class)
@@ -141,6 +141,8 @@ public class SessionManagerTest {
         LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+
         long sequenceNumber = validSession.get_sequenceNumber() + 1;
         String keyId = validSession.get_sessionNonce();
         byte[] content = "message".getBytes();
@@ -166,8 +168,10 @@ public class SessionManagerTest {
         LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
-        long sequenceNumber = 0L;
-        String keyId = validSession.get_sessionNonce();
+        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+
+        long sequenceNumber = validSession.get_sequenceNumber() + 1;
+        String keyId = SESSION_NONCE5;
         byte[] content = "message".getBytes();
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -191,6 +195,9 @@ public class SessionManagerTest {
         LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+
+        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+
         long sequenceNumber = validSession.get_sequenceNumber() + 1;
         String keyId = validSession.get_sessionNonce();
         byte[] content = "message".getBytes();
@@ -206,7 +213,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidHMACgvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidHMACvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid hmac");
 
@@ -216,9 +223,13 @@ public class SessionManagerTest {
         LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+
+        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+
         long sequenceNumber = validSession.get_sequenceNumber() + 1;
         String keyId = validSession.get_sessionNonce();
         byte[] content = "message".getBytes();
+
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] encodedhash = digest.digest("wrong message".getBytes());
@@ -227,7 +238,7 @@ public class SessionManagerTest {
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
         byte[] hmac = cipher.doFinal(encodedhash);
 
-        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -1);
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
     }
 
     @Test
@@ -240,6 +251,8 @@ public class SessionManagerTest {
         PublicKey pubKey = keyPair.getPublic();
 
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
+
+        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
 
         long sequenceNumber = invalidSession.get_sequenceNumber() + 1;
         String keyId = invalidSession.get_sessionNonce();

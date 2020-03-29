@@ -21,7 +21,7 @@ public class SessionManager {
     public SessionManager(long keyValidity) {
         _sessionKeys = new ConcurrentHashMap<>();
         _keyValidity = keyValidity;
-        new SessionCleanup(this, keyValidity).run();
+        new Thread(new SessionCleanup(this, keyValidity)).start();
     }
 
     //Testing only
@@ -54,7 +54,7 @@ public class SessionManager {
         if (session.isInvalid())
             throw new IllegalArgumentException("Invalid session");
 
-        if (session.get_sequenceNumber() != sequenceNumber + 1)
+        if (session.get_sequenceNumber() + 1 != sequenceNumber)
             throw new IllegalArgumentException("Invalid sequence number");
 
         Cipher cipher = Cipher.getInstance("RSA");
