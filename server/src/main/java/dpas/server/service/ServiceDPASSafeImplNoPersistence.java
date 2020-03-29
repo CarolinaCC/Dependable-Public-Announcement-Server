@@ -64,8 +64,10 @@ public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] encodedHashClient = digest.digest(contentClient.getBytes());
 
-            if (!Arrays.equals(encodedHashClient, clientMac))
-                throw new IllegalArgumentException("Invalid Client Hmac");
+            if (!Arrays.equals(encodedHashClient, clientMac)) {
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Mac").asRuntimeException());
+                return;
+            }
 
             _sessionManager.createSession(publicKey, sessionNonce);
 
@@ -78,11 +80,11 @@ public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
             responseObserver.onCompleted();
 
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Key").asRuntimeException());
+            responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Values provided").asRuntimeException());
         } catch (SessionException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException e) {
-            responseObserver.onError(ABORTED.withDescription("Error while generating Server Mac").asRuntimeException());
+            responseObserver.onError(ABORTED.withDescription("Unspecified error on the server side").asRuntimeException());
         }
     }
 
@@ -104,7 +106,7 @@ public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid values provided, could not decipher").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("Invalid values provided").asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
         } catch (CommonDomainException e) {
@@ -131,9 +133,9 @@ public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid values provided, could not decipher").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("Invalid values provided").asRuntimeException());
         } catch (IOException e) {
-            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
         } catch (CommonDomainException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
@@ -172,7 +174,7 @@ public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
         } catch (IOException | GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
         }
     }
 
@@ -191,7 +193,7 @@ public class ServiceDPASSafeImplNoPersistence extends ServiceDPASImpl {
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
         } catch (IOException | GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
         }
     }
 

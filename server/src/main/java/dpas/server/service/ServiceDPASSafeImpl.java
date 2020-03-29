@@ -67,7 +67,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             byte[] encodedHashClient = digest.digest(contentClient.getBytes());
 
             if (!Arrays.equals(encodedHashClient, clientMac)) {
-                responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Client HMAC").asRuntimeException());
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Mac").asRuntimeException());
                 return;
             }
             _sessionManager.createSession(publicKey, sessionNonce);

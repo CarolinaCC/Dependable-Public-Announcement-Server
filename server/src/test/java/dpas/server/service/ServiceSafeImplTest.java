@@ -100,7 +100,11 @@ public class ServiceSafeImplTest {
 
     @Test
     public void validNewSession() {
-        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE2).build());
+        _stub.newSession(Contract.ClientHello.newBuilder()
+                .setMac(ByteString.copyFrom(_clientMac))
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce(SESSION_NONCE2)
+                .build());
         assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
         assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
@@ -109,10 +113,14 @@ public class ServiceSafeImplTest {
     public void newSessionWrongClientMac() {
 
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Client HMAC");
+        exception.expectMessage("Invalid Values provided");
 
         byte[] invalidMac = "ThisIsInvalid".getBytes();
-        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE3).build());
+        _stub.newSession(Contract.ClientHello.newBuilder()
+                .setMac(ByteString.copyFrom(invalidMac))
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce(SESSION_NONCE3)
+                .build());
 
     }
 
@@ -138,7 +146,7 @@ public class ServiceSafeImplTest {
     @Test
     public void invalidSessionNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("UNAUTHENTICATED: Could not validate request");
+        exception.expectMessage("Could not validate request");
 
         byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 5, _privKey );
         Contract.SafeRegisterReply regReply =_stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
@@ -152,13 +160,13 @@ public class ServiceSafeImplTest {
     @Test
     public void invalidSeqRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("UNAUTHENTICATED: Could not validate request");
+        exception.expectMessage("Could not validate request");
 
-        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 7, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce(SESSION_NONCE)
-                .setSeq(1)
+                .setSeq(7)
                 .setMac(ByteString.copyFrom(requestMAC))
                 .build());
     }
@@ -166,7 +174,7 @@ public class ServiceSafeImplTest {
     @Test
     public void invalidMacRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("UNAUTHENTICATED: Could not validate request");
+        exception.expectMessage("Could not validate request");
 
         byte[] requestMAC = ContractUtils.generateMac("ola", 1, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
@@ -180,7 +188,7 @@ public class ServiceSafeImplTest {
     @Test
     public void badRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("CANCELLED: An Error ocurred in the server");
+        exception.expectMessage("An Error occurred in the server");
 
         byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()

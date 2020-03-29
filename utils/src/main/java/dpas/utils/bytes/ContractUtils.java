@@ -145,7 +145,6 @@ public class ContractUtils {
 
     public static byte[] obtainMac(Contract.ClientHello request) throws NoSuchAlgorithmException, InvalidKeySpecException,
             NoSuchPaddingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        String sessionNonce = request.getSessionNonce();
         PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] clientMac = request.getMac().toByteArray();
 
