@@ -31,4 +31,9 @@ public class Session {
     public LocalDateTime get_validity() {
         return _validity;
     }
+
+    public boolean isInvalid() {
+        return LocalDateTime.now().isAfter(_validity);
+    }
+
 }
