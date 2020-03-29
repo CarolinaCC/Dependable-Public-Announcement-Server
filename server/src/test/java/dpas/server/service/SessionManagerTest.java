@@ -232,6 +232,36 @@ public class SessionManagerTest {
     }
 
     @Test
+    public void invalidKeySessionRequestTest() throws GeneralSecurityException, SessionException {
+        exception.expect(SessionException.class);
+        //exception.expectMessage("Invalid SessionId");
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+        LocalDateTime validTime = LocalDateTime.now().plusHours(1);
+
+        Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+
+        long sequenceNumber = validSession.getSequenceNumber() + 1;
+        String keyId = validSession.getSessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        keyPair = keyFactory.generateKeyPair();
+        pubKey = keyPair.getPublic();
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber, pubKey);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
+    }
+
+
+    @Test
 
     public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException {
         exception.expect(SessionException.class);
@@ -315,6 +345,7 @@ public class SessionManagerTest {
 
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
     }
+
 
     @Test
     public void invalidSessionvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {

@@ -48,6 +48,26 @@ public class SessionManager {
     /**
      * Validates an hmac for a valid session
      */
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber, PublicKey pubKey) throws GeneralSecurityException, SessionException {
+
+        Session session = _sessions.getOrDefault(sessionNonce, null);
+
+        if (session == null)
+            throw new SessionException("Invalid SessionId");
+
+        if (session.isInvalid())
+            throw new SessionException("Invalid session");
+
+        if (session.getSequenceNumber() + 1 != sequenceNumber)
+            throw new SessionException("Invalid sequence number");
+
+        if (!Arrays.equals(session.getPublicKey().getEncoded(), pubKey.getEncoded())) {
+            throw new SessionException("Invalid Public Key for request");
+        }
+
+        return validateRequest(mac, content, session);
+    }
+
     public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
@@ -61,6 +81,10 @@ public class SessionManager {
         if (session.getSequenceNumber() + 1 != sequenceNumber)
             throw new SessionException("Invalid sequence number");
 
+        return validateRequest(mac, content, session);
+    }
+
+    private long validateRequest(byte[] mac, byte[] content, Session session) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, SessionException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, session.getPublicKey());
         byte[] decriptedMac = cipher.doFinal(mac);

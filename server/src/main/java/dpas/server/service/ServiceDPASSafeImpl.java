@@ -154,7 +154,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                     nonce,
                     request.getMac().toByteArray(),
                     ContractUtils.toByteArray(request),
-                    request.getSeq());
+                    request.getSeq(), pubKey);
 
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
@@ -184,6 +184,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     @Override
     public void goodbye(Contract.GoodByeRequest request, StreamObserver<Empty> responseObserver) {
         try {
+
             String nonce = request.getSessionNonce();
             _sessionManager.validateSessionRequest(
                     nonce,
@@ -210,14 +211,11 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
     protected Announcement generateAnnouncement(Contract.SafePostRequest request) throws GeneralSecurityException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] signature = request.getSignature().toByteArray();
-        String message = new String(CypherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
-
         User user = _users.get(key);
         if (user == null) {
             throw new InvalidUserException("User does not exist");
         }
-        return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
+        return generateAnnouncement(request, user.getUserBoard());
     }
 
     private long validatePostRequest(Contract.SafePostRequest request) throws IOException, GeneralSecurityException, SessionException {
@@ -225,7 +223,8 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         byte[] mac = request.getMac().toByteArray();
         String sessionNonce = request.getSessionNonce();
         long seq = request.getSeq();
-        return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq, key);
     }
 
     private Contract.SafePostReply generatePostReply(String sessionNonce, long seq) throws GeneralSecurityException, IOException {
