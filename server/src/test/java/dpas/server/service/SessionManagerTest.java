@@ -39,10 +39,7 @@ public class SessionManagerTest {
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
-
         KeyPair keyPair = keygen.generateKeyPair();
-        KeyPair keyPair2 = keygen.generateKeyPair();
-
         _pubKey = keyPair.getPublic();
 
     }

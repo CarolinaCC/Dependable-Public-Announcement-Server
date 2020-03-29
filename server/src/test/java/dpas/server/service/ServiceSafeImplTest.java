@@ -1,0 +1,103 @@
+package dpas.server.service;
+
+import com.google.protobuf.ByteString;
+import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.server.persistence.PersistenceManager;
+import dpas.server.session.Session;
+import dpas.server.session.SessionManager;
+import io.grpc.BindableService;
+import io.grpc.ManagedChannel;
+import io.grpc.Server;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.security.*;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+@RunWith(Parameterized.class)
+public class ServiceSafeImplTest {
+
+    private PublicKey _pubKey;
+    private PrivateKey _privKey;
+    private static final String SESSION_NONCE = "NONCE";
+    private static final String MESSAGE = "Message";
+    private byte[] _clientMac;
+    private PersistenceManager _persistenceManager;
+
+    private static final int port = 9000;
+    private static final String host = "localhost";
+
+    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+    private Server _server;
+    private ManagedChannel _channel;
+    private PublicKey _serverPKey;
+    private PrivateKey _serverPrivKey;
+    private SessionManager _sessionManager;
+    private ServiceDPASSafeImpl _impl;
+
+    @Before
+    public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException,
+            IllegalBlockSizeException, InvalidKeyException, IOException {
+
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
+        KeyPair keyPair = keygen.generateKeyPair();
+        KeyPair serverPair = keygen.generateKeyPair();
+
+        _serverPKey = serverPair.getPublic();
+        _serverPrivKey = serverPair.getPrivate();
+
+        _pubKey = keyPair.getPublic();
+        _privKey = keyPair.getPrivate();
+
+        Cipher cipherServer = Cipher.getInstance("RSA");
+        cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
+        _clientMac = cipherServer.doFinal(MESSAGE.getBytes());
+
+        _impl = new ServiceDPASSafeImpl(_persistenceManager, _serverPKey, _serverPrivKey, _sessionManager);
+        final BindableService bindableService = new ServiceDPASSafeImpl(_persistenceManager, _serverPKey, _serverPrivKey, _sessionManager);
+        _server = NettyServerBuilder.forPort(port).addService(bindableService).build();
+        _server.start();
+
+        //Connect to Server
+        _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
+        _stub = ServiceDPASGrpc.newBlockingStub(_channel);
+
+    }
+
+    @After
+    public void tearDown() {
+
+    }
+
+    @Test
+    public void validNewSession() {
+
+        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
+
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), _pubKey.getEncoded());
+    }
+
+    @Test (expected = IllegalArgumentException.class)
+    public void newSessionWrongClientMac() {
+
+        byte[] invalidMac = "ThisIsInvalid".getBytes();
+        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
+
+    }
+
+}

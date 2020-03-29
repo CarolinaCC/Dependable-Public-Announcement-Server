@@ -66,14 +66,12 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
+    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
 
         try {
             String sessionNonce = request.getSessionNonce();
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             byte[] clientMac = request.getMac().toByteArray();
-            _sessionManager.createSession(pubKey, sessionNonce);
 
             //Verify client's mac with its public key
             String contentClient = sessionNonce + pubKey;
@@ -85,7 +83,9 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             byte[] encodedHashClient = digest.digest(contentClient.getBytes());
 
             if (!Arrays.equals(encodedHashClient, plaintextBytes))
-                throw new IllegalArgumentException("Invalid hmac");
+                throw new IllegalArgumentException("Invalid Client Hmac");
+
+            _sessionManager.createSession(pubKey, sessionNonce);
 
             //Generate server's mac with its private key
             long seqNumber = new SecureRandom().nextLong();
@@ -100,7 +100,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
         } catch (IllegalArgumentException e) {
             responseObserver.onError(ALREADY_EXISTS.withDescription("Session already exists").asRuntimeException());
-        } catch (NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException | InvalidKeyException e) {
+        } catch (GeneralSecurityException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Key").asRuntimeException());
         }
     }
@@ -163,6 +163,10 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             e.printStackTrace();
         }
 
+    }
+
+    public SessionManager getSessionManager() {
+        return _sessionManager;
     }
 
 
