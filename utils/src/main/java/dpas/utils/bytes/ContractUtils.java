@@ -80,6 +80,16 @@ public class ContractUtils {
         }
     }
 
+    public static byte[] toByteArray(Contract.GoodByeRequest request) throws IOException {
+        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] nonce = request.getSessionNonce().getBytes();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
+            stream.writeBytes(nonce);
+            return stream.toByteArray();
+        }
+    }
+
 
     public static byte[] generateMac(Contract.SafePostRequest request, PrivateKey privKey) throws IOException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         byte[] content = toByteArray(request);

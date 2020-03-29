@@ -29,20 +29,23 @@ public class SessionManager {
         _sessions = new ConcurrentHashMap<>();
     }
 
-    public long createSession(PublicKey pubKey, String sessionNonce) {
+    public void createSession(PublicKey pubKey, String sessionNonce) {
 
         Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusMinutes(_keyValidity));
         var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
             throw new IllegalArgumentException("Saession alredy exists!");
         }
-        return s.getSequenceNumber();
+    }
+
+    public void removeSession(String sessionNonce) {
+        _sessions.remove(sessionNonce);
     }
 
     /**
      * Validates an hmac for a valid session
      */
-    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, SessionException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 

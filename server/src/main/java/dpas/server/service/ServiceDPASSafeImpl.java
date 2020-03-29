@@ -192,7 +192,25 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         } catch (IOException | GeneralSecurityException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
         }
+    }
 
+    @Override
+    public void goodbye(Contract.GoodByeRequest request, StreamObserver<Empty> responseObserver) {
+        try {
+            String nonce = request.getSessionNonce();
+            _sessionManager.validateSessionRequest(
+                    nonce,
+                    request.getMac().toByteArray(),
+                    ContractUtils.toByteArray(request),
+                    request.getSeq());
+            _sessionManager.removeSession(nonce);
+            responseObserver.onNext(Empty.newBuilder().build());
+            responseObserver.onCompleted();
+        } catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+        } catch (IOException | GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+        }
     }
 
     protected Announcement generateAnnouncement(Contract.SafePostRequest request, AnnouncementBoard board) throws GeneralSecurityException, CommonDomainException {
