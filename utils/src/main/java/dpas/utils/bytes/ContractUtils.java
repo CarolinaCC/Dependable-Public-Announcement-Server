@@ -26,7 +26,6 @@ public class ContractUtils {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
             stream.writeBytes(nonce);
-            stream.writeBytes(nonce);
             stream.writeBytes(pubKey);
             stream.writeBytes(message);
             stream.writeBytes(signature);
@@ -44,6 +43,17 @@ public class ContractUtils {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
             stream.writeBytes(nonce);
+            stream.writeBytes(nonce);
+            return stream.toByteArray();
+        }
+    }
+
+    public static byte[] toByteArray(Contract.SafeRegisterRequest request) throws IOException {
+        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] nonce = request.getSessionNonce().getBytes();
+        byte[] pubKey = request.getPublicKey().toByteArray();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
             stream.writeBytes(nonce);
             return stream.toByteArray();
         }

@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -96,7 +98,34 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
     @Override
     public void safeRegister(Contract.SafeRegisterRequest request, StreamObserver<Contract.SafeRegisterReply> responseObserver) {
-        //TODO
+        try {
+            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            String nonce = request.getSessionNonce();
+            long seq = request.getSeq();
+            _sessionManager.validateSessionRequest(nonce,
+                                                    request.getMac().toByteArray(),
+                                                    ContractUtils.toByteArray(request),
+                                                    seq);
+
+
+
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
+
 
 }
