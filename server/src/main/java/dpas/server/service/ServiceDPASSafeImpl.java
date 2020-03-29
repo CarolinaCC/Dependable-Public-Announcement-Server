@@ -2,6 +2,7 @@ package dpas.server.service;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import dpas.common.domain.User;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionManager;
@@ -22,6 +23,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static io.grpc.Status.INVALID_ARGUMENT;
 import static io.grpc.Status.UNAVAILABLE;
 
 public class ServiceDPASSafeImpl extends ServiceDPASImpl {
@@ -102,11 +104,28 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             String nonce = request.getSessionNonce();
             long seq = request.getSeq();
-            _sessionManager.validateSessionRequest(nonce,
+            long nextSeq = _sessionManager.validateSessionRequest(nonce,
                                                     request.getMac().toByteArray(),
                                                     ContractUtils.toByteArray(request),
                                                     seq);
-
+            var user = new User(pubKey);
+            var curr = _users.putIfAbsent(user.getPublicKey(), user);
+            if (curr != null) {
+                //User with public key already exists
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+            } else {
+                _persistenceManager.save(user.toJson());
+                //Contract.SafeRegisterReply safeRegisterReply =
+                responseObserver.onNext(Contract.SafeRegisterReply.newBuilder()
+                                                .setMac(ContractUtils.generateMac(request))
+                                                .setSeq(seq)
+                                                .setSessionNonce(nonce)
+                                                .build());
+                responseObserver.onCompleted();
+            }
+        } catch (Exception e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        }
 
 
         } catch (InvalidKeySpecException e) {
