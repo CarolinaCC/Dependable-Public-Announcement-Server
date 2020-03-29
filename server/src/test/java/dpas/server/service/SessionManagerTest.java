@@ -15,8 +15,7 @@ import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.time.LocalDateTime;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class SessionManagerTest {
 
@@ -114,7 +113,83 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void createSessionValid() {
+    public void SessionCleanupTest() throws NoSuchAlgorithmException, InterruptedException {
+        LocalDateTime invalidTime = LocalDateTime.now().plusSeconds(1);
+        _manager = new SessionManager(2000);
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+
+        Session invalidSession = new Session(0, pubKey, SESSION_NONCE, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE, invalidSession);
+        invalidSession = new Session(1, pubKey, SESSION_NONCE2, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
+        invalidSession = new Session(2, pubKey, SESSION_NONCE3, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE3, invalidSession);
+        invalidSession = new Session(3, pubKey, SESSION_NONCE4, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE4, invalidSession);
+        invalidSession = new Session(4, pubKey, SESSION_NONCE5, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE5, invalidSession);
+        invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
+        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        Thread.sleep(3000);
+        assertEquals(_manager.getSessionKeys().size(), 0);
+    }
+
+    @Test
+    public void SessionCleanupTestSomeValid() throws NoSuchAlgorithmException, InterruptedException {
+        LocalDateTime invalidTime = LocalDateTime.now().plusSeconds(1);
+        LocalDateTime validTime = LocalDateTime.now().plusSeconds(6);
+        _manager = new SessionManager(2000);
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+
+        Session invalidSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+        _manager.getSessionKeys().put(SESSION_NONCE, invalidSession);
+        invalidSession = new Session(1, pubKey, SESSION_NONCE2, validTime);
+        _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
+        invalidSession = new Session(2, pubKey, SESSION_NONCE3, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE3, invalidSession);
+        invalidSession = new Session(3, pubKey, SESSION_NONCE4, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE4, invalidSession);
+        invalidSession = new Session(4, pubKey, SESSION_NONCE5, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE5, invalidSession);
+        invalidSession = new Session(0, pubKey, SESSION_NONCE6, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        Thread.sleep(3000);
+        assertEquals(_manager.getSessionKeys().size(), 2);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), pubKey.getEncoded());
+    }
+
+
+    @Test
+    public void multipleinvalidSessionsCleanupTest() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+        LocalDateTime invalidTime = LocalDateTime.now().minusHours(1);
+
+        Session invalidSession = new Session(0, pubKey, SESSION_NONCE, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE, invalidSession);
+        invalidSession = new Session(1, pubKey, SESSION_NONCE2, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
+        invalidSession = new Session(2, pubKey, SESSION_NONCE3, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE3, invalidSession);
+        invalidSession = new Session(3, pubKey, SESSION_NONCE4, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE4, invalidSession);
+        invalidSession = new Session(4, pubKey, SESSION_NONCE5, invalidTime);
+        _manager.getSessionKeys().put(SESSION_NONCE5, invalidSession);
+        invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
+        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        _manager.cleanup();
+        assertEquals(_manager.getSessionKeys().size(), 0);
+    }
+
+
+    @Test
+    public void createSessionValid() throws SessionException {
 
         SessionManager manager = new SessionManager(5);
         manager.createSession(_pubKey, SESSION_NONCE);
@@ -123,8 +198,8 @@ public class SessionManagerTest {
         assertArrayEquals(manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void createSameSessionNonce() {
+    @Test(expected = SessionException.class)
+    public void createSameSessionNonce() throws SessionException {
 
         SessionManager manager = new SessionManager(5);
         manager.createSession(_pubKey, SESSION_NONCE);
@@ -153,11 +228,12 @@ public class SessionManagerTest {
         byte[] hmac = cipher.doFinal(encodedhash);
 
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
+        assertNotEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
     }
 
     @Test
     public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException {
-        exception.expect(GeneralSecurityException.class);
+        exception.expect(SessionException.class);
         exception.expectMessage("Invalid SessionId");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
@@ -184,7 +260,7 @@ public class SessionManagerTest {
 
     @Test
     public void invalidSeqNumbergvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
-        exception.expect(GeneralSecurityException.class);
+        exception.expect(SessionException.class);
         exception.expectMessage("Invalid sequence number");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
@@ -212,7 +288,7 @@ public class SessionManagerTest {
 
     @Test
     public void invalidHMACvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
-        exception.expect(GeneralSecurityException.class);
+        exception.expect(SessionException.class);
         exception.expectMessage("Invalid hmac");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
@@ -241,7 +317,7 @@ public class SessionManagerTest {
 
     @Test
     public void invalidSessionvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
-        exception.expect(GeneralSecurityException.class);
+        exception.expect(SessionException.class);
         exception.expectMessage("Invalid session");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");

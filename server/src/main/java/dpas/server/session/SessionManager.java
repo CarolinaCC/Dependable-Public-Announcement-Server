@@ -6,9 +6,12 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class SessionManager {
 
@@ -29,12 +32,12 @@ public class SessionManager {
         _sessions = new ConcurrentHashMap<>();
     }
 
-    public void createSession(PublicKey pubKey, String sessionNonce) {
+    public void createSession(PublicKey pubKey, String sessionNonce) throws SessionException {
 
-        Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusMinutes(_keyValidity));
+        Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusNanos(_keyValidity * 1000));
         var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
-            throw new IllegalArgumentException("Saession alredy exists!");
+            throw new SessionException("Session already exists!");
         }
     }
 
@@ -66,9 +69,11 @@ public class SessionManager {
         byte[] encodedhash = digest.digest(content);
 
         if (!Arrays.equals(encodedhash, decriptedMac))
-            throw new IllegalArgumentException("Invalid hmac");
+            throw new SessionException("Invalid hmac");
 
         session.nextSequenceNumber();
+        //Update Validity
+        session.setValidity(LocalDateTime.now().plusNanos(_keyValidity * 1000));
         return session.getSequenceNumber();
     }
 

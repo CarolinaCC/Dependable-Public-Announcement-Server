@@ -86,10 +86,10 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             responseObserver.onNext(Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac(ByteString.copyFrom(serverMac)).setSeq((int) seqNumber).build());
             responseObserver.onCompleted();
 
-        } catch (IllegalArgumentException e) {
-            responseObserver.onError(ALREADY_EXISTS.withDescription("Session already exists").asRuntimeException());
-        } catch (GeneralSecurityException e) {
+        }  catch (GeneralSecurityException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Key").asRuntimeException());
+        } catch (SessionException e) {
+           responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
