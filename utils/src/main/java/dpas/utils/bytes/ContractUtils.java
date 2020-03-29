@@ -81,7 +81,6 @@ public class ContractUtils {
     }
 
 
-
     public static byte[] generateMac(Contract.SafePostRequest request, PrivateKey privKey) throws IOException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         byte[] content = toByteArray(request);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");

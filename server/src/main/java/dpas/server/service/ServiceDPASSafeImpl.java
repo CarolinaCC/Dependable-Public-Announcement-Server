@@ -217,7 +217,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
     }
 
-    private long validatePostRequest(Contract.SafePostRequest request) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, SessionException, InvalidKeyException {
+    private long validatePostRequest(Contract.SafePostRequest request) throws IOException, GeneralSecurityException, SessionException {
         byte[] content = ContractUtils.toByteArray(request);
         byte[] mac = request.getMac().toByteArray();
         String sessionNonce = request.getSessionNonce();
@@ -225,7 +225,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
     }
 
-    private Contract.SafePostReply generatePostReply(String sessionNonce, long seq) throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+    private Contract.SafePostReply generatePostReply(String sessionNonce, long seq) throws GeneralSecurityException, IOException {
         byte[] mac = ContractUtils.generateMac(sessionNonce, seq, _privateKey);
         return Contract.SafePostReply.newBuilder()
                 .setSessionNonce(sessionNonce)
