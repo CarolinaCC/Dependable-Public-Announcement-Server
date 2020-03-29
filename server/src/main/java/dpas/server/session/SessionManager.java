@@ -12,6 +12,7 @@ public class SessionManager {
     /**Relationship between keyId and current valid sessionKey*/
     private Map<String, Session> _sessionKeys;
     private long _keyValidity;
+
     public SessionManager(long keyValidity) {
         _sessionKeys = new ConcurrentHashMap<>();
         _keyValidity = keyValidity;
@@ -20,6 +21,9 @@ public class SessionManager {
 
     public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, LocalDateTime validity) {
 
+        if (LocalDateTime.now().isAfter(validity)) {
+            throw new IllegalArgumentException("Validity of session expired!");
+        }
         Session s = new Session(seqNumber, pubKey, sessionNonce, validity);
         String keyId = new SecureRandom().toString();
         _sessionKeys.putIfAbsent(keyId, s);
