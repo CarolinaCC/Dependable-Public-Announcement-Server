@@ -150,7 +150,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             long nextSeq = _sessionManager.validateSessionRequest(nonce,
                                                     request.getMac().toByteArray(),
                                                     ContractUtils.toByteArray(request),
-                                                    seq);
+                                                    request.getSeq());
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
@@ -158,32 +158,18 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 _persistenceManager.save(user.toJson());
-                //Contract.SafeRegisterReply safeRegisterReply =
+                byte[] replyMac = ContractUtils.generateMac(nonce, nextSeq, _privateKey);
+
                 responseObserver.onNext(Contract.SafeRegisterReply.newBuilder()
-                                                .setMac(ContractUtils.generateMac(request))
-                                                .setSeq(seq)
+                                                .setMac(ByteString.copyFrom(replyMac))
+                                                .setSeq(nextSeq)
                                                 .setSessionNonce(nonce)
                                                 .build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
     }
 
     protected Announcement generateAnnouncement(Contract.SafePostRequest request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
