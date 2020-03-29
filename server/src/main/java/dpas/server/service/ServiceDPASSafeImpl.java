@@ -5,16 +5,22 @@ import com.google.protobuf.Empty;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionManager;
+import dpas.utils.bytes.ContractUtils;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.SerializationUtils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static io.grpc.Status.UNAVAILABLE;
 
@@ -61,10 +67,28 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
          */
     }
 
-
     @Override
     public void safePost(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
-        //TODO
+        try {
+            byte[] content = ContractUtils.toByteArray(request);
+            byte[] mac = request.getMac().toByteArray();
+            String sessionNonce = request.getSessionNonce();
+            long seq = request.getSeq();
+            _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
+            //TODO REST
+        } catch (IOException e) {
+            //TODO
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

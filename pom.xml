@@ -90,5 +90,6 @@
         <module>contract</module>
         <module>client</module>
         <module>library</module>
+        <module>utils</module>
     </modules>
 </project>
