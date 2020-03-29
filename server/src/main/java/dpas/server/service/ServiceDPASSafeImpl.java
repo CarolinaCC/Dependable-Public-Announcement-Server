@@ -66,9 +66,10 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] encodedHashClient = digest.digest(contentClient.getBytes());
 
-            if (!Arrays.equals(encodedHashClient, clientMac))
-                throw new IllegalArgumentException("Invalid Client Hmac");
-
+            if (!Arrays.equals(encodedHashClient, clientMac)) {
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Client HMAC").asRuntimeException());
+                return;
+            }
             _sessionManager.createSession(publicKey, sessionNonce);
 
             //Generate server's mac with its private key

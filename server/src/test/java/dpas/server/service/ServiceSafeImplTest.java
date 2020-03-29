@@ -9,11 +9,14 @@ import dpas.server.session.SessionManager;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -24,11 +27,15 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
+import java.util.Base64;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class ServiceSafeImplTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     private PublicKey _pubKey;
     private PrivateKey _privKey;
@@ -69,7 +76,12 @@ public class ServiceSafeImplTest {
 
         Cipher cipherServer = Cipher.getInstance("RSA");
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
-        _clientMac = cipherServer.doFinal(MESSAGE.getBytes());
+
+        String content = SESSION_NONCE2 + Base64.getEncoder().encodeToString(_pubKey.getEncoded());
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedHashClient = digest.digest(content.getBytes());
+        _clientMac = cipherServer.doFinal(encodedHashClient);
 
         _impl = new ServiceDPASSafeImplNoPersistence(_serverPKey, _serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -91,11 +103,14 @@ public class ServiceSafeImplTest {
 
         _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE2).build());
         assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void newSessionWrongClientMac() {
+
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid Client HMAC");
 
         byte[] invalidMac = "ThisIsInvalid".getBytes();
         _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE3).build());
