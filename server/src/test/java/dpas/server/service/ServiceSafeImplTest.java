@@ -33,11 +33,13 @@ public class ServiceSafeImplTest {
     private PublicKey _pubKey;
     private PrivateKey _privKey;
     private static final String SESSION_NONCE = "NONCE";
+    private static final String SESSION_NONCE2 = "NONCE2";
+    private static final String SESSION_NONCE3 = "NONCE3";
     private static final String MESSAGE = "Message";
     private byte[] _clientMac;
     private PersistenceManager _persistenceManager;
 
-    private static final int port = 9000;
+    private static final int port = 9001;
     private static final String host = "localhost";
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
@@ -88,17 +90,16 @@ public class ServiceSafeImplTest {
     @Test
     public void validNewSession() {
 
-        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
-
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE2).build());
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
     @Test (expected = IllegalArgumentException.class)
     public void newSessionWrongClientMac() {
 
         byte[] invalidMac = "ThisIsInvalid".getBytes();
-        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
+        _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE3).build());
 
     }
 
