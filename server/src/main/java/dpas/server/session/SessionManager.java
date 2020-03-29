@@ -9,7 +9,11 @@ import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
@@ -23,9 +27,15 @@ public class SessionManager {
         new SessionCleanup(this, keyValidity).run();
     }
 
-    public long createSession() {
-        //TODO
-        return 0L;
+    public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, LocalDateTime validity) {
+
+        if (LocalDateTime.now().isAfter(validity)) {
+            throw new IllegalArgumentException("Validity of session expired!");
+        }
+        Session s = new Session(seqNumber, pubKey, sessionNonce, validity);
+        String keyId = new SecureRandom().toString();
+        _sessionKeys.putIfAbsent(keyId, s);
+        return keyId;
     }
 
     /**
