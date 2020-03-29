@@ -26,6 +26,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 
 import static io.grpc.Status.*;
 
@@ -63,42 +64,33 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
         try {
             String sessionNonce = request.getSessionNonce();
-            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            byte[] clientMac = request.getMac().toByteArray();
+            PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            String contentClient = sessionNonce +  Base64.getEncoder().encodeToString(publicKey.getEncoded());
 
-            //Verify client's mac with its public key
-            String contentClient = sessionNonce + pubKey;
-            Cipher cipherClient = Cipher.getInstance("RSA");
-            cipherClient.init(Cipher.DECRYPT_MODE, pubKey);
-            byte[] plaintextBytes = cipherClient.doFinal(clientMac);
+            byte[] clientMac = ContractUtils.obtainMac(request);
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] encodedHashClient = digest.digest(contentClient.getBytes());
 
-            if (!Arrays.equals(encodedHashClient, plaintextBytes))
+            if (!Arrays.equals(encodedHashClient, clientMac))
                 throw new IllegalArgumentException("Invalid Client Hmac");
 
-            _sessionManager.createSession(pubKey, sessionNonce);
+            _sessionManager.createSession(publicKey, sessionNonce);
 
             //Generate server's mac with its private key
             long seqNumber = new SecureRandom().nextLong();
-            String reply = sessionNonce + seqNumber;
+            String replyContent = sessionNonce + seqNumber;
+            byte[] serverMac = ContractUtils.generateMac(replyContent, _privateKey);
 
-            Cipher cipherServer = Cipher.getInstance("RSA");
-            cipherServer.init(Cipher.ENCRYPT_MODE, _privateKey);
-            byte[] serverMac = cipherServer.doFinal(reply.getBytes());
-
-            responseObserver.onNext(Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac(ByteString.copyFrom(serverMac)).setSeq((int) seqNumber).build());
+            responseObserver.onNext(Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setSeq((int)seqNumber).setMac(ByteString.copyFrom(serverMac)).build());
             responseObserver.onCompleted();
 
         } catch (IllegalArgumentException e) {
             responseObserver.onError(ALREADY_EXISTS.withDescription("Session already exists").asRuntimeException());
         } catch (GeneralSecurityException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Key").asRuntimeException());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            responseObserver.onError(ABORTED.withDescription("Error while generating Server Mac").asRuntimeException());
         }
     }
 

@@ -132,7 +132,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
+    public void validateSessionRequestTest() throws GeneralSecurityException, SessionException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
@@ -156,7 +156,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSessionIdValidateSessionRequestTest () throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
+    public void invalidSessionIdValidateSessionRequestTest () throws GeneralSecurityException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid SessionId");
 
