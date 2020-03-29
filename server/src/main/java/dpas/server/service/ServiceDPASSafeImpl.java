@@ -2,39 +2,32 @@ package dpas.server.service;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
-import com.google.protobuf.Int64Value;
+import dpas.common.domain.Announcement;
+import dpas.common.domain.AnnouncementBoard;
+import dpas.common.domain.User;
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
+import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
-import io.grpc.Status;
 import dpas.utils.bytes.ContractUtils;
+import dpas.utils.bytes.CypherUtils;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.SerializationUtils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Base64;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
-import java.io.IOException;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static io.grpc.Status.UNAVAILABLE;
-import static io.grpc.Status.INVALID_ARGUMENT;
-import static io.grpc.Status.ALREADY_EXISTS;
+import static io.grpc.Status.*;
 
 public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     private PublicKey _publicKey;
@@ -102,36 +95,68 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             responseObserver.onError(ALREADY_EXISTS.withDescription("Session already exists").asRuntimeException());
         } catch (GeneralSecurityException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Key").asRuntimeException());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
         }
     }
+
 
     @Override
     public void safePost(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
         try {
-            byte[] content = ContractUtils.toByteArray(request);
-            byte[] mac = request.getMac().toByteArray();
+            long seq = validatePostRequest(request);
             String sessionNonce = request.getSessionNonce();
-            long seq = request.getSeq();
-            _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
-            //TODO REST
+            var announcement = generateAnnouncement(request);
+
+            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+            if (curr != null) {
+                //Announcement with that identifier already	 exists
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+            } else {
+                _persistenceManager.save(announcement.toJson("Post"));
+                announcement.getUser().getUserBoard().post(announcement);
+                responseObserver.onNext(generatePostReply(sessionNonce, seq));
+                responseObserver.onCompleted();
+            }
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("Invalid values provided, could not decipher").asRuntimeException());
         } catch (IOException e) {
-            //TODO
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+        } catch (CommonDomainException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
         }
     }
 
     @Override
     public void safePostGeneral(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
-        //TODO
+        try {
+            long seq = validatePostRequest(request);
+            String sessionNonce = request.getSessionNonce();
+            Announcement announcement = generateAnnouncement(request, _generalBoard);
+
+            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+            if (curr != null) {
+                //Announcement with that identifier already exists
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+            } else {
+                _persistenceManager.save(announcement.toJson("PostGeneral"));
+                _generalBoard.post(announcement);
+                responseObserver.onNext(generatePostReply(sessionNonce, seq));
+                responseObserver.onCompleted();
+            }
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("Invalid values provided, could not decipher").asRuntimeException());
+        } catch (IOException e) {
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+        } catch (CommonDomainException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+        }
     }
 
     @Override
@@ -139,30 +164,91 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         try {
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             String nonce = request.getSessionNonce();
-            long seq = request.getSeq();
-            _sessionManager.validateSessionRequest(nonce,
-                                                    request.getMac().toByteArray(),
-                                                    ContractUtils.toByteArray(request),
-                                                    seq);
+            long nextSeq = _sessionManager.validateSessionRequest(
+                    nonce,
+                    request.getMac().toByteArray(),
+                    ContractUtils.toByteArray(request),
+                    request.getSeq());
 
+            var user = new User(pubKey);
+            var curr = _users.putIfAbsent(user.getPublicKey(), user);
+            if (curr != null) {
+                //User with public key already exists
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+            } else {
+                _persistenceManager.save(user.toJson());
+                byte[] replyMac = ContractUtils.generateMac(nonce, nextSeq, _privateKey);
 
-
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+                responseObserver.onNext(Contract.SafeRegisterReply.newBuilder()
+                        .setMac(ByteString.copyFrom(replyMac))
+                        .setSeq(nextSeq)
+                        .setSessionNonce(nonce)
+                        .build());
+                responseObserver.onCompleted();
+            }
+        } catch (CommonDomainException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+        } catch (IOException | GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
         }
+    }
 
+    @Override
+    public void goodbye(Contract.GoodByeRequest request, StreamObserver<Empty> responseObserver) {
+        try {
+            String nonce = request.getSessionNonce();
+            _sessionManager.validateSessionRequest(
+                    nonce,
+                    request.getMac().toByteArray(),
+                    ContractUtils.toByteArray(request),
+                    request.getSeq());
+            _sessionManager.removeSession(nonce);
+            responseObserver.onNext(Empty.newBuilder().build());
+            responseObserver.onCompleted();
+        } catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+        } catch (IOException | GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+        }
+    }
+
+    protected Announcement generateAnnouncement(Contract.SafePostRequest request, AnnouncementBoard board) throws GeneralSecurityException, CommonDomainException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] signature = request.getSignature().toByteArray();
+        String message = new String(CypherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
+
+        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
+    }
+
+    protected Announcement generateAnnouncement(Contract.SafePostRequest request) throws GeneralSecurityException, CommonDomainException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] signature = request.getSignature().toByteArray();
+        String message = new String(CypherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
+
+        User user = _users.get(key);
+        if (user == null) {
+            throw new InvalidUserException("User does not exist");
+        }
+        return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
+    }
+
+    private long validatePostRequest(Contract.SafePostRequest request) throws IOException, GeneralSecurityException, SessionException {
+        byte[] content = ContractUtils.toByteArray(request);
+        byte[] mac = request.getMac().toByteArray();
+        String sessionNonce = request.getSessionNonce();
+        long seq = request.getSeq();
+        return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
+    }
+
+    private Contract.SafePostReply generatePostReply(String sessionNonce, long seq) throws GeneralSecurityException, IOException {
+        byte[] mac = ContractUtils.generateMac(sessionNonce, seq, _privateKey);
+        return Contract.SafePostReply.newBuilder()
+                .setSessionNonce(sessionNonce)
+                .setSeq(seq)
+                .setMac(ByteString.copyFrom(mac))
+                .build();
     }
 
     public SessionManager getSessionManager() {

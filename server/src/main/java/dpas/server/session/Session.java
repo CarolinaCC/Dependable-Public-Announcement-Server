@@ -16,21 +16,21 @@ public class Session {
         this._validity = _validity;
     }
 
-    public void incr_sequenceNumber() {_sequenceNumber++;}
+    public void nextSequenceNumber() {_sequenceNumber += 2;}
 
-    public long get_sequenceNumber() {
+    public long getSequenceNumber() {
         return _sequenceNumber;
     }
 
-    public PublicKey get_publicKey() {
+    public PublicKey getPublicKey() {
         return _publicKey;
     }
 
-    public String get_sessionNonce() {
+    public String getSessionNonce() {
         return _sessionNonce;
     }
 
-    public LocalDateTime get_validity() {
+    public LocalDateTime getValidity() {
         return _validity;
     }
 

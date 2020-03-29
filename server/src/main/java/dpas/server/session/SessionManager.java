@@ -29,34 +29,37 @@ public class SessionManager {
         _sessions = new ConcurrentHashMap<>();
     }
 
-    public long createSession(PublicKey pubKey, String sessionNonce) {
+    public void createSession(PublicKey pubKey, String sessionNonce) {
 
         Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusMinutes(_keyValidity));
         var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
             throw new IllegalArgumentException("Saession alredy exists!");
         }
-        return s.get_sequenceNumber();
+    }
+
+    public void removeSession(String sessionNonce) {
+        _sessions.remove(sessionNonce);
     }
 
     /**
      * Validates an hmac for a valid session
      */
-    public void validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
         if (session == null)
-            throw new IllegalArgumentException("Invalid SessionId");
+            throw new SessionException("Invalid SessionId");
 
         if (session.isInvalid())
-            throw new IllegalArgumentException("Invalid session");
+            throw new SessionException("Invalid session");
 
-        if (session.get_sequenceNumber() + 1 != sequenceNumber)
-            throw new IllegalArgumentException("Invalid sequence number");
+        if (session.getSequenceNumber() + 1 != sequenceNumber)
+            throw new SessionException("Invalid sequence number");
 
         Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, session.get_publicKey());
+        cipher.init(Cipher.DECRYPT_MODE, session.getPublicKey());
         byte[] decriptedMac = cipher.doFinal(mac);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -65,7 +68,8 @@ public class SessionManager {
         if (!Arrays.equals(encodedhash, decriptedMac))
             throw new IllegalArgumentException("Invalid hmac");
 
-        session.incr_sequenceNumber();
+        session.nextSequenceNumber();
+        return session.getSequenceNumber();
     }
 
     public void cleanup() {

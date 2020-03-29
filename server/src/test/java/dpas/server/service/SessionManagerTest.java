@@ -1,8 +1,8 @@
 package dpas.server.service;
 
 import dpas.server.session.Session;
+import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
-import io.grpc.StatusRuntimeException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,10 +57,10 @@ public class SessionManagerTest {
         _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
         _manager.cleanup();
         assertEquals(_manager.getSessionKeys().size(), 1);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_sequenceNumber(), 0);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_validity(), validTime);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 0);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
     }
 
     @Test
@@ -86,30 +86,30 @@ public class SessionManagerTest {
         _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
         _manager.cleanup();
         assertEquals(_manager.getSessionKeys().size(), 5);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_sequenceNumber(), 0);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_validity(), validTime);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 0);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).get_sequenceNumber(), 1);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).get_sessionNonce(), SESSION_NONCE2);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE2).get_publicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).get_validity(), validTime);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getSequenceNumber(), 1);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).get_sequenceNumber(), 2);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).get_sessionNonce(), SESSION_NONCE3);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE3).get_publicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).get_validity(), validTime);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getSequenceNumber(), 2);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getSessionNonce(), SESSION_NONCE3);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).get_sequenceNumber(), 3);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).get_sessionNonce(), SESSION_NONCE4);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE4).get_publicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).get_validity(), validTime);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getSequenceNumber(), 3);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getSessionNonce(), SESSION_NONCE4);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).get_sequenceNumber(), 4);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).get_sessionNonce(), SESSION_NONCE5);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE5).get_publicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).get_validity(), validTime);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getSequenceNumber(), 4);
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getSessionNonce(), SESSION_NONCE5);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getValidity(), validTime);
 
     }
 
@@ -119,8 +119,8 @@ public class SessionManagerTest {
         SessionManager manager = new SessionManager(5);
         manager.createSession( _pubKey, SESSION_NONCE);
 
-        assertEquals(manager.getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
-        assertArrayEquals(manager.getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(manager.getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
     @Test (expected = IllegalArgumentException.class)
@@ -132,7 +132,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
@@ -141,8 +141,8 @@ public class SessionManagerTest {
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
 
-        long sequenceNumber = validSession.get_sequenceNumber() + 1;
-        String keyId = validSession.get_sessionNonce();
+        long sequenceNumber = validSession.getSequenceNumber() + 1;
+        String keyId = validSession.getSessionNonce();
         byte[] content = "message".getBytes();
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -156,7 +156,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSessionIdValidateSessionRequestTest () throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidSessionIdValidateSessionRequestTest () throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid SessionId");
 
@@ -168,7 +168,7 @@ public class SessionManagerTest {
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
 
-        long sequenceNumber = validSession.get_sequenceNumber() + 1;
+        long sequenceNumber = validSession.getSequenceNumber() + 1;
         String keyId = SESSION_NONCE5;
         byte[] content = "message".getBytes();
 
@@ -183,7 +183,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSeqNumbergvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidSeqNumbergvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid sequence number");
 
@@ -196,8 +196,8 @@ public class SessionManagerTest {
 
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
 
-        long sequenceNumber = validSession.get_sequenceNumber() + 1;
-        String keyId = validSession.get_sessionNonce();
+        long sequenceNumber = validSession.getSequenceNumber() + 1;
+        String keyId = validSession.getSessionNonce();
         byte[] content = "message".getBytes();
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -211,7 +211,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidHMACvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidHMACvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid hmac");
 
@@ -224,8 +224,8 @@ public class SessionManagerTest {
 
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
 
-        long sequenceNumber = validSession.get_sequenceNumber() + 1;
-        String keyId = validSession.get_sessionNonce();
+        long sequenceNumber = validSession.getSequenceNumber() + 1;
+        String keyId = validSession.getSessionNonce();
         byte[] content = "message".getBytes();
 
 
@@ -240,7 +240,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSessionvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidSessionvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid session");
 
@@ -252,8 +252,8 @@ public class SessionManagerTest {
 
         _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
 
-        long sequenceNumber = invalidSession.get_sequenceNumber() + 1;
-        String keyId = invalidSession.get_sessionNonce();
+        long sequenceNumber = invalidSession.getSequenceNumber() + 1;
+        String keyId = invalidSession.getSessionNonce();
         byte[] content = "message".getBytes();
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
