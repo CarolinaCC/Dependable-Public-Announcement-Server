@@ -6,6 +6,7 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
+import dpas.utils.bytes.ContractUtils;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -25,8 +26,7 @@ import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ServiceSafeImplTest {
 
@@ -100,6 +100,63 @@ public class ServiceSafeImplTest {
         byte[] invalidMac = "ThisIsInvalid".getBytes();
         _stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(invalidMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
 
+    }
+
+    @Test
+    public void validRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        byte[] requestMac = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+        Contract.SafeRegisterReply regReply = _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+                        .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                        .setMac(ByteString.copyFrom(requestMac))
+                        .setSessionNonce(SESSION_NONCE)
+                        .setSeq(1)
+                        .build());
+
+        byte[] mac = regReply.getMac().toByteArray();
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, _serverPrivKey);
+        byte[] replyMac = cipher.doFinal(mac);
+
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 2);
+        assertEquals( ContractUtils.generateMac(SESSION_NONCE, 2, _serverPrivKey), replyMac);
+    }
+
+
+    @Test
+    public void invalidSessionNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce("invalido")
+                .setSeq(1)
+                .setMac(ByteString.copyFrom(requestMAC))
+                .build());
+
+    }
+
+    @Test
+    public void invalidSeqNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce("invalido")
+                .setSeq(1)
+                .setMac(ByteString.copyFrom(requestMAC))
+                .build());
+    }
+
+    @Test
+    public void invalidMacNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        //_stub.newSession(Contract.ClientHello.newBuilder().setMac(ByteString.copyFrom(_clientMac)).setPublicKey(ByteString.copyFrom(_pubKey.getEncoded())).setSessionNonce(SESSION_NONCE).build());
+
+        byte[] requestMAC = ContractUtils.generateMac("ola", 1, _privKey );
+        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce(SESSION_NONCE)
+                .setSeq(1)
+                .setMac(ByteString.copyFrom(requestMAC))
+                .build());
     }
 
 }
