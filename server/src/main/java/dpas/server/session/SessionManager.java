@@ -29,22 +29,25 @@ public class SessionManager {
         _sessionKeys = new ConcurrentHashMap<>();
     }
 
+    public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, int validity) {
 
-    public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, LocalDateTime validity) {
-
-        if (LocalDateTime.now().isAfter(validity)) {
-            throw new IllegalArgumentException("Validity of session expired!");
-        }
-        Session s = new Session(seqNumber, pubKey, sessionNonce, validity);
+        LocalDateTime val = LocalDateTime.now().plusSeconds(validity / 1000);
+        Session s = new Session(seqNumber, pubKey, sessionNonce, val);
         String keyId = new SecureRandom().toString();
-        _sessionKeys.putIfAbsent(keyId, s);
+        var session = _sessionKeys.putIfAbsent(keyId, s);
+        if (session != null) {
+            throw new IllegalArgumentException("Session already exists!");
+        }
         return keyId;
     }
 
     /**
      * Validates an hmac for a valid session
      */
-    public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, int sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        //FIXME RACE CONDITIONS
+        //FIXME UPDATE SEQUENCE NUMBER
+
         if (!_sessionKeys.containsKey(keyId))
             throw new IllegalArgumentException("Invalid SessionId");
 

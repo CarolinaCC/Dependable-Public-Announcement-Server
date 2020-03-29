@@ -32,7 +32,7 @@ public class SessionManagerTest {
     private static final String SESSION_NONCE6 = "NONCE6";
 
     @Before
-    public void setup() throws NoSuchAlgorithmException {
+    public void setup() {
         _manager = new SessionManager();
 
     }
@@ -43,6 +43,7 @@ public class SessionManagerTest {
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
         LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE2, LocalDateTime.now().minusHours(1));
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
@@ -174,7 +175,7 @@ public class SessionManagerTest {
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
         byte[] hmac = cipher.doFinal(encodedhash);
 
-        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -1);
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -);
     }
 
 
