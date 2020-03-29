@@ -70,6 +70,17 @@ public class ContractUtils {
         }
     }
 
+    public static byte[] toByteArray(Contract.SafeRegisterReply request) throws IOException {
+        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] nonce = request.getSessionNonce().getBytes();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
+            stream.writeBytes(nonce);
+            return stream.toByteArray();
+        }
+    }
+
+
 
     public static byte[] generateMac(Contract.SafePostRequest request, PrivateKey privKey) throws IOException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         byte[] content = toByteArray(request);
@@ -94,6 +105,16 @@ public class ContractUtils {
 
     public static byte[] generateMac(Contract.SafePostReply reply, PrivateKey privKey) throws IOException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         byte[] content = toByteArray(reply);
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, privKey);
+        return cipher.doFinal(encodedhash);
+    }
+
+    public static byte[] generateMac(Contract.SafeRegisterRequest request, PrivateKey privKey) throws IOException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        byte[] content = toByteArray(request);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] encodedhash = digest.digest(content);
 

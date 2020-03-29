@@ -163,27 +163,36 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         try {
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             String nonce = request.getSessionNonce();
-            long seq = request.getSeq();
-            _sessionManager.validateSessionRequest(nonce,
+            long nextSeq = _sessionManager.validateSessionRequest(
+                    nonce,
                     request.getMac().toByteArray(),
                     ContractUtils.toByteArray(request),
-                    seq);
+                    request.getSeq());
 
+            var user = new User(pubKey);
+            var curr = _users.putIfAbsent(user.getPublicKey(), user);
+            if (curr != null) {
+                //User with public key already exists
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+            } else {
+                _persistenceManager.save(user.toJson());
+                byte[] replyMac = ContractUtils.generateMac(nonce, nextSeq, _privateKey);
 
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
+                responseObserver.onNext(Contract.SafeRegisterReply.newBuilder()
+                        .setMac(ByteString.copyFrom(replyMac))
+                        .setSeq(nextSeq)
+                        .setSessionNonce(nonce)
+                        .build());
+                responseObserver.onCompleted();
+            }
+        } catch (CommonDomainException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (InvalidKeyException e) {
             e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+        } catch (IOException | GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
         }
 
     }

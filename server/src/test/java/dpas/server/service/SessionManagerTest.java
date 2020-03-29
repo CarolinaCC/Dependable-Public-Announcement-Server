@@ -1,6 +1,7 @@
 package dpas.server.service;
 
 import dpas.server.session.Session;
+import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
 import org.junit.Before;
 import org.junit.Rule;
@@ -134,7 +135,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
@@ -158,7 +159,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSessionIdValidateSessionRequestTest () throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidSessionIdValidateSessionRequestTest () throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid SessionId");
 
@@ -185,7 +186,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSeqNumbergvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidSeqNumbergvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid sequence number");
 
@@ -213,7 +214,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidHMACvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidHMACvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid hmac");
 
@@ -242,7 +243,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSessionvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public void invalidSessionvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, SessionException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid session");
 
