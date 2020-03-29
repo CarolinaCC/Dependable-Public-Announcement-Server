@@ -1,15 +1,14 @@
 package dpas.server.service;
 
 import com.google.protobuf.Empty;
+import com.google.protobuf.Int64Value;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionManager;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Random;
@@ -47,19 +46,26 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
-        /*
-        String sessionNonce = request.getSessionNonce();
-        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] mac = request.getMac().toByteArray();
+    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) throws NoSuchAlgorithmException,
+            InvalidKeySpecException {
 
-        Random rand = new Random();
-        int seqNumber = rand.nextInt();
+        try {
+            String sessionNonce = request.getSessionNonce();
+            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            byte[] mac = request.getMac().toByteArray();
+            _sessionManager.createSession(pubKey, sessionNonce);
 
-        Contract.ServerHello reply = Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac().setSeq(seqNumber).build()
-         */
+            //Verify client's mac with its public key
+
+            //Generate server's mac with its private key
+
+            long seqNumber = new SecureRandom().nextLong();
+            responseObserver.onNext(Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac().setSeq((int) seqNumber).build());
+            responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Session already exists").asRuntimeException());
+        }
     }
-
 
     @Override
     public void safePost(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {

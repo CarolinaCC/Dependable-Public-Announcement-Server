@@ -34,7 +34,7 @@ public class SessionManager {
         Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusMinutes(_keyValidity));
         var session = _sessionKeys.putIfAbsent(sessionNonce, s);
         if (session != null) {
-            throw new IllegalArgumentException("Session already exists!");
+            throw new IllegalArgumentException("Saession alredy exists!");
         }
         return s.get_sequenceNumber();
     }
