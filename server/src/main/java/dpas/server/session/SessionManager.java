@@ -1,15 +1,20 @@
 package dpas.server.session;
 
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.security.*;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
-    /**Relationship between keyId and current valid sessionKey*/
+
+    /**
+     * Relationship between keyId and current valid sessionKey
+     */
     private Map<String, Session> _sessionKeys;
     private long _keyValidity;
 
@@ -17,6 +22,11 @@ public class SessionManager {
         _sessionKeys = new ConcurrentHashMap<>();
         _keyValidity = keyValidity;
         new SessionCleanup(this, keyValidity).run();
+    }
+
+    //Testing only
+    public SessionManager() {
+        _sessionKeys = new ConcurrentHashMap<>();
     }
 
     public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, int validity) {
@@ -34,10 +44,9 @@ public class SessionManager {
     /**
      * Validates an hmac for a valid session
      */
-    public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, int sequenceNumber) {
+    public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, int sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         if (!_sessionKeys.containsKey(keyId))
             throw new IllegalArgumentException("Invalid SessionId");
-
 
         Session session = _sessionKeys.get(keyId);
 
@@ -47,14 +56,24 @@ public class SessionManager {
         if (session.get_sequenceNumber() != sequenceNumber + 1)
             throw new IllegalArgumentException("Invalid sequence number");
 
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, session.get_publicKey());
+        byte[] decriptedMac = cipher.doFinal(hmac);
 
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
 
-        //TODO CAROLINA
+        if (!Arrays.equals(encodedhash, decriptedMac))
+            throw new IllegalArgumentException("Invalid hmac");
     }
 
     public void cleanup() {
         _sessionKeys.keySet().stream()
                 .filter(k -> _sessionKeys.get(k).isInvalid())
                 .forEach(k -> _sessionKeys.remove(k));
+    }
+
+    public Map<String, Session> getSessionKeys() {
+        return _sessionKeys;
     }
 }

@@ -141,12 +141,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void dhKeyExchange(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
-        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
-    }
-
-    @Override
-    public void dhFreshnessProof(Contract.ClientProof request, StreamObserver<Contract.ServerProof> responseObserver) {
+    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
         responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
