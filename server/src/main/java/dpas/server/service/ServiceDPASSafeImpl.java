@@ -6,9 +6,7 @@ import dpas.common.domain.User;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullAnnouncementException;
+import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionException;
@@ -148,9 +146,9 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             String nonce = request.getSessionNonce();
             long nextSeq = _sessionManager.validateSessionRequest(nonce,
-                                                    request.getMac().toByteArray(),
-                                                    ContractUtils.toByteArray(request),
-                                                    request.getSeq());
+                    request.getMac().toByteArray(),
+                    ContractUtils.toByteArray(request),
+                    request.getSeq());
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
@@ -161,15 +159,22 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 byte[] replyMac = ContractUtils.generateMac(nonce, nextSeq, _privateKey);
 
                 responseObserver.onNext(Contract.SafeRegisterReply.newBuilder()
-                                                .setMac(ByteString.copyFrom(replyMac))
-                                                .setSeq(nextSeq)
-                                                .setSessionNonce(nonce)
-                                                .build());
+                        .setMac(ByteString.copyFrom(replyMac))
+                        .setSeq(nextSeq)
+                        .setSessionNonce(nonce)
+                        .build());
                 responseObserver.onCompleted();
             }
-        } catch (Exception e) {
+        } catch (CommonDomainException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }  catch (SessionException e) {
+            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+        } catch (IOException | GeneralSecurityException e) {
+            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
         }
+
     }
 
     protected Announcement generateAnnouncement(Contract.SafePostRequest request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
