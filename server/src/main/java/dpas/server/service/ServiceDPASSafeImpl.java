@@ -47,7 +47,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
     @Override
     public void dhFreshnessProof(Contract.ClientProof request, StreamObserver<Contract.ServerProof> responseObserver) {
-        //TODO
+        //TODO CAROLINA
     }
 
     @Override

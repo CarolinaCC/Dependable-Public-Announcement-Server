@@ -8,41 +8,42 @@ service ServiceDPAS {
     rpc postGeneral (PostRequest) returns (google.protobuf.Empty);
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
-    rpc dhKeyExchange(ClientHello) returns (ServerHello);
-    rpc dhFreshnessProof(ClientProof) returns (ServerProof);
+    rpc newSession(ClientHello) returns (ServerHello);
+    rpc freshnessProof(ProofRequest) returns (ProofReply);
     rpc safePost(SafePostRequest) returns (SafePostReply);
     rpc safePostGeneral(SafePostRequest) returns (SafePostReply);
     rpc safeRegister(SafeRegisterRequest) returns (SafeRegisterReply);
 }
 
-
+//
 message ClientHello {
     bytes publicKey = 1;
-    bytes dhKey = 2;
-    bytes signature = 3;
 }
 
 
 message ServerHello {
-    bytes seq = 1;
-    bytes dhKey = 2;
+    bytes seq = 1; //encrypted random int
     string keyId = 3;
-    bytes signature = 4;
+    bytes mac = 4;
 }
 
 
-message ClientProof {
-    bytes serverSeq = 1;
-    bytes clientSeq = 2;
-    bytes hmac = 3;
+message ProofRequest {
+    bytes serverSeq = 1; //encrypted int sent by server + 1
+    bytes clientSeq = 2; //encrypted random int
+    string keyId = 3;
+    bytes mac = 4;
 }
 
-
-message ServerProof {
-    bytes clientSeq = 1;
-    bytes hmac = 2;
+message Proof {
+    int32 clientSeq = 1;
+    int32 serverSeq = 2;
 }
 
+message ProofReply {
+    bytes proof = 1; //Encrypted proof
+    bytes mac = 2;
+}
 
 //
 message RegisterRequest {
@@ -69,6 +70,7 @@ message PostRequest {
     repeated string references = 4;
 }
 
+//
 message SafeRegisterRequest {
     bytes publicKey = 1;
     string keyId = 2;
@@ -76,6 +78,7 @@ message SafeRegisterRequest {
     bytes hmac = 4;
 }
 
+//
 message SafeRegisterReply {
     bytes seq = 1;
     bytes hmac = 2;
@@ -92,6 +95,7 @@ message SafePostRequest {
     bytes hmac = 7;
 }
 
+//
 message SafePostReply {
     bytes seq = 1;
     bytes hmac = 2;
@@ -108,6 +112,7 @@ message ReadReply {
     repeated Announcement announcements = 1;
 }
 
+//
 message Announcement {
     string message = 1;
     repeated string references = 3;
