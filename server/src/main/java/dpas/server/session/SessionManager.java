@@ -29,15 +29,15 @@ public class SessionManager {
         _sessionKeys = new ConcurrentHashMap<>();
     }
 
+    public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, int validity) {
 
-    public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, LocalDateTime validity) {
-
-        if (LocalDateTime.now().isAfter(validity)) {
-            throw new IllegalArgumentException("Validity of session expired!");
-        }
-        Session s = new Session(seqNumber, pubKey, sessionNonce, validity);
+        LocalDateTime val = LocalDateTime.now().plusSeconds(validity / 1000);
+        Session s = new Session(seqNumber, pubKey, sessionNonce, val);
         String keyId = new SecureRandom().toString();
-        _sessionKeys.putIfAbsent(keyId, s);
+        var session = _sessionKeys.putIfAbsent(keyId, s);
+        if (session != null) {
+            throw new IllegalArgumentException("Session already exists!");
+        }
         return keyId;
     }
 
