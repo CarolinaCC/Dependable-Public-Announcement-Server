@@ -1,16 +1,23 @@
 package dpas.server.session;
 
 import java.security.Key;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
     /**Relationship between keyId and current valid sessionKey*/
     private Map<String, Session> _sessionKeys = new ConcurrentHashMap<>();
 
-    public long createSession() {
-        //TODO
-        return 0L;
+    public String createSession(long seqNumber, PublicKey pubKey, String sessionNonce, LocalDateTime validity) {
+
+        Session s = new Session(seqNumber, pubKey, sessionNonce, validity);
+        String keyId = new SecureRandom().toString();
+        _sessionKeys.putIfAbsent(keyId, s);
+        return keyId;
     }
 
     /**

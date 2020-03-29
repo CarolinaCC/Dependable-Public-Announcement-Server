@@ -6,8 +6,14 @@ import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionManager;
 import io.grpc.stub.StreamObserver;
 
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Random;
+import java.util.UUID;
 
 import static io.grpc.Status.UNAVAILABLE;
 
@@ -41,8 +47,19 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
-        //TODO CATARINA
+    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) throws NoSuchAlgorithmException,
+            InvalidKeySpecException {
+        /*
+        String sessionNonce = request.getSessionNonce();
+        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] mac = request.getMac().toByteArray();
+
+        Random rand = new Random();
+        int seqNumber = rand.nextInt();
+
+        Contract.ServerHello reply = Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac().setSeq(seqNumber).build()
+         */
+
     }
 
 
