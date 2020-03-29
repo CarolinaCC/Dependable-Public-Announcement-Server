@@ -112,13 +112,10 @@ public class ServiceSafeImplTest {
                         .build());
 
         byte[] mac = regReply.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, _serverPrivKey);
-        byte[] replyMac = cipher.doFinal(mac);
 
         assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
         assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 2);
-        assertEquals( ContractUtils.generateMac(SESSION_NONCE, 2, _serverPrivKey), replyMac);
+        assertArrayEquals( ContractUtils.generateMac(SESSION_NONCE, 2, _serverPrivKey), mac);
     }
 
 
