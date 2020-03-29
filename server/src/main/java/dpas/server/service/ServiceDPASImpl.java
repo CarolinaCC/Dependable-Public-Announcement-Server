@@ -8,6 +8,7 @@ import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidReferenceException;
 import dpas.common.domain.exception.InvalidUserException;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.Contract.ReadReply;
 import dpas.grpc.contract.Contract.ReadRequest;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.grpc.Status.INVALID_ARGUMENT;
+import static io.grpc.Status.UNAVAILABLE;
 
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
@@ -136,6 +138,31 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         } catch (Exception e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
+    }
+
+    @Override
+    public void dhKeyExchange(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
+    @Override
+    public void dhFreshnessProof(Contract.ClientProof request, StreamObserver<Contract.ServerProof> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
+    @Override
+    public void safePost(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
+    @Override
+    public void safePostGeneral(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
+    @Override
+    public void safeRegister(Contract.SafeRegisterRequest request, StreamObserver<Contract.SafeRegisterReply> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
 
