@@ -4,8 +4,14 @@ import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import io.grpc.StatusRuntimeException;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.time.LocalDateTime;
 
@@ -13,6 +19,9 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class SessionManagerTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     private SessionManager _manager;
     private static final String SESSION_NONCE = "NONCE";
@@ -44,6 +53,7 @@ public class SessionManagerTest {
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
         LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE2, LocalDateTime.now().minusHours(1));
         _manager.getSessionKeys().put(SESSION_NONCE, validSession);
@@ -124,4 +134,126 @@ public class SessionManagerTest {
         manager.createSession( _pubKey, SESSION_NONCE);
     }
 
-}
+    public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+
+        Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+        long sequenceNumber = validSession.get_sequenceNumber() + 1;
+        String keyId = validSession.get_sessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
+    }
+
+    @Test
+    public void invalidSessionIdValidateSessionRequestTest () throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Invalid SessionId");
+
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+
+        Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+        long sequenceNumber = 0L;
+        String keyId = validSession.get_sessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
+    }
+
+    @Test
+    public void invalidSeqNumbergvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Invalid sequence number");
+
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+
+        Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+        long sequenceNumber = validSession.get_sequenceNumber() + 1;
+        String keyId = validSession.get_sessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -1);
+    }
+
+    @Test
+    public void invalidHMACgvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Invalid hmac");
+
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+        LocalDateTime validTime =  LocalDateTime.now().plusHours(1);
+
+        Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
+        long sequenceNumber = validSession.get_sequenceNumber() + 1;
+        String keyId = validSession.get_sessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest("wrong message".getBytes());
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber -1);
+    }
+
+    @Test
+    public void invalidSessionvalidateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Invalid session");
+
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+
+        Session invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
+
+        long sequenceNumber = invalidSession.get_sequenceNumber() + 1;
+        String keyId = invalidSession.get_sessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
+    }
+
+
+    }
