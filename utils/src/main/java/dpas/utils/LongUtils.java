@@ -1,4 +1,4 @@
-package dpas.utils.bytes;
+package dpas.utils;
 
 import java.nio.ByteBuffer;
 

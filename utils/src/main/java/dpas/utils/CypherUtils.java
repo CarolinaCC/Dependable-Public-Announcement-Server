@@ -1,4 +1,4 @@
-package dpas.utils.bytes;
+package dpas.utils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;

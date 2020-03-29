@@ -3,11 +3,10 @@ package dpas.server.service;
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
-import dpas.utils.bytes.ContractUtils;
-import io.grpc.BindableService;
+import dpas.utils.MacVerifier;
+import dpas.utils.MacGenerator;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
@@ -18,21 +17,16 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
-import java.util.Base64;
 
 import static org.junit.Assert.*;
 
-public class ServiceSafeImplTest {
+public class SafeServiceRegisterTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -40,34 +34,30 @@ public class ServiceSafeImplTest {
     private PublicKey _pubKey;
     private PrivateKey _privKey;
     private static final String SESSION_NONCE = "NONCE";
-    private static final String SESSION_NONCE2 = "NONCE2";
-    private static final String SESSION_NONCE3 = "NONCE3";
-    private byte[] _clientMac;
 
     private static final int port = 9001;
     private static final String host = "localhost";
 
-    private static ServiceDPASSafeImplNoPersistence _impl;
+    private static ServiceDPASSafeImpl _impl;
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
     private ManagedChannel _channel;
-    private PublicKey _serverPKey;
     private PrivateKey _serverPrivKey;
-    private SessionManager _sessionManager;
+    private PublicKey _serverPubKey;
 
     @Before
-    public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException,
-            IllegalBlockSizeException, InvalidKeyException, IOException {
+    public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException {
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         KeyPair serverPair = keygen.generateKeyPair();
 
-        _serverPKey = serverPair.getPublic();
+        PublicKey _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
-        _sessionManager = new SessionManager(5000);
+        _serverPubKey = serverPair.getPublic();
+        SessionManager _sessionManager = new SessionManager(5000);
 
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
@@ -76,13 +66,7 @@ public class ServiceSafeImplTest {
         Cipher cipherServer = Cipher.getInstance("RSA");
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
 
-        String content = SESSION_NONCE2 + Base64.getEncoder().encodeToString(_pubKey.getEncoded());
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] encodedHashClient = digest.digest(content.getBytes());
-        _clientMac = cipherServer.doFinal(encodedHashClient);
-
-        _impl = new ServiceDPASSafeImplNoPersistence(_serverPKey, _serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 
@@ -99,56 +83,30 @@ public class ServiceSafeImplTest {
     }
 
     @Test
-    public void validNewSession() {
-        _stub.newSession(Contract.ClientHello.newBuilder()
-                .setMac(ByteString.copyFrom(_clientMac))
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setSessionNonce(SESSION_NONCE2)
-                .build());
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
-        assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
-    }
-
-    @Test
-    public void newSessionWrongClientMac() {
-
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Values provided");
-
-        byte[] invalidMac = "ThisIsInvalid".getBytes();
-        _stub.newSession(Contract.ClientHello.newBuilder()
-                .setMac(ByteString.copyFrom(invalidMac))
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setSessionNonce(SESSION_NONCE3)
-                .build());
-
-    }
-
-    @Test
-    public void validRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
-        byte[] requestMac = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+    public void validRegister() throws IOException, GeneralSecurityException {
+        byte[] requestMac = MacGenerator.generateMac(SESSION_NONCE, 1, _pubKey, _privKey );
 
         var regReply = _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
-                        .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                        .setMac(ByteString.copyFrom(requestMac))
-                        .setSessionNonce(SESSION_NONCE)
-                        .setSeq(1)
-                        .build());
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setMac(ByteString.copyFrom(requestMac))
+                .setSessionNonce(SESSION_NONCE)
+                .setSeq(1)
+                .build());
 
         byte[] mac = regReply.getMac().toByteArray();
 
         assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
         assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 2);
-        assertArrayEquals( ContractUtils.generateMac(SESSION_NONCE, 2, _serverPrivKey), mac);
+        assertTrue(MacVerifier.verifyMac(_serverPubKey, regReply));
     }
 
 
     @Test
-    public void invalidSessionNonceRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+    public void invalidSessionNonceRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Could not validate request");
 
-        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 5, _privKey );
+        byte[] requestMAC = MacGenerator.generateMac(SESSION_NONCE, 5, _pubKey, _privKey );
         Contract.SafeRegisterReply regReply =_stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce("invalid")
@@ -158,11 +116,11 @@ public class ServiceSafeImplTest {
     }
 
     @Test
-    public void invalidSeqRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+    public void invalidSeqRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Could not validate request");
 
-        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 7, _privKey );
+        byte[] requestMAC = MacGenerator.generateMac(SESSION_NONCE, 7, _pubKey, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce(SESSION_NONCE)
@@ -172,11 +130,11 @@ public class ServiceSafeImplTest {
     }
 
     @Test
-    public void invalidMacRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+    public void invalidMacRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Could not validate request");
 
-        byte[] requestMAC = ContractUtils.generateMac("ola", 1, _privKey );
+        byte[] requestMAC = MacGenerator.generateMac("ola", 1,_pubKey, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce(SESSION_NONCE)
@@ -186,11 +144,10 @@ public class ServiceSafeImplTest {
     }
 
     @Test
-    public void badRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+    public void noMacRegister() {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("An Error occurred in the server");
 
-        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce(SESSION_NONCE)

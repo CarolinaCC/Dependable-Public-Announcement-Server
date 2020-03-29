@@ -7,8 +7,9 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
-import dpas.utils.bytes.ContractUtils;
-import dpas.utils.bytes.CypherUtils;
+import dpas.utils.CypherUtils;
+import dpas.utils.MacVerifier;
+import dpas.utils.MacGenerator;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -19,14 +20,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
+
+import static org.junit.Assert.*;
+
 
 public class SafeServicePostTest {
 
@@ -45,7 +46,7 @@ public class SafeServicePostTest {
     private static final int port = 9001;
     private static final String host = "localhost";
 
-    private static ServiceDPASSafeImplNoPersistence _impl;
+    private static ServiceDPASSafeImpl _impl;
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
@@ -56,8 +57,8 @@ public class SafeServicePostTest {
     private byte[] _message;
 
     @Before
-    public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException,
-            IllegalBlockSizeException, InvalidKeyException, IOException, CommonDomainException {
+    public void setup() throws GeneralSecurityException,
+            IOException, CommonDomainException {
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(2048);
@@ -73,7 +74,7 @@ public class SafeServicePostTest {
         _privKey = keyPair.getPrivate();
         _sessionManager.getSessionKeys().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(2)));
 
-        _impl = new ServiceDPASSafeImplNoPersistence(_serverPKey, _serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 
@@ -84,6 +85,7 @@ public class SafeServicePostTest {
         //Connect to Server
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
+
         _message = CypherUtils.cipher(MESSAGE.getBytes(), _serverPKey);
 
         _request = Contract.SafePostRequest.newBuilder()
@@ -93,7 +95,7 @@ public class SafeServicePostTest {
                 .setSeq(3)
                 .setSessionNonce(SESSION_NONCE)
                 .build();
-        byte[] mac = ContractUtils.generateMac(_request, _privKey);
+        byte[] mac = MacGenerator.generateMac(_request, _privKey);
 
         _request = Contract.SafePostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
@@ -104,7 +106,7 @@ public class SafeServicePostTest {
                 .setSessionNonce(SESSION_NONCE)
                 .build();
 
-        byte[] requestMac = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey);
+        byte[] requestMac = MacGenerator.generateMac(SESSION_NONCE, 1, _pubKey, _privKey);
         var regRequest = Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setMac(ByteString.copyFrom(requestMac))
@@ -122,8 +124,11 @@ public class SafeServicePostTest {
     }
 
     @Test
-    public void validPost() {
-        _stub.safePost(_request);
+    public void validPost() throws GeneralSecurityException, IOException {
+        var reply = _stub.safePost(_request);
+        assertEquals(reply.getSessionNonce(), SESSION_NONCE);
+        assertEquals(reply.getSeq(), 4);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
     }
 
     @Test

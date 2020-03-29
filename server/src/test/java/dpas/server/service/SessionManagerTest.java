@@ -12,6 +12,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
 
@@ -207,7 +208,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void validateSessionRequestTest() throws GeneralSecurityException, SessionException {
+    public void validateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
@@ -233,7 +234,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidKeySessionRequestTest() throws GeneralSecurityException, SessionException {
+    public void invalidKeySessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
         //exception.expectMessage("Invalid SessionId");
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
@@ -264,7 +265,7 @@ public class SessionManagerTest {
 
     @Test
 
-    public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+    public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid SessionId");
 
@@ -291,7 +292,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSeqNumbergvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+    public void invalidSeqNumbergvalidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid sequence number");
 
@@ -319,7 +320,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidHMACvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+    public void invalidHMACvalidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid hmac");
 
@@ -349,7 +350,7 @@ public class SessionManagerTest {
 
 
     @Test
-    public void invalidSessionvalidateSessionRequestTest() throws GeneralSecurityException, SessionException {
+    public void invalidSessionvalidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid session");
 

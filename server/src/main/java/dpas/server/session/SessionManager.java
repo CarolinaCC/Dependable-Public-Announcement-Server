@@ -1,9 +1,13 @@
 package dpas.server.session;
 
+import dpas.utils.MacGenerator;
+import dpas.utils.MacVerifier;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -32,13 +36,14 @@ public class SessionManager {
         _sessions = new ConcurrentHashMap<>();
     }
 
-    public void createSession(PublicKey pubKey, String sessionNonce) throws SessionException {
-
-        Session s = new Session(new SecureRandom().nextLong(), pubKey, sessionNonce, LocalDateTime.now().plusNanos(_keyValidity * 1000));
+    public long createSession(PublicKey pubKey, String sessionNonce) throws SessionException {
+        long seq = new SecureRandom().nextLong();
+        Session s = new Session(seq, pubKey, sessionNonce, LocalDateTime.now().plusNanos(_keyValidity * 1000));
         var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
             throw new SessionException("Session already exists!");
         }
+        return seq;
     }
 
     public void removeSession(String sessionNonce) {
@@ -48,7 +53,7 @@ public class SessionManager {
     /**
      * Validates an hmac for a valid session
      */
-    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber, PublicKey pubKey) throws GeneralSecurityException, SessionException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber, PublicKey pubKey) throws GeneralSecurityException, SessionException, IOException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
@@ -68,7 +73,7 @@ public class SessionManager {
         return validateRequest(mac, content, session);
     }
 
-    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException, IOException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
@@ -84,15 +89,9 @@ public class SessionManager {
         return validateRequest(mac, content, session);
     }
 
-    private long validateRequest(byte[] mac, byte[] content, Session session) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, SessionException {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, session.getPublicKey());
-        byte[] decriptedMac = cipher.doFinal(mac);
+    private long validateRequest(byte[] mac, byte[] content, Session session) throws GeneralSecurityException, SessionException, IOException {
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] encodedhash = digest.digest(content);
-
-        if (!Arrays.equals(encodedhash, decriptedMac))
+        if (!MacVerifier.verifyMac(session.getPublicKey(), content, mac))
             throw new SessionException("Invalid hmac");
 
         session.nextSequenceNumber();
