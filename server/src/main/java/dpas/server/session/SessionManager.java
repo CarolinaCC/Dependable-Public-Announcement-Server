@@ -17,6 +17,17 @@ public class SessionManager {
      * Validates an hmac for a valid session
      */
     public void validateSessionRequest(String keyId, byte[] hmac, byte[] content, int sequenceNumber) {
+        if (!_sessionKeys.containsKey(keyId)) {
+            throw new IllegalArgumentException("Invalid SessionId");
+        }
+
+        Session session = _sessionKeys.get(keyId);
+
+        if (session.get_sequenceNumber() != sequenceNumber + 1) {
+            throw new IllegalArgumentException("Invalid SessionId");
+        }
+
+
         //TODO CAROLINA
     }
 
