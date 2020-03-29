@@ -9,40 +9,24 @@ service ServiceDPAS {
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
     rpc newSession(ClientHello) returns (ServerHello);
-    rpc freshnessProof(ProofRequest) returns (ProofReply);
     rpc safePost(SafePostRequest) returns (SafePostReply);
     rpc safePostGeneral(SafePostRequest) returns (SafePostReply);
     rpc safeRegister(SafeRegisterRequest) returns (SafeRegisterReply);
+    rpc goodbye(GoodByeRequest) returns (google.protobuf.Empty);
 }
 
 //
 message ClientHello {
-    bytes publicKey = 1;
+    string sessionNonce = 1;
+    bytes publicKey = 2;
+    bytes mac = 3;
 }
 
 
 message ServerHello {
-    bytes seq = 1; //encrypted random int
-    string keyId = 3;
-    bytes mac = 4;
-}
-
-
-message ProofRequest {
-    bytes serverSeq = 1; //encrypted int sent by server + 1
-    bytes clientSeq = 2; //encrypted random int
-    string keyId = 3;
-    bytes mac = 4;
-}
-
-message Proof {
-    int32 clientSeq = 1;
-    int32 serverSeq = 2;
-}
-
-message ProofReply {
-    bytes proof = 1; //Encrypted proof
-    bytes mac = 2;
+    int64 seq = 1;
+    string sessionNonce = 2;
+    bytes mac = 3;
 }
 
 //
@@ -73,15 +57,22 @@ message PostRequest {
 //
 message SafeRegisterRequest {
     bytes publicKey = 1;
-    string keyId = 2;
-    bytes seq = 3;
-    bytes hmac = 4;
+    string sessionNonce = 2;
+    int64 seq = 3;
+    bytes mac = 4;
 }
 
 //
 message SafeRegisterReply {
-    bytes seq = 1;
-    bytes hmac = 2;
+    string sessionNonce = 1;
+    int64 seq = 2;
+    bytes mac = 3;
+}
+
+message GoodByeRequest {
+    string sessionNonce = 1;
+    int64 seq = 2;
+    bytes mac = 3;
 }
 
 //
@@ -90,15 +81,16 @@ message SafePostRequest {
     bytes message = 2; //must be encrypted
     bytes signature = 3;
     repeated string references = 4;
-    string keyId = 5;
-    bytes seq = 6;
-    bytes hmac = 7;
+    string sessionNonce = 5;
+    int64 seq = 6;
+    bytes mac = 7;
 }
 
 //
 message SafePostReply {
-    bytes seq = 1;
-    bytes hmac = 2;
+    string sessionNonce = 1;
+    int64 seq = 2;
+    bytes mac = 3;
 }
 
 //

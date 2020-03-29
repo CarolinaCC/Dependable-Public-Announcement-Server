@@ -6,13 +6,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
     /**Relationship between keyId and current valid sessionKey*/
-    private Map<String, Key> _sessionKeys = new ConcurrentHashMap<>();
-    /**Relationship between keyId and sessionKey not yet validated*/
-    private Map<String, Key> _futureKeys = new ConcurrentHashMap<>();
-    /**Relationship between keyId and current sequence number for session*/
-    private Map<String, Integer> _sessionSequenceNumber = new ConcurrentHashMap<>();
-    /**Relationship between keyId and current sequence number for future session*/
-    private Map<String, Integer> _futureSequenceNumber = new ConcurrentHashMap<>();
+    private Map<String, Session> _sessionKeys = new ConcurrentHashMap<>();
+
+    public long createSession() {
+        //TODO
+        return 0L;
+    }
 
     /**
      * Validates an hmac for a valid session
