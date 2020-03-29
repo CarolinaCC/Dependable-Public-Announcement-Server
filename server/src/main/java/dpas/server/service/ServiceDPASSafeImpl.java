@@ -16,14 +16,10 @@ import dpas.utils.bytes.CypherUtils;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
@@ -60,7 +56,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
     @Override
     public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
-
         try {
             String sessionNonce = request.getSessionNonce();
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
