@@ -25,4 +25,13 @@ public class ContractGenerator {
                 .setMac(ByteString.copyFrom(MacGenerator.generateMac(sessionNonce, publicKey, privateKey)))
                 .build();
     }
+
+    public static Contract.SafePostReply generatePostReply(PrivateKey privateKey, String sessionNonce, long seq) throws GeneralSecurityException, IOException {
+        byte[] mac = MacGenerator.generateMac(sessionNonce, seq, privateKey);
+        return Contract.SafePostReply.newBuilder()
+                .setSessionNonce(sessionNonce)
+                .setSeq(seq)
+                .setMac(ByteString.copyFrom(mac))
+                .build();
+    }
 }

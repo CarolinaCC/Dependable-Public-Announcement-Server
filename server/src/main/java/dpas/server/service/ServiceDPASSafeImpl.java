@@ -99,7 +99,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             } else {
                 save(announcement.toJson("Post"));
                 announcement.getUser().getUserBoard().post(announcement);
-                responseObserver.onNext(generatePostReply(sessionNonce, seq));
+                responseObserver.onNext(ContractGenerator.generatePostReply(_privateKey, sessionNonce, seq));
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
@@ -127,7 +127,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             } else {
                 save(announcement.toJson("PostGeneral"));
                 _generalBoard.post(announcement);
-                responseObserver.onNext(generatePostReply(sessionNonce, seq));
+                responseObserver.onNext(ContractGenerator.generatePostReply(_privateKey, sessionNonce, seq));
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
@@ -224,19 +224,11 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq, key);
     }
 
-    private Contract.SafePostReply generatePostReply(String sessionNonce, long seq) throws GeneralSecurityException, IOException {
-        byte[] mac = MacGenerator.generateMac(sessionNonce, seq, _privateKey);
-        return Contract.SafePostReply.newBuilder()
-                .setSessionNonce(sessionNonce)
-                .setSeq(seq)
-                .setMac(ByteString.copyFrom(mac))
-                .build();
-    }
-
     public SessionManager getSessionManager() {
         return _sessionManager;
     }
 
+    //Don't want to save when testing
     private void save(JsonObject object) throws IOException {
         if (_persistenceManager != null) {
             _persistenceManager.save(object);
