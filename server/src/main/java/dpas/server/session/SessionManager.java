@@ -6,7 +6,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
     /**Relationship between keyId and current valid sessionKey*/
-    private Map<String, Session> _sessionKeys = new ConcurrentHashMap<>();
+    private Map<String, Session> _sessionKeys;
+
+    public SessionManager() {
+        _sessionKeys = new ConcurrentHashMap<>();
+        new SessionCleanup()
+    }
 
     public long createSession() {
         //TODO
@@ -20,6 +25,10 @@ public class SessionManager {
         //TODO CAROLINA
     }
 
-    //TODO: CLEANUP DAS SESSIONKEYS
 
+    public void cleanup() {
+        _sessionKeys.keySet().stream()
+                .filter(k -> _sessionKeys.get(k).isInvalid())
+                .forEach(k -> _sessionKeys.remove(k));
+    }
 }
