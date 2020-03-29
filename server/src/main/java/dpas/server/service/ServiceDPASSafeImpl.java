@@ -2,10 +2,17 @@ package dpas.server.service;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import dpas.common.domain.Announcement;
+import dpas.common.domain.AnnouncementBoard;
+import dpas.common.domain.User;
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionManager;
 import dpas.utils.bytes.ContractUtils;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.SerializationUtils;
 
@@ -74,8 +81,25 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             byte[] mac = request.getMac().toByteArray();
             String sessionNonce = request.getSessionNonce();
             long seq = request.getSeq();
-            _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
-            //TODO REST
+            long nextSeq = _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq);
+            var announcement = generateAnnouncement(request);
+
+            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+            if (curr != null) {
+                //Announcement with that identifier already	 exists
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+            } else {
+                _persistenceManager.save(announcement.toJson("Post"));
+                announcement.getUser().getUserBoard().post(announcement);
+                Contract.SafePostReply reply = Contract.SafePostReply.newBuilder().setSessionNonce(sessionNonce).setSeq(nextSeq).build();
+                byte[] serverMac = ContractUtils.generateMac(sessionNonce, nextSeq, _privateKey);
+                responseObserver.onNext(Contract.SafePostReply.newBuilder()
+                        .setSessionNonce(sessionNonce)
+                        .setSeq(nextSeq)
+                        .setMac(ByteString.copyFrom(serverMac))
+                        .build());
+                responseObserver.onCompleted();
+            }
         } catch (IOException e) {
             //TODO
         } catch (NoSuchAlgorithmException e) {
@@ -87,6 +111,14 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         } catch (BadPaddingException e) {
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (NullAnnouncementException e) {
+            e.printStackTrace();
+        } catch (InvalidUserException e) {
+            e.printStackTrace();
+        } catch (CommonDomainException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
             e.printStackTrace();
         }
     }
@@ -127,5 +159,26 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
     }
 
+    protected Announcement generateAnnouncement(Contract.SafePostRequest request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] signature = request.getSignature().toByteArray();
+        //TODO
+        //String message = request.getMessage();
+
+        return new Announcement(signature, _users.get(key), "message", getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
+    }
+
+    protected Announcement generateAnnouncement(Contract.SafePostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] signature = request.getSignature().toByteArray();
+        //TODO
+        //String message = request.getMessage();
+
+        User user = _users.get(key);
+        if (user == null) {
+            throw new InvalidUserException("User does not exist");
+        }
+        return new Announcement(signature, user, "message", getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
+    }
 
 }

@@ -36,13 +36,13 @@ public class SessionManager {
         if (session != null) {
             throw new IllegalArgumentException("Session already exists!");
         }
-        return s.get_sequenceNumber();
+        return s.getSequenceNumber();
     }
 
     /**
      * Validates an hmac for a valid session
      */
-    public void validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
@@ -52,11 +52,11 @@ public class SessionManager {
         if (session.isInvalid())
             throw new IllegalArgumentException("Invalid session");
 
-        if (session.get_sequenceNumber() + 1 != sequenceNumber)
+        if (session.getSequenceNumber() + 1 != sequenceNumber)
             throw new IllegalArgumentException("Invalid sequence number");
 
         Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, session.get_publicKey());
+        cipher.init(Cipher.DECRYPT_MODE, session.getPublicKey());
         byte[] decriptedMac = cipher.doFinal(mac);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -65,7 +65,8 @@ public class SessionManager {
         if (!Arrays.equals(encodedhash, decriptedMac))
             throw new IllegalArgumentException("Invalid hmac");
 
-        session.incr_sequenceNumber();
+        session.nextSequenceNumber();
+        return session.getSequenceNumber();
     }
 
     public void cleanup() {
