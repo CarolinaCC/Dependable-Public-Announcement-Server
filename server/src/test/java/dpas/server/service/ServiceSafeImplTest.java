@@ -42,7 +42,6 @@ public class ServiceSafeImplTest {
     private static final String SESSION_NONCE = "NONCE";
     private static final String SESSION_NONCE2 = "NONCE2";
     private static final String SESSION_NONCE3 = "NONCE3";
-    private static final String MESSAGE = "Message";
     private byte[] _clientMac;
 
     private static final int port = 9001;
@@ -95,7 +94,8 @@ public class ServiceSafeImplTest {
 
     @After
     public void tearDown() {
-
+        _server.shutdown();
+        _channel.shutdown();
     }
 
     @Test
