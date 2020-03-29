@@ -187,8 +187,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             }
         } catch (CommonDomainException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
         } catch (IOException | GeneralSecurityException e) {
