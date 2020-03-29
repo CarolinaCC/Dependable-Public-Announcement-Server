@@ -176,4 +176,17 @@ public class ServiceSafeImplTest {
                 .build());
     }
 
+    @Test
+    public void badRegister() throws BadPaddingException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("CANCELLED: An Error ocurred in the server");
+
+        byte[] requestMAC = ContractUtils.generateMac(SESSION_NONCE, 1, _privKey );
+        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce(SESSION_NONCE)
+                .setSeq(1)
+                .build());
+    }
+
 }
