@@ -37,10 +37,11 @@ public class ServiceSafeImplTest {
     private static final String SESSION_NONCE3 = "NONCE3";
     private static final String MESSAGE = "Message";
     private byte[] _clientMac;
-    private PersistenceManager _persistenceManager;
 
     private static final int port = 9001;
     private static final String host = "localhost";
+
+    private static ServiceDPASSafeImplNoPersistence _impl;
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
@@ -48,7 +49,6 @@ public class ServiceSafeImplTest {
     private PublicKey _serverPKey;
     private PrivateKey _serverPrivKey;
     private SessionManager _sessionManager;
-    private ServiceDPASSafeImpl _impl;
 
     @Before
     public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException,
@@ -71,9 +71,8 @@ public class ServiceSafeImplTest {
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
         _clientMac = cipherServer.doFinal(MESSAGE.getBytes());
 
-        _impl = new ServiceDPASSafeImpl(_persistenceManager, _serverPKey, _serverPrivKey, _sessionManager);
-        final BindableService bindableService = new ServiceDPASSafeImpl(_persistenceManager, _serverPKey, _serverPrivKey, _sessionManager);
-        _server = NettyServerBuilder.forPort(port).addService(bindableService).build();
+        _impl = new ServiceDPASSafeImplNoPersistence(_serverPKey, _serverPrivKey, _sessionManager);
+        _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 
         //Connect to Server
