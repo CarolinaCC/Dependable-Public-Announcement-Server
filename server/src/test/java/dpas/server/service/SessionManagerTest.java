@@ -232,6 +232,7 @@ public class SessionManagerTest {
     }
 
     @Test
+
     public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid SessionId");
