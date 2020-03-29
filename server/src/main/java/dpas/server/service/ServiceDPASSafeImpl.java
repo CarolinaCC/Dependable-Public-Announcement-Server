@@ -47,8 +47,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
+    public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
         /*
         String sessionNonce = request.getSessionNonce();
         PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -59,7 +58,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
         Contract.ServerHello reply = Contract.ServerHello.newBuilder().setSessionNonce(sessionNonce).setMac().setSeq(seqNumber).build()
          */
-
     }
 
 

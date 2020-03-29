@@ -30,10 +30,20 @@ public class SessionManagerTest {
     private static final String SESSION_NONCE4 = "NONCE4";
     private static final String SESSION_NONCE5 = "NONCE5";
     private static final String SESSION_NONCE6 = "NONCE6";
+    private PublicKey _pubKey;
+    private static final int VALIDITY = 5000;
 
     @Before
-    public void setup() {
+    public void setup() throws NoSuchAlgorithmException {
         _manager = new SessionManager();
+
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(1024);
+
+        KeyPair keyPair = keygen.generateKeyPair();
+        KeyPair keyPair2 = keygen.generateKeyPair();
+
+        _pubKey = keyPair.getPublic();
 
     }
 
@@ -107,6 +117,23 @@ public class SessionManagerTest {
     }
 
     @Test
+    public void createSessionValid() {
+
+        SessionManager manager = new SessionManager(5);
+        manager.createSession( _pubKey, SESSION_NONCE);
+
+        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_sessionNonce(), SESSION_NONCE);
+        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).get_publicKey().getEncoded(), _pubKey.getEncoded());
+    }
+
+    @Test (expected = IllegalArgumentException.class)
+    public void createSameSessionNonce() {
+
+        SessionManager manager = new SessionManager(5);
+        manager.createSession(_pubKey, SESSION_NONCE);
+        manager.createSession( _pubKey, SESSION_NONCE);
+    }
+
     public void validateSessionRequestTest() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
