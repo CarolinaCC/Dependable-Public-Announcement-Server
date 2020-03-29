@@ -68,6 +68,8 @@ public class SessionManager {
 
         if (!Arrays.equals(encodedhash, decriptedMac))
             throw new IllegalArgumentException("Invalid hmac");
+
+        session.incr_sequenceNumber();
     }
 
     public void cleanup() {
