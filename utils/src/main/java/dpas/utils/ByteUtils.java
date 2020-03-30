@@ -1,10 +1,12 @@
 package dpas.utils;
 
 import dpas.grpc.contract.Contract;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
