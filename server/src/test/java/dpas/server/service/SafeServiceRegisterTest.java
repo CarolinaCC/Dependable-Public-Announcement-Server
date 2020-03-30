@@ -5,6 +5,7 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
+import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import dpas.utils.MacGenerator;
 import io.grpc.ManagedChannel;
@@ -50,7 +51,7 @@ public class SafeServiceRegisterTest {
     public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException {
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(2048);
         KeyPair keyPair = keygen.generateKeyPair();
         KeyPair serverPair = keygen.generateKeyPair();
 
@@ -61,7 +62,7 @@ public class SafeServiceRegisterTest {
 
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
-        _sessionManager.getSessionKeys().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
+        _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
 
         Cipher cipherServer = Cipher.getInstance("RSA");
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
@@ -84,55 +85,34 @@ public class SafeServiceRegisterTest {
 
     @Test
     public void validRegister() throws IOException, GeneralSecurityException {
-        byte[] requestMac = MacGenerator.generateMac(SESSION_NONCE, 1, _pubKey, _privKey );
+        var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(SESSION_NONCE, 1, _pubKey, _privKey));
 
-        var regReply = _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setMac(ByteString.copyFrom(requestMac))
-                .setSessionNonce(SESSION_NONCE)
-                .setSeq(1)
-                .build());
-
-        byte[] mac = regReply.getMac().toByteArray();
-
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 2);
-        assertTrue(MacVerifier.verifyMac(_serverPubKey, regReply));
+        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSequenceNumber(), 2);
+        assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
     }
 
 
     @Test
     public void invalidSessionNonceRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Could not validate request");
+        exception.expectMessage("Invalid Session");
 
-        byte[] requestMAC = MacGenerator.generateMac(SESSION_NONCE, 5, _pubKey, _privKey );
-        Contract.SafeRegisterReply regReply =_stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setSessionNonce("invalid")
-                .setSeq(5)
-                .setMac(ByteString.copyFrom(requestMAC))
-                .build());
+        _stub.safeRegister(ContractGenerator.generateRegisterRequest("invalid", 1, _pubKey, _privKey));
     }
 
     @Test
     public void invalidSeqRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Could not validate request");
+        exception.expectMessage("Invalid sequence number");
 
-        byte[] requestMAC = MacGenerator.generateMac(SESSION_NONCE, 7, _pubKey, _privKey );
-        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setSessionNonce(SESSION_NONCE)
-                .setSeq(7)
-                .setMac(ByteString.copyFrom(requestMAC))
-                .build());
+        _stub.safeRegister(ContractGenerator.generateRegisterRequest(SESSION_NONCE, 7, _pubKey, _privKey));
     }
 
     @Test
     public void invalidMacRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Could not validate request");
+        exception.expectMessage("Invalid mac");
 
         byte[] requestMAC = MacGenerator.generateMac("ola", 1,_pubKey, _privKey );
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
@@ -146,7 +126,7 @@ public class SafeServiceRegisterTest {
     @Test
     public void noMacRegister() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("An Error occurred in the server");
+        exception.expectMessage("Invalid security values provided");
 
         _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))

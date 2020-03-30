@@ -56,7 +56,7 @@ public class SafeServiceNewSessionTest {
             IllegalBlockSizeException, InvalidKeyException, IOException {
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(2048);
         KeyPair keyPair = keygen.generateKeyPair();
         KeyPair serverPair = keygen.generateKeyPair();
 
@@ -96,20 +96,25 @@ public class SafeServiceNewSessionTest {
     public void validNewSession() throws GeneralSecurityException, IOException {
         var reply = _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE));
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
-        assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        assertArrayEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
     @Test
     public void newSessionWrongClientMac() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Values provided");
+        exception.expectMessage("Invalid security values provided");
 
         byte[] invalidMac = "ThisIsInvalid".getBytes();
-        _stub.newSession(Contract.ClientHello.newBuilder()
-                .setMac(ByteString.copyFrom(invalidMac))
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setSessionNonce(SESSION_NONCE3)
-                .build());
+        try {
+            _stub.newSession(Contract.ClientHello.newBuilder()
+                    .setMac(ByteString.copyFrom(invalidMac))
+                    .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                    .setSessionNonce(SESSION_NONCE3)
+                    .build());
+        } finally {
+            assertEquals(_impl.getSessionManager().getSessions().size(), 0);
+        }
     }
 
     @Test
@@ -117,13 +122,17 @@ public class SafeServiceNewSessionTest {
         var reply = _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE));
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
 
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(_impl.getSessionManager().getSessions().size(), 1);
 
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Session already exists!");
-
-        _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE));
+        try {
+            _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE));
+        } finally {
+            assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        }
     }
 
 
@@ -132,14 +141,16 @@ public class SafeServiceNewSessionTest {
         var reply = _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE));
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
 
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+
 
         reply = _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE2));
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
 
-        assertEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
-        assertArrayEquals(_impl.getSessionManager().getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
-
+        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
+        assertArrayEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE2).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(_impl.getSessionManager().getSessions().size(), 2);
     }
 }

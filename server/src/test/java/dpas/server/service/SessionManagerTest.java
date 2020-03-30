@@ -8,10 +8,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
@@ -31,7 +28,6 @@ public class SessionManagerTest {
     private static final String SESSION_NONCE5 = "NONCE5";
     private static final String SESSION_NONCE6 = "NONCE6";
     private PublicKey _pubKey;
-    private static final int VALIDITY = 5000;
 
     @Before
     public void setup() throws NoSuchAlgorithmException {
@@ -45,6 +41,49 @@ public class SessionManagerTest {
     }
 
     @Test
+    public void sessionManagerConstructorCompleteCleanupTest() throws NoSuchAlgorithmException, SessionException, InterruptedException {
+
+        _manager = new SessionManager(1000);
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+
+        _manager.createSession(pubKey, SESSION_NONCE);
+        _manager.createSession(pubKey, SESSION_NONCE2);
+        _manager.createSession(pubKey, SESSION_NONCE3);
+        _manager.createSession(pubKey, SESSION_NONCE4);
+        _manager.createSession(pubKey, SESSION_NONCE5);
+        _manager.createSession(pubKey, SESSION_NONCE6);
+        Thread.sleep(2000);
+        assertEquals(_manager.getSessions().size(), 0);
+    }
+
+    @Test
+    public void sessionManagerConstructorCleanupTest() throws NoSuchAlgorithmException, SessionException, InterruptedException {
+
+        _manager = new SessionManager(2000);
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+
+        _manager.createSession(pubKey, SESSION_NONCE);
+        _manager.createSession(pubKey, SESSION_NONCE2);
+        _manager.createSession(pubKey, SESSION_NONCE3);
+        _manager.createSession(pubKey, SESSION_NONCE4);
+        _manager.createSession(pubKey, SESSION_NONCE5);
+        _manager.createSession(pubKey, SESSION_NONCE6);
+        Thread.sleep(1000);
+        assertEquals(_manager.getSessions().size(), 6);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE2).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE3).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE4).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE5).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE6).getPublicKey().getEncoded(), pubKey.getEncoded());
+    }
+
+
+    @Test
     public void cleanupTest() throws NoSuchAlgorithmException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
@@ -53,14 +92,14 @@ public class SessionManagerTest {
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE2, LocalDateTime.now().minusHours(1));
-        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
-        _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE, validSession);
+        _manager.getSessions().put(SESSION_NONCE2, invalidSession);
         _manager.cleanup();
-        assertEquals(_manager.getSessionKeys().size(), 1);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 0);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
+        assertEquals(_manager.getSessions().size(), 1);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getSequenceNumber(), 0);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getValidity(), validTime);
     }
 
     @Test
@@ -71,45 +110,45 @@ public class SessionManagerTest {
         LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+        _manager.getSessions().put(SESSION_NONCE, validSession);
         validSession = new Session(1, pubKey, SESSION_NONCE2, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE2, validSession);
+        _manager.getSessions().put(SESSION_NONCE2, validSession);
         validSession = new Session(2, pubKey, SESSION_NONCE3, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE3, validSession);
+        _manager.getSessions().put(SESSION_NONCE3, validSession);
         validSession = new Session(3, pubKey, SESSION_NONCE4, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE4, validSession);
+        _manager.getSessions().put(SESSION_NONCE4, validSession);
         validSession = new Session(4, pubKey, SESSION_NONCE5, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE5, validSession);
+        _manager.getSessions().put(SESSION_NONCE5, validSession);
 
 
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
-        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE6, invalidSession);
         _manager.cleanup();
-        assertEquals(_manager.getSessionKeys().size(), 5);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 0);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
+        assertEquals(_manager.getSessions().size(), 5);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getSequenceNumber(), 0);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getSequenceNumber(), 1);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getValidity(), validTime);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE2).getSequenceNumber(), 1);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE2).getSessionNonce(), SESSION_NONCE2);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE2).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessions().get(SESSION_NONCE2).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getSequenceNumber(), 2);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getSessionNonce(), SESSION_NONCE3);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getPublicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE3).getValidity(), validTime);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE3).getSequenceNumber(), 2);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE3).getSessionNonce(), SESSION_NONCE3);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE3).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessions().get(SESSION_NONCE3).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getSequenceNumber(), 3);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getSessionNonce(), SESSION_NONCE4);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getPublicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE4).getValidity(), validTime);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE4).getSequenceNumber(), 3);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE4).getSessionNonce(), SESSION_NONCE4);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE4).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessions().get(SESSION_NONCE4).getValidity(), validTime);
 
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getSequenceNumber(), 4);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getSessionNonce(), SESSION_NONCE5);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getPublicKey().getEncoded(), pubKey.getEncoded());
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE5).getValidity(), validTime);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE5).getSequenceNumber(), 4);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE5).getSessionNonce(), SESSION_NONCE5);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE5).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessions().get(SESSION_NONCE5).getValidity(), validTime);
 
     }
 
@@ -122,19 +161,19 @@ public class SessionManagerTest {
         PublicKey pubKey = keyPair.getPublic();
 
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE, invalidSession);
         invalidSession = new Session(1, pubKey, SESSION_NONCE2, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE2, invalidSession);
         invalidSession = new Session(2, pubKey, SESSION_NONCE3, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE3, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE3, invalidSession);
         invalidSession = new Session(3, pubKey, SESSION_NONCE4, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE4, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE4, invalidSession);
         invalidSession = new Session(4, pubKey, SESSION_NONCE5, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE5, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE5, invalidSession);
         invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
-        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE6, invalidSession);
         Thread.sleep(3000);
-        assertEquals(_manager.getSessionKeys().size(), 0);
+        assertEquals(_manager.getSessions().size(), 0);
     }
 
     @Test
@@ -147,56 +186,55 @@ public class SessionManagerTest {
         PublicKey pubKey = keyPair.getPublic();
 
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE, invalidSession);
         invalidSession = new Session(1, pubKey, SESSION_NONCE2, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE2, invalidSession);
         invalidSession = new Session(2, pubKey, SESSION_NONCE3, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE3, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE3, invalidSession);
         invalidSession = new Session(3, pubKey, SESSION_NONCE4, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE4, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE4, invalidSession);
         invalidSession = new Session(4, pubKey, SESSION_NONCE5, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE5, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE5, invalidSession);
         invalidSession = new Session(0, pubKey, SESSION_NONCE6, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE6, invalidSession);
         Thread.sleep(3000);
-        assertEquals(_manager.getSessionKeys().size(), 2);
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
-        assertArrayEquals(_manager.getSessionKeys().get(SESSION_NONCE2).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertEquals(_manager.getSessions().size(), 2);
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), pubKey.getEncoded());
+        assertArrayEquals(_manager.getSessions().get(SESSION_NONCE2).getPublicKey().getEncoded(), pubKey.getEncoded());
     }
 
 
     @Test
-    public void multipleinvalidSessionsCleanupTest() throws NoSuchAlgorithmException {
+    public void multipleInvalidSessionsCleanupTest() throws NoSuchAlgorithmException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
         LocalDateTime invalidTime = LocalDateTime.now().minusHours(1);
 
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE, invalidSession);
         invalidSession = new Session(1, pubKey, SESSION_NONCE2, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE2, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE2, invalidSession);
         invalidSession = new Session(2, pubKey, SESSION_NONCE3, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE3, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE3, invalidSession);
         invalidSession = new Session(3, pubKey, SESSION_NONCE4, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE4, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE4, invalidSession);
         invalidSession = new Session(4, pubKey, SESSION_NONCE5, invalidTime);
-        _manager.getSessionKeys().put(SESSION_NONCE5, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE5, invalidSession);
         invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
-        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE6, invalidSession);
         _manager.cleanup();
-        assertEquals(_manager.getSessionKeys().size(), 0);
+        assertEquals(_manager.getSessions().size(), 0);
     }
 
 
     @Test
     public void createSessionValid() throws SessionException {
-
         SessionManager manager = new SessionManager(5);
         manager.createSession(_pubKey, SESSION_NONCE);
 
-        assertEquals(manager.getSessionKeys().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertArrayEquals(manager.getSessionKeys().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
+        assertEquals(manager.getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertArrayEquals(manager.getSessions().get(SESSION_NONCE).getPublicKey().getEncoded(), _pubKey.getEncoded());
     }
 
     @Test(expected = SessionException.class)
@@ -215,7 +253,7 @@ public class SessionManagerTest {
         LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+        _manager.getSessions().put(SESSION_NONCE, validSession);
 
         long sequenceNumber = validSession.getSequenceNumber() + 1;
         String keyId = validSession.getSessionNonce();
@@ -229,21 +267,21 @@ public class SessionManagerTest {
         byte[] hmac = cipher.doFinal(encodedhash);
 
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
-        assertNotEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getSequenceNumber(), 2);
+        assertNotEquals(_manager.getSessions().get(SESSION_NONCE).getValidity(), validTime);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getSequenceNumber(), 2);
     }
 
     @Test
     public void invalidKeySessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
-        //exception.expectMessage("Invalid SessionId");
+        exception.expectMessage("Invalid Public Key for request");
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
         LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+        _manager.getSessions().put(SESSION_NONCE, validSession);
 
         long sequenceNumber = validSession.getSequenceNumber() + 1;
         String keyId = validSession.getSessionNonce();
@@ -259,7 +297,7 @@ public class SessionManagerTest {
         keyPair = keyFactory.generateKeyPair();
         pubKey = keyPair.getPublic();
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber, pubKey);
-        assertEquals(_manager.getSessionKeys().get(SESSION_NONCE).getValidity(), validTime);
+        assertEquals(_manager.getSessions().get(SESSION_NONCE).getValidity(), validTime);
     }
 
 
@@ -267,7 +305,7 @@ public class SessionManagerTest {
 
     public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
-        exception.expectMessage("Invalid SessionId");
+        exception.expectMessage("Invalid Session, doesn't exist or has expired");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
@@ -275,10 +313,9 @@ public class SessionManagerTest {
         LocalDateTime validTime = LocalDateTime.now().plusHours(1);
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
-        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+        _manager.getSessions().put(SESSION_NONCE, validSession);
 
         long sequenceNumber = validSession.getSequenceNumber() + 1;
-        String keyId = SESSION_NONCE5;
         byte[] content = "message".getBytes();
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -288,11 +325,11 @@ public class SessionManagerTest {
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
         byte[] hmac = cipher.doFinal(encodedhash);
 
-        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
+        _manager.validateSessionRequest(SESSION_NONCE5, hmac, content, sequenceNumber);
     }
 
     @Test
-    public void invalidSeqNumbergvalidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
+    public void invalidSeqNumberValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid sequence number");
 
@@ -303,7 +340,7 @@ public class SessionManagerTest {
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
 
-        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+        _manager.getSessions().put(SESSION_NONCE, validSession);
 
         long sequenceNumber = validSession.getSequenceNumber() + 1;
         String keyId = validSession.getSessionNonce();
@@ -320,9 +357,9 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidHMACvalidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
+    public void invalidMacValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
-        exception.expectMessage("Invalid hmac");
+        exception.expectMessage("Invalid mac");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
@@ -331,7 +368,7 @@ public class SessionManagerTest {
 
         Session validSession = new Session(0, pubKey, SESSION_NONCE, validTime);
 
-        _manager.getSessionKeys().put(SESSION_NONCE, validSession);
+        _manager.getSessions().put(SESSION_NONCE, validSession);
 
         long sequenceNumber = validSession.getSequenceNumber() + 1;
         String keyId = validSession.getSessionNonce();
@@ -350,9 +387,9 @@ public class SessionManagerTest {
 
 
     @Test
-    public void invalidSessionvalidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
+    public void sessionExpiredValidateTest() throws GeneralSecurityException, SessionException, IOException {
         exception.expect(SessionException.class);
-        exception.expectMessage("Invalid session");
+        exception.expectMessage("Session is expired");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
@@ -360,7 +397,7 @@ public class SessionManagerTest {
 
         Session invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
 
-        _manager.getSessionKeys().put(SESSION_NONCE6, invalidSession);
+        _manager.getSessions().put(SESSION_NONCE6, invalidSession);
 
         long sequenceNumber = invalidSession.getSequenceNumber() + 1;
         String keyId = invalidSession.getSessionNonce();
@@ -374,5 +411,32 @@ public class SessionManagerTest {
         byte[] hmac = cipher.doFinal(encodedhash);
 
         _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber);
+    }
+
+    @Test
+    public void sessionExpiredValidateTestWithKey() throws GeneralSecurityException, SessionException, IOException {
+        exception.expect(SessionException.class);
+        exception.expectMessage("Session is expired");
+
+        KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = keyFactory.generateKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+
+        Session invalidSession = new Session(0, pubKey, SESSION_NONCE6, LocalDateTime.now().minusHours(1));
+
+        _manager.getSessions().put(SESSION_NONCE6, invalidSession);
+
+        long sequenceNumber = invalidSession.getSequenceNumber() + 1;
+        String keyId = invalidSession.getSessionNonce();
+        byte[] content = "message".getBytes();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(content);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate());
+        byte[] hmac = cipher.doFinal(encodedhash);
+
+        _manager.validateSessionRequest(keyId, hmac, content, sequenceNumber, _pubKey);
     }
 }

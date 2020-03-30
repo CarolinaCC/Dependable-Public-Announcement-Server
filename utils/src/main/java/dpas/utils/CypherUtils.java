@@ -4,10 +4,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
+import java.util.Base64;
 
 public class CypherUtils {
 
@@ -21,5 +19,10 @@ public class CypherUtils {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(content);
+    }
+
+    public static String keyToString(Key key) {
+        return Base64.getEncoder().encodeToString(key.getEncoded());
+
     }
 }

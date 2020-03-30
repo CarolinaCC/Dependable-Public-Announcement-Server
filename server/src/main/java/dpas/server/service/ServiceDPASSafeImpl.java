@@ -1,6 +1,5 @@
 package dpas.server.service;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
@@ -11,14 +10,19 @@ import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
-import dpas.utils.*;
+import dpas.utils.ContractGenerator;
+import dpas.utils.CypherUtils;
+import dpas.utils.MacVerifier;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
 import static io.grpc.Status.*;
@@ -76,7 +80,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             responseObserver.onCompleted();
 
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Values provided").asRuntimeException());
+            responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid security values provided").asRuntimeException());
         } catch (SessionException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException e) {
@@ -88,7 +92,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     @Override
     public void safePost(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
         try {
-            long seq = validatePostRequest(request);
+            long seq = _sessionManager.validateSessionRequest(request);
             String sessionNonce = request.getSessionNonce();
             var announcement = generateAnnouncement(request);
 
@@ -103,20 +107,20 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid values provided").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
         } catch (CommonDomainException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
     @Override
     public void safePostGeneral(Contract.SafePostRequest request, StreamObserver<Contract.SafePostReply> responseObserver) {
         try {
-            long seq = validatePostRequest(request);
+            long seq = _sessionManager.validateSessionRequest(request);
             String sessionNonce = request.getSessionNonce();
             Announcement announcement = generateAnnouncement(request, _generalBoard);
 
@@ -131,26 +135,23 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid values provided").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
         } catch (CommonDomainException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
     @Override
     public void safeRegister(Contract.SafeRegisterRequest request, StreamObserver<Contract.SafeRegisterReply> responseObserver) {
         try {
-            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            long nextSeq = _sessionManager.validateSessionRequest(request);
+
             String nonce = request.getSessionNonce();
-            long nextSeq = _sessionManager.validateSessionRequest(
-                    nonce,
-                    request.getMac().toByteArray(),
-                    ByteUtils.toByteArray(request),
-                    request.getSeq());
+            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
@@ -159,39 +160,29 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 save(user.toJson());
-                byte[] replyMac = MacGenerator.generateMac(nonce, nextSeq, _privateKey);
-                responseObserver.onNext(Contract.SafeRegisterReply.newBuilder()
-                        .setMac(ByteString.copyFrom(replyMac))
-                        .setSeq(nextSeq)
-                        .setSessionNonce(nonce)
-                        .build());
+                responseObserver.onNext(ContractGenerator.generateRegisterReply(nonce, nextSeq, _privateKey));
                 responseObserver.onCompleted();
             }
         } catch (CommonDomainException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException | GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         }
     }
 
     @Override
     public void goodbye(Contract.GoodByeRequest request, StreamObserver<Empty> responseObserver) {
         try {
-            String nonce = request.getSessionNonce();
-            _sessionManager.validateSessionRequest(
-                    nonce,
-                    request.getMac().toByteArray(),
-                    ByteUtils.toByteArray(request),
-                    request.getSeq());
-            _sessionManager.removeSession(nonce);
+            _sessionManager.validateSessionRequest(request);
+            _sessionManager.removeSession(request.getSessionNonce());
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription("Could not validate request").asRuntimeException());
+            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException | GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
+            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         }
     }
 
@@ -215,14 +206,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
     }
 
-    private long validatePostRequest(Contract.SafePostRequest request) throws IOException, GeneralSecurityException, SessionException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] content = ByteUtils.toByteArray(request);
-        byte[] mac = request.getMac().toByteArray();
-        String sessionNonce = request.getSessionNonce();
-        long seq = request.getSeq();
-        return _sessionManager.validateSessionRequest(sessionNonce, mac, content, seq, key);
-    }
 
     public SessionManager getSessionManager() {
         return _sessionManager;

@@ -1,13 +1,13 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
-import dpas.utils.CypherUtils;
 import dpas.utils.MacGenerator;
 import dpas.utils.MacVerifier;
 import io.grpc.ManagedChannel;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
-public class SafeServicePostTest {
+public class SafeServicePostGeneralTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -88,7 +88,7 @@ public class SafeServicePostTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, SESSION_NONCE, 3, CypherUtils.keyToString(_pubKey), null);
+                MESSAGE, SESSION_NONCE, 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _stub.safeRegister(ContractGenerator.generateRegisterRequest(SESSION_NONCE, 1, _pubKey, _privKey));
 
@@ -102,7 +102,7 @@ public class SafeServicePostTest {
 
     @Test
     public void validPost() throws GeneralSecurityException, IOException {
-        var reply = _stub.safePost(_request);
+        var reply = _stub.safePostGeneral(_request);
         assertEquals(reply.getSessionNonce(), SESSION_NONCE);
         assertEquals(reply.getSeq(), 4);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
@@ -114,7 +114,7 @@ public class SafeServicePostTest {
         _request = Contract.SafePostRequest.newBuilder(_request).setSessionNonce(INVALID_SESSION_NONCE).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Session");
-        _stub.safePost(_request);
+        _stub.safePostGeneral(_request);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class SafeServicePostTest {
         _request = Contract.SafePostRequest.newBuilder(_request).setSeq(7).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid sequence number");
-        _stub.safePost(_request);
+        _stub.safePostGeneral(_request);
     }
 
     @Test
@@ -130,7 +130,7 @@ public class SafeServicePostTest {
         _request = Contract.SafePostRequest.newBuilder(_request).setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded())).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Public Key for request");
-        _stub.safePost(_request);
+        _stub.safePostGeneral(_request);
     }
 
     @Test
@@ -140,7 +140,7 @@ public class SafeServicePostTest {
         _request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(mac)).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
-        _stub.safePost(_request);
+        _stub.safePostGeneral(_request);
     }
 
     @Test
@@ -150,14 +150,14 @@ public class SafeServicePostTest {
         _request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(mac)).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid mac");
-        _stub.safePost(_request);
+        _stub.safePostGeneral(_request);
     }
 
     @Test
     public void notAMacPost() {
-        _request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[] {12, 4, 56, 21})).build();
+        _request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("security values provided");
-        _stub.safePost(_request);
+        _stub.safePostGeneral(_request);
     }
 }
