@@ -11,10 +11,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
@@ -34,11 +31,11 @@ public class ReadTest {
     private Server _server;
     private ManagedChannel _channel;
 
-    private PublicKey _publicKey;
-    private PrivateKey _privateKey;
+    private static PublicKey _publicKey;
+    private static PrivateKey _privateKey;
 
-    private byte[] _signature;
-    private byte[] _signature2;
+    private static byte[] _signature;
+    private static byte[] _signature2;
 
 
     private static final String MESSAGE = "Message to sign";
@@ -47,12 +44,11 @@ public class ReadTest {
     private static final String host = "localhost";
     private static final int port = 9000;
 
-
-    @Before
-    public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException, InvalidKeyException, SignatureException {
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException, CommonDomainException {
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
 
         KeyPair keyPair = keygen.generateKeyPair();
         _publicKey = keyPair.getPublic();
@@ -62,6 +58,12 @@ public class ReadTest {
         //Signatures
         _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
         _signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
+
+    }
+
+
+    @Before
+    public void setup() throws IOException {
 
         //Start Server
         final BindableService impl = new ServiceDPASImpl();

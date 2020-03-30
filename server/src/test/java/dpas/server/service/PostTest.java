@@ -12,10 +12,7 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
@@ -35,31 +32,31 @@ public class PostTest {
 
     private Server _server;
 
-    private PublicKey _firstPublicKey;
-    private PublicKey _secondPublicKey;
+    private static PublicKey _firstPublicKey;
+    private static PublicKey _secondPublicKey;
 
-    private PrivateKey _secondPrivateKey;
+    private static PrivateKey _secondPrivateKey;
 
-    private byte[] _firstSignature;
-    private byte[] _secondSignature;
-    private byte[] _bigMessageSignature;
+    private static byte[] _firstSignature;
+    private static byte[] _secondSignature;
+    private static byte[] _bigMessageSignature;
 
-    private String _invalidReference;
+    private static String _invalidReference;
 
     private ManagedChannel _channel;
 
     private static final String MESSAGE = "Message";
     private static final String SECOND_MESSAGE = "Second Message";
-    private static final String INVALID_MESSAGE = StringUtils.repeat("ThisMessageisInvalid", "", 15);
+    private static final String INVALID_MESSAGE = StringUtils.repeat("A", 1000);
 
     private static final String host = "localhost";
     private static final int port = 9000;
 
-    @Before
-    public void setup() throws IOException, NoSuchAlgorithmException, CommonDomainException, URISyntaxException, InvalidKeySpecException {
+    @BeforeClass
+    public static void oneTimeSetup() throws CommonDomainException, NoSuchAlgorithmException {
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
 
         KeyPair keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
@@ -84,6 +81,10 @@ public class PostTest {
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
                 new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
+    }
+
+    @Before
+    public void setup() throws IOException {
 
         final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();

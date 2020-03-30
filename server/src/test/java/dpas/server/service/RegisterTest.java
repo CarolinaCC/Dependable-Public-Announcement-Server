@@ -9,10 +9,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
@@ -25,9 +22,9 @@ public class RegisterTest {
 
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
-    private PublicKey _firstPublicKey;
-    private PublicKey _secondPublicKey;
-    private PublicKey _publicDSAKey;
+    private static PublicKey _firstPublicKey;
+    private static PublicKey _secondPublicKey;
+    private static PublicKey _publicDSAKey;
     private ManagedChannel _channel;
 
     @Rule
@@ -36,26 +33,27 @@ public class RegisterTest {
     private static final String host = "localhost";
     private static final int port = 9000;
 
-    @Before
-    public void setup() throws IOException, NoSuchAlgorithmException {
-
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException {
         //Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
 
         KeyPair keyPair = keygen.generateKeyPair();
-
-        keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
 
         keyPair = keygen.generateKeyPair();
         _secondPublicKey = keyPair.getPublic();
 
         keygen = KeyPairGenerator.getInstance("DSA");
-        keygen.initialize(1024);
+        keygen.initialize(2048);
         keyPair = keygen.generateKeyPair();
         _publicDSAKey = keyPair.getPublic();
 
+    }
+
+    @Before
+    public void setup() throws IOException {
         // Start server
         final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
@@ -63,7 +61,6 @@ public class RegisterTest {
 
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
-
     }
 
     @After

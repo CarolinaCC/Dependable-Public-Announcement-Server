@@ -13,10 +13,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import javax.crypto.Cipher;
@@ -28,12 +25,13 @@ import java.time.LocalDateTime;
 import static org.junit.Assert.*;
 
 public class SafeServiceRegisterTest {
-
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private PublicKey _pubKey;
-    private PrivateKey _privKey;
+    private static PublicKey _serverPKey;
+    private static PublicKey _pubKey;
+    private static PrivateKey _privKey;
+
     private static final String SESSION_NONCE = "NONCE";
 
     private static final int port = 9001;
@@ -44,28 +42,33 @@ public class SafeServiceRegisterTest {
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
     private ManagedChannel _channel;
-    private PrivateKey _serverPrivKey;
-    private PublicKey _serverPubKey;
+    private static PrivateKey _serverPrivKey;
+    private static PublicKey _serverPubKey;
 
-    @Before
-    public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException {
-
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(2048);
+        keygen.initialize(4096);
         KeyPair keyPair = keygen.generateKeyPair();
         KeyPair serverPair = keygen.generateKeyPair();
 
-        PublicKey _serverPKey = serverPair.getPublic();
+        _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
         _serverPubKey = serverPair.getPublic();
-        SessionManager _sessionManager = new SessionManager(5000);
 
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
-        _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
 
         Cipher cipherServer = Cipher.getInstance("RSA");
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
+
+
+    }
+
+    @Before
+    public void setup() throws IOException {
+        SessionManager _sessionManager = new SessionManager(5000);
+        _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
 
         _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();

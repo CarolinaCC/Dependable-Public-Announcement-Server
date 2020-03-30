@@ -14,6 +14,7 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -36,12 +37,9 @@ public class ServerConcurrencyTest {
     private ServiceDPASGrpc.ServiceDPASBlockingStub _blockingStub;
     private Server _server;
 
-    private PublicKey _firstPublicKey;
-
-
-    private PrivateKey _firstPrivateKey;
-
-    private byte[] _firstSignature;
+    private static PublicKey _firstPublicKey;
+    private static PrivateKey _firstPrivateKey;
+    private static byte[] _firstSignature;
 
 
     private ManagedChannel _channel;
@@ -62,12 +60,11 @@ public class ServerConcurrencyTest {
     public ServerConcurrencyTest() {
     }
 
-    @Before
-    public void setup() throws NoSuchAlgorithmException, CommonDomainException, IOException {
-
+    @BeforeClass
+    public static void oneTimeSetup() throws CommonDomainException, NoSuchAlgorithmException {
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
 
         KeyPair keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
@@ -76,8 +73,10 @@ public class ServerConcurrencyTest {
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
                 new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+    }
 
-
+    @Before
+    public void setup() throws IOException {
         final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();

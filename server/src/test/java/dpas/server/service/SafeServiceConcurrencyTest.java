@@ -19,6 +19,7 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -42,12 +43,12 @@ public class SafeServiceConcurrencyTest {
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
 
+    private static PublicKey _serverPubKey;
+    private static PrivateKey _serverPrivKey;
+    private static PublicKey _publicKey;
+    private static PrivateKey _privateKey;
 
-    private PublicKey _serverPubKey;
-    private PublicKey _publicKey;
-    private PrivateKey _privateKey;
-
-    private Session[] _sessions;
+    private static Session[] _sessions;
 
     private ManagedChannel _channel;
 
@@ -56,7 +57,7 @@ public class SafeServiceConcurrencyTest {
     private static final String host = "localhost";
     private static final int port = 9000;
 
-    private static final int NUMBER_THREADS = 50;
+    private static final int NUMBER_THREADS = 20;
     private static final int NUMBER_POSTS = NUMBER_THREADS * 10;
 
     @Parameterized.Parameters
@@ -67,27 +68,32 @@ public class SafeServiceConcurrencyTest {
     public SafeServiceConcurrencyTest() {
     }
 
-    @Before
-    public void setup() throws GeneralSecurityException, IOException {
-
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException {
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(2048);
+        keygen.initialize(4096);
 
         KeyPair keyPair = keygen.generateKeyPair();
         _serverPubKey = keyPair.getPublic();
-        PrivateKey _serverPrivKey = keyPair.getPrivate();
-
+        _serverPrivKey = keyPair.getPrivate();
 
         keyPair = keygen.generateKeyPair();
         _publicKey = keyPair.getPublic();
         _privateKey = keyPair.getPrivate();
 
-        SessionManager manager = new SessionManager(50000000);
         _sessions = new Session[NUMBER_THREADS + 1];
-        for(int i = 0; i < NUMBER_THREADS + 1; ++i) {
+        for (int i = 0; i < NUMBER_THREADS + 1; ++i) {
             Session session = new Session(new SecureRandom().nextLong(), _publicKey, UUID.randomUUID().toString(), LocalDateTime.now().plusHours(2));
             _sessions[i] = session;
+        }
+    }
+
+    @Before
+    public void setup() throws GeneralSecurityException, IOException {
+
+        SessionManager manager = new SessionManager(50000000);
+        for (int i = 0; i < NUMBER_THREADS + 1; ++i) {
             manager.getSessions().put(_sessions[i].getSessionNonce(), _sessions[i]);
         }
 
@@ -108,7 +114,6 @@ public class SafeServiceConcurrencyTest {
         _server.shutdown();
         _channel.shutdown();
     }
-
 
 
     private void postRun(int id) throws GeneralSecurityException, IOException, CommonDomainException {

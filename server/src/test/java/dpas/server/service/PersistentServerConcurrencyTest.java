@@ -15,6 +15,7 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -40,12 +41,10 @@ public class PersistentServerConcurrencyTest {
     private ServiceDPASGrpc.ServiceDPASStub _stub;
     private ServiceDPASGrpc.ServiceDPASBlockingStub _blockingStub;
     private Server _server;
-    private PublicKey _serverKey;
 
-    private PublicKey _firstPublicKey;
-
-
-    private PrivateKey _firstPrivateKey;
+    private static PublicKey _serverKey;
+    private static PublicKey _firstPublicKey;
+    private static PrivateKey _firstPrivateKey;
 
     private PersistenceManager _manager;
 
@@ -70,12 +69,11 @@ public class PersistentServerConcurrencyTest {
     public PersistentServerConcurrencyTest() {
     }
 
-    @Before
-    public void setup() throws NoSuchAlgorithmException, CommonDomainException, IOException, URISyntaxException {
-
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException {
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
 
         KeyPair keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
@@ -83,6 +81,12 @@ public class PersistentServerConcurrencyTest {
 
         keyPair = keygen.generateKeyPair();
         _serverKey = keyPair.getPublic();
+
+    }
+
+    @Before
+    public void setup() throws CommonDomainException, IOException, URISyntaxException {
+
 
 
         URL res = getClass().getClassLoader().getResource("no_operations_3.json");

@@ -7,6 +7,7 @@ keytool -genkeypair \
         -alias server \
         -dname "CN=localhost" \
         -keyalg RSA \
+        -keysize 4096 \
         -validity 365 \
         -storepass server-password \
         -keystore server.jks
@@ -16,6 +17,7 @@ keytool -genkeypair \
         -alias client \
         -dname "CN=localhost" \
         -keyalg RSA \
+        -keysize 4096 \
         -validity 365 \
         -storepass client-password \
         -keystore client.jks

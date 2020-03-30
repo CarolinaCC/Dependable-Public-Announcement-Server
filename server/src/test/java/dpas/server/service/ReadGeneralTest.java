@@ -11,10 +11,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
@@ -35,30 +32,31 @@ public class ReadGeneralTest {
     private ManagedChannel _channel;
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
-    private PublicKey _publicKey;
-    private PrivateKey _privateKey;
+    private static PublicKey _publicKey;
+    private static PrivateKey _privateKey;
 
-    private byte[] _signature;
+    private static byte[] _signature;
     private static final String host = "localhost";
     private static final int port = 9000;
 
 
     private static final String MESSAGE = "Message to sign";
 
-    @Before
-    public void setup() throws IOException, CommonDomainException, NoSuchAlgorithmException {
-
+    @BeforeClass
+    public static void oneTimeSetup() throws CommonDomainException, NoSuchAlgorithmException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
 
         KeyPair keyPair = keygen.generateKeyPair();
         _publicKey = keyPair.getPublic();
         _privateKey = keyPair.getPrivate();
 
-        keygen.generateKeyPair();
-        PublicKey _serverKey = keyPair.getPublic();
-
         _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, GENERAL_BOARD_IDENTIFIER);
+    }
+
+    @Before
+    public void setup() throws IOException {
+
 
         // Start Server
         final BindableService impl = new ServiceDPASImpl();

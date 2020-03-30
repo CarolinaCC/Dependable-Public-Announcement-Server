@@ -10,10 +10,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
@@ -26,10 +23,9 @@ public class SafeServiceGoodbyeTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private PublicKey _pubKey;
-    private PrivateKey _privKey;
+    private static PublicKey _pubKey;
+    private static PrivateKey _privKey;
     private static final String SESSION_NONCE = "NONCE";
-    private static final String SESSION_NONCE2 = "NONCE2";
 
     private long _seq;
 
@@ -41,26 +37,30 @@ public class SafeServiceGoodbyeTest {
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
     private ManagedChannel _channel;
-    private PublicKey _serverPKey;
-    private PrivateKey _serverPrivKey;
+    private static PublicKey _serverPKey;
+    private static PrivateKey _serverPrivKey;
     private SessionManager _sessionManager;
 
-    @Before
-    public void setup() throws GeneralSecurityException,
-            IOException {
-
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(2048);
+        keygen.initialize(4096);
         KeyPair keyPair = keygen.generateKeyPair();
         KeyPair serverPair = keygen.generateKeyPair();
 
         _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
-        _sessionManager = new SessionManager(15000);
+
 
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
+    }
 
+    @Before
+    public void setup() throws GeneralSecurityException,
+            IOException {
+
+        _sessionManager = new SessionManager(15000);
         _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
@@ -102,7 +102,7 @@ public class SafeServiceGoodbyeTest {
     @Test
     public void goodbyeInvalidMacKey() throws GeneralSecurityException, IOException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(2048);
+        keygen.initialize(4096);
         KeyPair keyPair = keygen.generateKeyPair();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");

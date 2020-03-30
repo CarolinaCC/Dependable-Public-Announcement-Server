@@ -12,10 +12,7 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import javax.json.Json;
@@ -143,7 +140,7 @@ public class PersistenceManagerTest {
         PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         String userName = "USERNAME";
 
@@ -174,7 +171,7 @@ public class PersistenceManagerTest {
         PersistenceManager manager = new PersistenceManager(path, _serverKey);
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         String userName = "USERNAME";
 
@@ -223,7 +220,7 @@ public class PersistenceManagerTest {
         String message = "MESSAGE";
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PrivateKey privateKey = keygen.generateKeyPair().getPrivate();
 
         Signature sign = Signature.getInstance("SHA256withRSA");
@@ -262,7 +259,7 @@ public class PersistenceManagerTest {
         String message = "Hello World";
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         PrivateKey privateKey = keygen.generateKeyPair().getPrivate();
 
@@ -306,7 +303,7 @@ public class PersistenceManagerTest {
         String message = "Hello World";
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         PrivateKey privateKey = keygen.generateKeyPair().getPrivate();
 
@@ -366,7 +363,7 @@ public class PersistenceManagerTest {
         String message = "MESSAGE";
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PrivateKey privateKey = keygen.generateKeyPair().getPrivate();
 
         Signature sign = Signature.getInstance("SHA256withRSA");
@@ -407,7 +404,7 @@ public class PersistenceManagerTest {
         String message = "Hello World";
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         PrivateKey privateKey = keygen.generateKeyPair().getPrivate();
 
@@ -449,7 +446,7 @@ public class PersistenceManagerTest {
         String message = "Hello World";
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(4096);
         PublicKey pubKey = keygen.generateKeyPair().getPublic();
         PrivateKey privateKey = keygen.generateKeyPair().getPrivate();
 

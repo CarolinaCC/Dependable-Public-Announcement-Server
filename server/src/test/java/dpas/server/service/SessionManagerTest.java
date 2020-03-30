@@ -4,6 +4,7 @@ import dpas.server.session.Session;
 import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -27,17 +28,19 @@ public class SessionManagerTest {
     private static final String SESSION_NONCE4 = "NONCE4";
     private static final String SESSION_NONCE5 = "NONCE5";
     private static final String SESSION_NONCE6 = "NONCE6";
-    private PublicKey _pubKey;
+    private static PublicKey _pubKey;
+
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException {
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(4096);
+        KeyPair keyPair = keygen.generateKeyPair();
+        _pubKey = keyPair.getPublic();
+    }
 
     @Before
     public void setup() throws NoSuchAlgorithmException {
         _manager = new SessionManager();
-
-        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
-        KeyPair keyPair = keygen.generateKeyPair();
-        _pubKey = keyPair.getPublic();
-
     }
 
     @Test

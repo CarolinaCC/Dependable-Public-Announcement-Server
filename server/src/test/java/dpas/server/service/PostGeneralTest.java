@@ -12,10 +12,7 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
@@ -34,18 +31,18 @@ public class PostGeneralTest {
 
     private Server _server;
 
-    private PublicKey _firstPublicKey;
-    private PublicKey _secondPublicKey;
+    private static PublicKey _firstPublicKey;
+    private static PublicKey _secondPublicKey;
 
-    private PrivateKey _firstPrivateKey;
-    private PrivateKey _secondPrivateKey;
+    private static PrivateKey _firstPrivateKey;
+    private static PrivateKey _secondPrivateKey;
 
 
-    private byte[] _firstSignature;
-    private byte[] _secondSignature;
-    private byte[] _secondSignatureWithRef;
-    private byte[] _signatureForSameId;
-    private byte[] _bigMessageSignature;
+    private static byte[] _firstSignature;
+    private static byte[] _secondSignature;
+    private static byte[] _secondSignatureWithRef;
+    private static byte[] _signatureForSameId;
+    private static byte[] _bigMessageSignature;
 
     private ManagedChannel _channel;
 
@@ -53,22 +50,21 @@ public class PostGeneralTest {
     private static final String SECOND_MESSAGE = "Second Message";
     private static final String INVALID_MESSAGE = StringUtils.repeat("ThisMessageisInvalid", "", 15);
 
-    @Before
-    public void setup() throws IOException, CommonDomainException, NoSuchAlgorithmException {
+    @BeforeClass
+    public static void oneTimeSetup() throws NoSuchAlgorithmException, CommonDomainException {
 
         // KeyPairs
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
-        KeyPair keyPair = keygen.generateKeyPair();
-        PublicKey _serverKey = keyPair.getPublic();
+        keygen.initialize(4096);
 
-        keyPair = keygen.generateKeyPair();
+        KeyPair keyPair = keygen.generateKeyPair();
         _firstPublicKey = keyPair.getPublic();
         _firstPrivateKey = keyPair.getPrivate();
 
         keyPair = keygen.generateKeyPair();
         _secondPublicKey = keyPair.getPublic();
         _secondPrivateKey = keyPair.getPrivate();
+
 
         //Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
@@ -84,6 +80,10 @@ public class PostGeneralTest {
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
                 new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
 
+    }
+
+    @Before
+    public void setup() throws IOException {
 
         // Start server
         final BindableService impl = new ServiceDPASImpl();
