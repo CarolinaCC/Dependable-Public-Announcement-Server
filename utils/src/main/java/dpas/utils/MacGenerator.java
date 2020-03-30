@@ -2,12 +2,13 @@ package dpas.utils;
 
 import dpas.grpc.contract.Contract;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.List;
 
 public class MacGenerator {
 
@@ -41,16 +42,18 @@ public class MacGenerator {
         return cipher.doFinal(hash);
     }
 
-    public static byte[] generateMac(String content, PrivateKey privKey) throws NoSuchAlgorithmException,
-            NoSuchPaddingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-
+    public static byte[] generateMac(long seq, String nonce, PublicKey pubKey, byte[] message,
+                                     byte[] signature, List<String> references, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        byte[] content = ByteUtils.toByteArray(seq, nonce, pubKey, message, signature, references);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hash = digest.digest(content.getBytes());
+        byte[] hash = digest.digest(content);
 
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, privKey);
         return cipher.doFinal(hash);
+
     }
+
 
     public static byte[] generateMac(Contract.SafePostRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {
         byte[] content = ByteUtils.toByteArray(request);

@@ -42,16 +42,7 @@ public class ContractGenerator {
 
         byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier);
 
-        var request = SafePostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
-                .setMessage(ByteString.copyFrom(encodedMessage))
-                .setSignature(ByteString.copyFrom(signature))
-                .setSeq(seq)
-                .addAllReferences(references)
-                .setSessionNonce(nonce)
-                .build();
-        byte[] mac = MacGenerator.generateMac(request, privKey);
-
+        byte[] mac = MacGenerator.generateMac(seq, nonce, pubKey, encodedMessage, signature, references, privKey);
 
         return SafePostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))

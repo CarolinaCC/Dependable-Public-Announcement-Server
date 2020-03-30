@@ -31,6 +31,28 @@ public class ByteUtils {
         }
     }
 
+    public static byte[] toByteArray(long sequence, String sessionNonce, PublicKey pubKey, byte[] message,
+                                     byte[] signature, List<String> references) throws IOException {
+        byte[] seq = LongUtils.longToBytes(sequence);
+        byte[] nonce = sessionNonce.getBytes();
+        byte[] key = pubKey.getEncoded();
+
+        List<byte[]> refs = references.stream().map(String::getBytes).collect(Collectors.toList());
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
+            stream.writeBytes(nonce);
+            stream.writeBytes(key);
+            stream.writeBytes(message);
+            stream.writeBytes(signature);
+            stream.writeBytes(message);
+            for (var ref : refs) {
+                stream.writeBytes(ref);
+            }
+            byte[] res = stream.toByteArray();
+            return res;
+        }
+    }
+
     public static byte[] toByteArray(String sessionNonce, long sequence) throws IOException {
         byte[] seq = LongUtils.longToBytes(sequence);
         byte[] nonce = sessionNonce.getBytes();
