@@ -24,6 +24,7 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -37,8 +38,9 @@ public class SafeServicePostTest {
     private PublicKey _pubKey;
     private PrivateKey _privKey;
     private PublicKey _invalidPubKey;
-    private static final String SESSION_NONCE = "NONCE";
-    private static final String INVALID_SESSION_NONCE = "NONCE2";
+    private String _nonce ;
+    private long seq;
+    private String _invalidNonce;
     private static final String MESSAGE = "Message";
 
     private Contract.SafePostRequest _request;
@@ -62,6 +64,10 @@ public class SafeServicePostTest {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(2048);
 
+        _nonce = UUID.randomUUID().toString();
+        _invalidNonce = UUID.randomUUID().toString();
+        seq = new SecureRandom().nextLong();
+
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
@@ -76,7 +82,7 @@ public class SafeServicePostTest {
         keyPair = keygen.generateKeyPair();
         _invalidPubKey = keyPair.getPublic();
 
-        _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(2)));
+        _sessionManager.getSessions().put(_nonce, new Session(seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
 
         _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -88,9 +94,9 @@ public class SafeServicePostTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, SESSION_NONCE, 3, CypherUtils.keyToString(_pubKey), null);
+                MESSAGE, _nonce, seq + 3, CypherUtils.keyToString(_pubKey), null);
 
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(SESSION_NONCE, 1, _pubKey, _privKey));
+        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, seq + 1, _pubKey, _privKey));
 
     }
 
@@ -103,15 +109,15 @@ public class SafeServicePostTest {
     @Test
     public void validPost() throws GeneralSecurityException, IOException {
         var reply = _stub.safePost(_request);
-        assertEquals(reply.getSessionNonce(), SESSION_NONCE);
-        assertEquals(reply.getSeq(), 4);
+        assertEquals(reply.getSessionNonce(), _nonce);
+        assertEquals(reply.getSeq(), seq + 4);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
         assertEquals(_impl._announcements.size(), 1);
     }
 
     @Test
     public void invalidSessionPost() {
-        _request = Contract.SafePostRequest.newBuilder(_request).setSessionNonce(INVALID_SESSION_NONCE).build();
+        _request = Contract.SafePostRequest.newBuilder(_request).setSessionNonce(_invalidNonce).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Session");
         _stub.safePost(_request);

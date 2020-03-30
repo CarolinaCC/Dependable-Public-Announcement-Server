@@ -5,6 +5,7 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
+import dpas.server.service.ServiceDPASPersistentImpl;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;

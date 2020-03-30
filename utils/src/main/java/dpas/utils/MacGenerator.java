@@ -6,21 +6,10 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.*;
 
 public class MacGenerator {
-    public static byte[] toByteArray(String sessionNonce, long sequence, PublicKey pubKey) throws IOException {
-        byte[] seq = LongUtils.longToBytes(sequence);
-        byte[] nonce = sessionNonce.getBytes();
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
-            stream.writeBytes(nonce);
-            stream.writeBytes(pubKey.getEncoded());
-            return stream.toByteArray();
-        }
-    }
 
     public static byte[] generateMac(String sessionNonce, long seq, PrivateKey privKey) throws IOException, GeneralSecurityException {
         byte[] content = ByteUtils.toByteArray(sessionNonce, seq);
@@ -43,7 +32,7 @@ public class MacGenerator {
     }
 
     public static byte[] generateMac(String sessionNonce, long seq, PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        byte[] content = toByteArray(sessionNonce, seq, pubKey);
+        byte[] content = ByteUtils.toByteArray(sessionNonce, seq, pubKey);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(content);
 

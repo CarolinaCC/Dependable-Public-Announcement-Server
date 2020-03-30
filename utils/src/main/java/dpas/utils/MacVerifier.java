@@ -95,6 +95,7 @@ public class MacVerifier {
         byte[] hash = cipher.doFinal(mac);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] dig = digest.digest(content);
         return Arrays.equals(digest.digest(content), hash);
     }
 }

@@ -110,4 +110,15 @@ public class ByteUtils {
             return stream.toByteArray();
         }
     }
+
+    public static byte[] toByteArray(String sessionNonce, long sequence, PublicKey pubKey) throws IOException {
+        byte[] seq = LongUtils.longToBytes(sequence);
+        byte[] nonce = sessionNonce.getBytes();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
+            stream.writeBytes(nonce);
+            stream.writeBytes(pubKey.getEncoded());
+            return stream.toByteArray();
+        }
+    }
 }
