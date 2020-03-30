@@ -61,7 +61,7 @@ public class SafeServiceGoodbyeTest {
             IOException {
 
         _sessionManager = new SessionManager(15000);
-        _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

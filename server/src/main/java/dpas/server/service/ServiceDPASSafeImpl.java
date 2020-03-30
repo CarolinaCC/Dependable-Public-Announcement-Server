@@ -11,7 +11,7 @@ import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
-import dpas.utils.CypherUtils;
+import dpas.utils.CipherUtils;
 import dpas.utils.MacVerifier;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -28,40 +28,21 @@ import java.security.spec.X509EncodedKeySpec;
 import static io.grpc.Status.*;
 
 public class ServiceDPASSafeImpl extends ServiceDPASImpl {
-    private PublicKey _publicKey;
     private PrivateKey _privateKey;
     private PersistenceManager _persistenceManager;
     private SessionManager _sessionManager;
 
-    public ServiceDPASSafeImpl(PersistenceManager manager, PublicKey pubKey, PrivateKey privKey, SessionManager sessionManager) {
+    public ServiceDPASSafeImpl(PersistenceManager manager, PrivateKey privKey, SessionManager sessionManager) {
         _persistenceManager = manager;
-        _publicKey = pubKey;
         _privateKey = privKey;
         _sessionManager = sessionManager;
     }
 
     //Use with tests only
-    public ServiceDPASSafeImpl(PublicKey pubKey, PrivateKey privKey, SessionManager sessionManager) {
+    public ServiceDPASSafeImpl(PrivateKey privKey, SessionManager sessionManager) {
         _persistenceManager = null;
-        _publicKey = pubKey;
         _privateKey = privKey;
         _sessionManager = sessionManager;
-    }
-
-    @Override
-    public void register(Contract.RegisterRequest request, StreamObserver<Empty> responseObserver) {
-        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
-    }
-
-
-    @Override
-    public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
-        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
-    }
-
-    @Override
-    public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
-        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
     @Override
@@ -98,7 +79,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-                //Announcement with that identifier already	 exists
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 save(announcement.toJson("Post"));
@@ -126,7 +106,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
 
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-                //Announcement with that identifier already exists
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 save(announcement.toJson("PostGeneral"));
@@ -156,7 +135,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
-                //User with public key already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 save(user.toJson());
@@ -186,10 +164,26 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         }
     }
 
+    @Override
+    public void register(Contract.RegisterRequest request, StreamObserver<Empty> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
+
+    @Override
+    public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
+    @Override
+    public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
     protected Announcement generateAnnouncement(Contract.SafePostRequest request, AnnouncementBoard board) throws GeneralSecurityException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
-        String message = new String(CypherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
+        String message = new String(CipherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
 
         return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
     }
@@ -197,7 +191,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
     protected Announcement generateAnnouncement(Contract.SafePostRequest request) throws GeneralSecurityException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
-        String message = new String(CypherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
+        String message = new String(CipherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
 
         User user = _users.get(key);
         if (user == null) {

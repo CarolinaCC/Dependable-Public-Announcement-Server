@@ -70,7 +70,7 @@ public class SafeServiceRegisterTest {
         SessionManager _sessionManager = new SessionManager(5000);
         _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
 
-        _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

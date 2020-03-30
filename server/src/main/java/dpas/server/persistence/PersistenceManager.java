@@ -71,7 +71,7 @@ public class PersistenceManager {
 
         JsonArray jsonArray = readSaveFile();
 
-        ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this, _pubKey);
+        ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
 
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);

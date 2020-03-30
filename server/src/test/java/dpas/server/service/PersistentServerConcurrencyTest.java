@@ -99,7 +99,7 @@ public class PersistentServerConcurrencyTest {
                 new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
 
-        final BindableService impl = new ServiceDPASPersistentImpl(_manager, _serverKey);
+        final BindableService impl = new ServiceDPASPersistentImpl(_manager);
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 

@@ -7,7 +7,7 @@ import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.util.Base64;
 
-public class CypherUtils {
+public class CipherUtils {
 
     public static byte[] decipher(byte[] content, PrivateKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         Cipher cipher = Cipher.getInstance("RSA");

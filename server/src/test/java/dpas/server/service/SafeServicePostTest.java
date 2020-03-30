@@ -7,7 +7,7 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
-import dpas.utils.CypherUtils;
+import dpas.utils.CipherUtils;
 import dpas.utils.MacGenerator;
 import dpas.utils.MacVerifier;
 import io.grpc.ManagedChannel;
@@ -81,10 +81,10 @@ public class SafeServicePostTest {
         _invalidPubKey = keyPair.getPublic();
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _nonce, seq + 3, CypherUtils.keyToString(_pubKey), null);
+                MESSAGE, _nonce, seq + 3, CipherUtils.keyToString(_pubKey), null);
 
         _longRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                LONGMESSAGE, _nonce, seq + 3, CypherUtils.keyToString(_pubKey), null);
+                LONGMESSAGE, _nonce, seq + 3, CipherUtils.keyToString(_pubKey), null);
 
     }
 
@@ -96,7 +96,7 @@ public class SafeServicePostTest {
 
         _sessionManager.getSessions().put(_nonce, new Session(seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
 
-        _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

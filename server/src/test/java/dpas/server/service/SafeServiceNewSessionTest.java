@@ -64,7 +64,7 @@ public class SafeServiceNewSessionTest {
     public void setup() throws IOException {
         _sessionManager = new SessionManager(5000);
 
-        _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

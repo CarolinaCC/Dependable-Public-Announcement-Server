@@ -1,8 +1,6 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Empty;
-import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -10,13 +8,12 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
-import dpas.utils.CypherUtils;
+import dpas.utils.CipherUtils;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -27,11 +24,8 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
@@ -97,7 +91,7 @@ public class SafeServiceConcurrencyTest {
             manager.getSessions().put(_sessions[i].getSessionNonce(), _sessions[i]);
         }
 
-        final BindableService impl = new ServiceDPASSafeImpl(_serverPubKey, _serverPrivKey, manager);
+        final BindableService impl = new ServiceDPASSafeImpl(_serverPrivKey, manager);
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
 
@@ -121,7 +115,7 @@ public class SafeServiceConcurrencyTest {
         String nonce = _sessions[id].getSessionNonce();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
             var request = ContractGenerator.generatePostRequest(_serverPubKey, _publicKey, _privateKey,
-                    MESSAGE, nonce, seq, CypherUtils.keyToString(_publicKey), null);
+                    MESSAGE, nonce, seq, CipherUtils.keyToString(_publicKey), null);
 
             _stub.safePost(request);
             seq += 2;

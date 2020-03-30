@@ -81,7 +81,7 @@ public class SafeServicePostGeneralTest {
         _sessionManager = new SessionManager(50000000);
         _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(2)));
 
-        _impl = new ServiceDPASSafeImpl(_serverPKey, _serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
         //Connect to Server

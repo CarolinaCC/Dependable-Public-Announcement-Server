@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     private PersistenceManager _manager;
 
-    public ServiceDPASPersistentImpl(PersistenceManager manager, PublicKey pubKey) {
+    public ServiceDPASPersistentImpl(PersistenceManager manager) {
         super();
         _manager = manager;
     }
@@ -38,9 +38,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
             User curr = _users.putIfAbsent(key, user);
             if (curr != null) {
-                // User with public key already exists
-                responseObserver
-                        .onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 _manager.save(user.toJson());
                 responseObserver.onNext(Empty.newBuilder().build());
@@ -53,8 +51,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException e) {
             // Should never happen
-            responseObserver
-                    .onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
         }
     }
 
@@ -65,7 +62,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-                //Announcement with that identifier already	 exists
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 _manager.save(announcement.toJson("Post"));
@@ -77,11 +73,9 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException e) {
             // Should never happen
-            responseObserver
-                    .onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            responseObserver
-                    .onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
         }
 
     }
@@ -93,7 +87,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-                //Announcement with that identifier already exists
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 _manager.save(announcement.toJson("PostGeneral"));
@@ -105,11 +98,9 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException e) {
             // Should never happen
-            responseObserver
-                    .onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Error on Server Side").asRuntimeException());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            responseObserver
-                    .onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Key Provided").asRuntimeException());
         }
     }
 

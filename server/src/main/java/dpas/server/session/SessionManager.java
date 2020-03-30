@@ -26,7 +26,7 @@ public class SessionManager {
         new Thread(new SessionCleanup(this, keyValidity)).start();
     }
 
-    //Testing only
+    //Testing purposes only
     public SessionManager() {
         _sessions = new ConcurrentHashMap<>();
     }
@@ -47,8 +47,12 @@ public class SessionManager {
 
 
     public long validateSessionRequest(Contract.SafeRegisterRequest request) throws GeneralSecurityException, IOException, SessionException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         String nonce = request.getSessionNonce();
-        return validateSessionRequest(nonce, request.getMac().toByteArray(), ByteUtils.toByteArray(request), request.getSeq());
+        byte[] content = ByteUtils.toByteArray(request);
+        byte[] mac = request.getMac().toByteArray();
+        long seq = request.getSeq();
+        return validateSessionRequest(nonce, mac, content, seq, key);
     }
 
 
@@ -77,7 +81,6 @@ public class SessionManager {
             throw new SessionException("Invalid Session, doesn't exist or has expired");
 
         synchronized (session) {
-
             if (session.isInvalid())
                 throw new SessionException("Session is expired");
 

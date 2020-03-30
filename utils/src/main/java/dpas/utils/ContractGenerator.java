@@ -35,7 +35,7 @@ public class ContractGenerator {
                                                       String message, String nonce, long seq,
                                                       String boardIdentifier, Announcement[] a)
             throws GeneralSecurityException, IOException, CommonDomainException {
-        byte[] encodedMessage = CypherUtils.cipher(message.getBytes(), serverKey);
+        byte[] encodedMessage = CipherUtils.cipher(message.getBytes(), serverKey);
 
         List<String> references = a == null ? new ArrayList<>()
                 : Stream.of(a).map(Announcement::getHash).collect(Collectors.toList());

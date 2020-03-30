@@ -14,7 +14,7 @@ public class SessionCleanup implements Runnable {
         while (true) {
             sleep();
             _manager.cleanup();
-            }
+        }
     }
 
     private void sleep() {
