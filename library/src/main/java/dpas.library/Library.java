@@ -1,6 +1,7 @@
 package dpas.library;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -82,13 +83,24 @@ public class Library {
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            _stub.post(createPostRequest(key, message, a, privateKey));
+            Session session = checkSession(key, privateKey);
+            var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey, String.valueOf(message) , session.getSessionNonce(), session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
+
+            if (! MacVerifier.verifyMac(_serverKey, reply)) {
+                System.out.println("An error occurred: Unable to validate server response.");
+            }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (CommonDomainException e) {
+            if (status.getDescription().equals("Session is expired")) {
+                System.out.println("Creating a new session and retrying...");
+                newSession(key, privateKey);
+                post(key, message, a, privateKey);
+            }
+        }  catch (GeneralSecurityException | CommonDomainException| IOException e) {
             //Should never happen
-            System.out.println("Could not create signature from values provided");
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
         }
     }
 
@@ -172,4 +184,6 @@ public class Library {
                                           PrivateKey privateKey) throws CommonDomainException {
         return createPostRequest(Base64.getEncoder().encodeToString(key.getEncoded()), key, message, a, privateKey);
     }
+
+
 }
