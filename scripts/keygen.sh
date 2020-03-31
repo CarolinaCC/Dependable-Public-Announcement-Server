@@ -38,7 +38,7 @@ keytool -genkeypair \
         -dname "CN=localhost" \
         -keyalg RSA \
         -keysize 4096 \
-        -validity 365 \
+        -validity 365 \z\
         -storepass client-password \
         -keystore client.jks
 
