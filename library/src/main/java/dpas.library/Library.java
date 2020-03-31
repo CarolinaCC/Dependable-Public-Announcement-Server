@@ -2,6 +2,7 @@ package dpas.library;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
@@ -26,8 +27,8 @@ import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
 public class Library {
 
-    public ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-    public Map<PublicKey, Session> _sessions;
+    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+    private Map<PublicKey, Session> _sessions;
     private PublicKey _serverKey;
 
     public Library(String host, int port, PublicKey serverKey) {
@@ -37,15 +38,21 @@ public class Library {
         _serverKey = serverKey;
     }
 
-    private void newSession(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        var hello = _stub.newSession(ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString()));
-        long seq = hello.getSeq();
-        String nonce = hello.getSessionNonce();
-        Session session = new Session(nonce, seq);
-        _sessions.put(pubKey, session);
+    private void newSession(PublicKey pubKey, PrivateKey privKey) {
+        try {
+            var hello = _stub.newSession(ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString()));
+            long seq = hello.getSeq();
+            String nonce = hello.getSessionNonce();
+            Session session = new Session(nonce, seq);
+            _sessions.put(pubKey, session);
+        } catch (GeneralSecurityException | IOException e) {
+            //Should never happen
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
+        }
     }
 
-    private Session checkSession(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
+    private Session checkSession(PublicKey pubKey, PrivateKey privKey) {
         if (!_sessions.containsKey(pubKey)) {
             newSession(pubKey, privKey);
         }
@@ -55,15 +62,22 @@ public class Library {
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
             var session = checkSession(publicKey, privkey);
-            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(),  publicKey, privkey));
-            //MacVerifier.verifyMac()
+            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(), publicKey, privkey));
+            if (!MacVerifier.verifyMac(_serverKey, reply)) {
+                System.out.println("An error occurred: Unable to validate server response");
+            }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (status.getDescription().equals("Session is expired")) {
+                System.out.println("Creating new session and retrying...");
+                newSession(publicKey, privkey);
+                register(publicKey, privkey);
+            }
+        } catch (GeneralSecurityException | IOException e) {
+            //Should never happen
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
         }
     }
 
@@ -81,23 +95,37 @@ public class Library {
             if (status.getDescription().equals("Session is expired")) {
                 System.out.println("Creating a new session and retrying...");
                 newSession(key, privateKey);
+                post(key, message, a, privateKey);
             }
-        } catch (CommonDomainException e) {
+        }  catch (GeneralSecurityException | CommonDomainException| IOException e) {
             //Should never happen
-            System.out.println("Could not create signature from values provided");
-        } catch (GeneralSecurityException | IOException e) {
-            e.printStackTrace();
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
         }
     }
 
-    public void postGeneral(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
+    public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            _stub.postGeneral(createPostGeneralRequest(key, message, a, privateKey));
+            var sessions = checkSession(pubKey, privateKey);
+            var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey,
+                    privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(),
+                    GENERAL_BOARD_IDENTIFIER, a));
+
+            if (!MacVerifier.verifyMac(_serverKey, safePostGeneralReply)) {
+                System.out.println("An error occurred: Unable to validate server response");
+            }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (CommonDomainException e) {
-            System.out.println("Could not create signature from values provided");
+            if (status.getDescription().equals("Session is expired")) {
+                System.out.println("Creating new session and retrying...");
+                newSession(pubKey, privateKey);
+                register(pubKey, privateKey);
+            }
+        } catch (GeneralSecurityException | CommonDomainException | IOException e) {
+            //Should never happen
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
         }
     }
 
