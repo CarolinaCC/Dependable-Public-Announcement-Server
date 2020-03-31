@@ -1,6 +1,7 @@
 package dpas.library;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
@@ -66,6 +67,7 @@ public class Library {
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
+            Session session = checkSession(key, privateKey);
             _stub.post(createPostRequest(key, message, a, privateKey));
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
@@ -73,6 +75,10 @@ public class Library {
         } catch (CommonDomainException e) {
             //Should never happen
             System.out.println("Could not create signature from values provided");
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
