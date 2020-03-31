@@ -12,21 +12,22 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
+
 public class Library {
 
     public ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+    public Map<PublicKey, Session> _sessions;
 
     public Library(String host, int port) {
         var _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
+        _sessions = new HashMap<>();
     }
 
     public void register(PublicKey publicKey) {
