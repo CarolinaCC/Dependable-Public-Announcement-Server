@@ -16,15 +16,19 @@ public class App {
 
     public static void main(String[] args) {
 
-        if (args.length < 2) {
+        if (args.length < 3) {
             System.out.println("Argument(s) missing!");
-            System.out.printf("<Usage> java ServerAddress ServerPort %s %n", App.class.getName());
+            System.out.printf("<Usage> java ServerAddress ServerPort ServerKey %s %n", App.class.getName());
             System.exit(-1);
         }
         String serverAddr = args[0];
         int port = Integer.parseInt(args[1]);
 
-        Library lib = new Library(serverAddr, port);
+        Library lib = new Library(serverAddr, port, null);
+        mainLoop(lib);
+    }
+
+    public static void mainLoop(Library lib) {
         printHelp();
         while (true) {
             String line = System.console().readLine("Enter Command: ");
@@ -69,14 +73,21 @@ public class App {
             }
 
             File jksFile = openKeyStore(split);
-            PublicKey pubKey = loadPublicKey(jksFile);
+            KeyPair keyPair = loadKeyPair(jksFile);
+            PublicKey pubKey = keyPair.getPublic();
+            PrivateKey privKey = keyPair.getPrivate();
 
             if (!pubKey.getAlgorithm().equals("RSA")) {
                 System.out.println("Error: Client key must be an RSA key");
                 return;
             }
 
-            lib.register(pubKey);
+            if (!privKey.getAlgorithm().equals("RSA")) {
+                System.out.println("Error: Client private key must be an RSA key");
+                return;
+            }
+
+            lib.register(pubKey, privKey);
         } catch (KeyStoreException e) {
             System.out.println("Invalid Argument: Could not load JKS keystore");
         } catch (CertificateException e) {
@@ -93,6 +104,8 @@ public class App {
             System.out.println("Invalid Argument: Key with that alias does not exist");
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
+        } catch (UnrecoverableKeyException e) {
+            System.out.println("Invalid Argument: Invalid key password provided");
         }
     }
 
@@ -246,5 +259,22 @@ public class App {
             pubKey = ks.getCertificate(alias).getPublicKey();
         }
         return pubKey;
+    }
+
+    private static KeyPair loadKeyPair(File jksFile) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NullPointerException, UnrecoverableKeyException {
+        char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
+        String alias = System.console().readLine("Insert Certificate Alias: ");
+        char[] keyPassword = System.console().readPassword("Insert PrivateKey Alias: ");
+
+        KeyStore ks = KeyStore.getInstance("JKS");
+
+        PublicKey pubKey;
+        PrivateKey privKey;
+        try (FileInputStream fis = new FileInputStream(jksFile)) {
+            ks.load(fis, jksPassword);
+            pubKey = ks.getCertificate(alias).getPublicKey();
+            privKey = (PrivateKey) ks.getKey(alias, keyPassword);
+        }
+        return new KeyPair(pubKey, privKey);
     }
 }
