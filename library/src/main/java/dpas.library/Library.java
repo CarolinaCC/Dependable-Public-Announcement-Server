@@ -6,6 +6,7 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.utils.MacVerifier;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -30,8 +31,19 @@ public class Library {
         _sessions = new HashMap<>();
     }
 
+    private void newSession(PublicKey pubKey) {
+
+    }
+
+    private void checkSession(PublicKey pubKey) {
+        if (!_sessions.containsKey(pubKey)) {
+            newSession(pubKey);
+        }
+    }
+
     public void register(PublicKey publicKey) {
         try {
+            checkSession(publicKey);
             _stub.register(Contract.RegisterRequest.newBuilder()
                     .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                     .build());
