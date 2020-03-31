@@ -5,7 +5,7 @@ import dpas.grpc.contract.Contract;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ByteUtils {
@@ -15,7 +15,7 @@ public class ByteUtils {
         byte[] pubKey = request.getPublicKey().toByteArray();
         byte[] message = request.getMessage().toByteArray();
         byte[] signature = request.getSignature().toByteArray();
-        List<byte[]> references = request.getReferencesList().stream().map(String::getBytes).collect(Collectors.toList());
+        Set<byte[]> references = request.getReferencesList().stream().map(String::getBytes).collect(Collectors.toSet());
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
             stream.writeBytes(nonce);
@@ -32,12 +32,12 @@ public class ByteUtils {
     }
 
     public static byte[] toByteArray(long sequence, String sessionNonce, PublicKey pubKey, byte[] message,
-                                     byte[] signature, List<String> references) throws IOException {
+                                     byte[] signature, Set<String> references) throws IOException {
         byte[] seq = LongUtils.longToBytes(sequence);
         byte[] nonce = sessionNonce.getBytes();
         byte[] key = pubKey.getEncoded();
 
-        List<byte[]> refs = references.stream().map(String::getBytes).collect(Collectors.toList());
+        Set<byte[]> refs = references.stream().map(String::getBytes).collect(Collectors.toSet());
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
             stream.writeBytes(nonce);

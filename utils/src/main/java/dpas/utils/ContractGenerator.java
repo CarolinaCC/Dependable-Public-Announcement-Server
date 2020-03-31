@@ -9,7 +9,9 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,8 +39,8 @@ public class ContractGenerator {
             throws GeneralSecurityException, IOException, CommonDomainException {
         byte[] encodedMessage = CipherUtils.cipher(message.getBytes(), serverKey);
 
-        List<String> references = a == null ? new ArrayList<>()
-                : Stream.of(a).map(Announcement::getHash).collect(Collectors.toList());
+        Set<String> references = a == null ? new HashSet<>()
+                : Stream.of(a).map(Announcement::getHash).collect(Collectors.toSet());
 
         byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier);
 

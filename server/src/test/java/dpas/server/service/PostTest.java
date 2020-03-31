@@ -19,9 +19,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
+import java.util.*;
 
 public class PostTest {
 
@@ -72,14 +70,14 @@ public class PostTest {
 
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
         _secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new ArrayList<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 
 
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
-                new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
 
     }
 
@@ -149,11 +147,42 @@ public class PostTest {
                 .getHash();
 
         byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                Collections.singletonList(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
+                Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
 
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setMessage(SECOND_MESSAGE)
+                .addReferences(firstIdentifier)
+                .setSignature(ByteString.copyFrom(secondSignatureWithRef))
+                .build());
+    }
+
+    @Test
+    public void twoPostsRepeatedReference() throws CommonDomainException {
+        _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_firstSignature))
+                .build());
+
+        var firstIdentifier = _stub.read(Contract.ReadRequest
+                .newBuilder()
+                .setNumber(1)
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .build())
+                .getAnnouncements(0)
+                .getHash();
+
+        byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
+                Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
+
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("INVALID_ARGUMENT: Invalid Reference: Reference is repeated");
+
+        _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
+                .setMessage(SECOND_MESSAGE)
+                .addReferences(firstIdentifier)
                 .addReferences(firstIdentifier)
                 .setSignature(ByteString.copyFrom(secondSignatureWithRef))
                 .build());

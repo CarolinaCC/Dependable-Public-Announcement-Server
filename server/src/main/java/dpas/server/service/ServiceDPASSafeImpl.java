@@ -183,7 +183,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decipher(request.getMessage().toByteArray(), _privateKey), StandardCharsets.UTF_8);
 
-        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
+        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
     }
 
     protected Announcement generateAnnouncement(Contract.SafePostRequest request) throws GeneralSecurityException, CommonDomainException {
@@ -195,7 +195,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         if (user == null) {
             throw new InvalidUserException("User does not exist");
         }
-        return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
+        return new Announcement(signature, user, message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
     }
 
     public SessionManager getSessionManager() {

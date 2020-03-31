@@ -17,8 +17,8 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
@@ -68,17 +68,17 @@ public class PostGeneralTest {
 
         //Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
+                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
 
         _secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
+                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
 
         _signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
+                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
 
 
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
-                new ArrayList<>(), GENERAL_BOARD_IDENTIFIER);
+                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
 
     }
 
@@ -148,7 +148,7 @@ public class PostGeneralTest {
                 .getHash();
 
         _secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                Collections.singletonList(firstIdentifier), GENERAL_BOARD_IDENTIFIER);
+                Collections.singleton(firstIdentifier), GENERAL_BOARD_IDENTIFIER);
 
 
         _stub.postGeneral(Contract.PostRequest.newBuilder()

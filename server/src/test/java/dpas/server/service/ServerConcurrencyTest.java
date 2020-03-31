@@ -72,7 +72,7 @@ public class ServerConcurrencyTest {
 
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
     }
 
     @Before
@@ -154,7 +154,7 @@ public class ServerConcurrencyTest {
     @Test
     public void concurrencyPostTest() throws CommonDomainException, InterruptedException {
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
         HashSet<Integer> sequencers = new HashSet<>();
         Thread[] threads = new Thread[NUMBER_THREADS];
 
@@ -197,7 +197,7 @@ public class ServerConcurrencyTest {
 
     @Test
     public void concurrencyPostGeneralTest() throws CommonDomainException, InterruptedException {
-        _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, new ArrayList<>(), "DPAS-GENERAL-BOARD");
+        _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, new HashSet<>(), "DPAS-GENERAL-BOARD");
         HashSet<Integer> sequencers = new HashSet<>();
         Thread[] threads = new Thread[NUMBER_THREADS];
 

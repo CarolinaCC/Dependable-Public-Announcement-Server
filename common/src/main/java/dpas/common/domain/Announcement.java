@@ -7,21 +7,19 @@ import dpas.grpc.contract.Contract;
 import javax.json.Json;
 import javax.json.JsonObject;
 import java.security.*;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Announcement {
     private byte[] _signature;
     private User _user;
     private String _message;
-    private List<Announcement> _references; // Can be null
+    private Set<Announcement> _references; // Can be null
     private int _sequencer;
     private String _hash;
     private AnnouncementBoard _board;
 
-    public Announcement(byte[] signature, User user, String message, List<Announcement> references,
+    public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         int sequencer, AnnouncementBoard board) throws CommonDomainException {
 
         checkArguments(signature, user, message, sequencer, references, board);
@@ -29,13 +27,13 @@ public class Announcement {
         _message = message;
         _signature = signature;
         _user = user;
-        _references = references;
+        _references =  references;
         _sequencer = sequencer;
         _board = board;
         generateHash();
     }
 
-    public Announcement(PrivateKey signatureKey, User user, String message, List<Announcement> references,
+    public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
                         int sequencer, AnnouncementBoard board) throws CommonDomainException {
 
         this(generateSignature(signatureKey, message, getReferenceStrings(references), board),
@@ -44,7 +42,7 @@ public class Announcement {
 
 
     public void checkArguments(byte[] signature, User user, String message, int identifier,
-                               List<Announcement> references, AnnouncementBoard board) throws CommonDomainException {
+                               Set<Announcement> references, AnnouncementBoard board) throws CommonDomainException {
 
         if (signature == null) {
             throw new NullSignatureException("Invalid Signature provided: null");
@@ -69,7 +67,7 @@ public class Announcement {
     }
 
     public void checkSignature(byte[] signature, User user, String message,
-                               List<String> references, String boardIdentifier) throws CommonDomainException {
+                               Set<String> references, String boardIdentifier) throws CommonDomainException {
         try {
 
             byte[] messageBytes = generateMessageBytes(message, references, boardIdentifier);
@@ -95,7 +93,7 @@ public class Announcement {
         return _signature;
     }
 
-    public List<Announcement> getReferences() {
+    public Set<Announcement> getReferences() {
         return _references;
     }
 
@@ -169,7 +167,7 @@ public class Announcement {
     }
 
     public static byte[] generateSignature(PrivateKey privKey, String message,
-                                           List<String> references, String boadIdentifier) throws CommonDomainException {
+                                           Set<String> references, String boadIdentifier) throws CommonDomainException {
         try {
             var messageBytes = generateMessageBytes(message, references, boadIdentifier);
             var sign = Signature.getInstance("SHA256withRSA");
@@ -183,17 +181,17 @@ public class Announcement {
 
 
     public static byte[] generateSignature(PrivateKey privKey, String message,
-                                           List<String> references, AnnouncementBoard board) throws CommonDomainException {
+                                           Set<String> references, AnnouncementBoard board) throws CommonDomainException {
 
         return generateSignature(privKey, message, references, board.getIdentifier());
     }
 
-    public static List<String> getReferenceStrings(List<Announcement> references) {
-        return references == null ? new ArrayList<>()
-                : references.stream().map(Announcement::getHash).collect(Collectors.toList());
+    public static Set<String> getReferenceStrings(Set<Announcement> references) {
+        return references == null ? new HashSet<>()
+                : references.stream().map(Announcement::getHash).collect(Collectors.toSet());
     }
 
-    private static byte[] generateMessageBytes(String message, List<String> references, String boardIdentifier) {
+    private static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier) {
         var builder = new StringBuilder();
         builder.append(message);
         if (references != null) {

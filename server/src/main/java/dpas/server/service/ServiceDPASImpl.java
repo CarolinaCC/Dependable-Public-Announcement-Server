@@ -22,7 +22,9 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -165,15 +167,18 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
-    protected ArrayList<Announcement> getListOfReferences(List<String> referenceIDs) throws InvalidReferenceException {
+    protected Set<Announcement> getReferences(List<String> referenceIDs) throws InvalidReferenceException {
         // add all references to lists of references
-        var references = new ArrayList<Announcement>();
+        var references = new HashSet<Announcement>();
         for (var reference : referenceIDs) {
             var announcement = _announcements.get(reference);
             if (announcement == null) {
                 throw new InvalidReferenceException("Invalid Reference: reference provided does not exist");
             }
-            references.add(announcement);
+            if (!references.add(announcement)) {
+                //Repeated reference
+                throw new InvalidReferenceException("Invalid Reference: Reference is repeated");
+            }
         }
         return references;
     }
@@ -183,7 +188,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
-        return new Announcement(signature, _users.get(key), message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
+        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
     }
 
     protected Announcement generateAnnouncement(PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
@@ -195,6 +200,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         if (user == null) {
             throw new InvalidUserException("User does not exist");
         }
-        return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
+        return new Announcement(signature, user, message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
     }
 }

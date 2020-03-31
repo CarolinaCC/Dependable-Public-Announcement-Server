@@ -112,7 +112,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int sequencer)
             throws CommonDomainException {
 
-        var refs = getListOfReferences(references);
+        var refs = getReferences(references);
         var user = _users.get(key);
         var board = user.getUserBoard();
 
@@ -124,7 +124,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int sequencer)
             throws CommonDomainException {
 
-        var refs = getListOfReferences(references);
+        var refs = getReferences(references);
         var user = _users.get(key);
         var board = _generalBoard;
 

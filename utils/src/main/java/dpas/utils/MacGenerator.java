@@ -4,8 +4,11 @@ import dpas.grpc.contract.Contract;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
-import java.security.*;
-import java.util.List;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Set;
 
 public class MacGenerator {
 
@@ -18,11 +21,11 @@ public class MacGenerator {
     }
 
     public static byte[] generateMac(String sessionNonce, long seq, PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
-       return generateMac(ByteUtils.toByteArray(sessionNonce, seq, pubKey), privKey);
+        return generateMac(ByteUtils.toByteArray(sessionNonce, seq, pubKey), privKey);
     }
 
     public static byte[] generateMac(long seq, String nonce, PublicKey pubKey, byte[] message,
-                                     byte[] signature, List<String> references, PrivateKey privKey) throws IOException, GeneralSecurityException {
+                                     byte[] signature, Set<String> references, PrivateKey privKey) throws IOException, GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(seq, nonce, pubKey, message, signature, references), privKey);
     }
 

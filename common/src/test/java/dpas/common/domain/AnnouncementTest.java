@@ -7,7 +7,9 @@ import org.junit.Test;
 
 import java.security.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -20,7 +22,7 @@ public class AnnouncementTest {
     private static final String INVALID_MESSAGE = "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid" +
             "ThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalidThisMessageIsInvalid";
 
-    private ArrayList<Announcement> _references = new ArrayList<>();
+    private Set<Announcement> _references = new HashSet<>();
     private byte[] _signature;
 
     private User _user;
@@ -44,7 +46,7 @@ public class AnnouncementTest {
         this._user = new User(_pubKey);
         this._board = new UserBoard(_user);
 
-        this._signature = Announcement.generateSignature(_privKey, MESSAGE, new ArrayList<>(), _board);
+        this._signature = Announcement.generateSignature(_privKey, MESSAGE, new HashSet<>(), _board);
 
 
         //Create another announcement
@@ -54,7 +56,7 @@ public class AnnouncementTest {
         PublicKey otherPublicKey = otherKeyPair.getPublic();
         PrivateKey otherPrivateKey = otherKeyPair.getPrivate();
 
-        byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, new ArrayList<>(), _board);
+        byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, new HashSet<>(), _board);
 
         User otherUser = new User(otherPublicKey);
         Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, 0, _board);
@@ -70,7 +72,7 @@ public class AnnouncementTest {
 
     @Test
     public void validAnnouncement() throws CommonDomainException {
-        List<String> refs = _references.stream().map(Announcement::getHash).collect(Collectors.toList());
+        var refs = _references.stream().map(Announcement::getHash).collect(Collectors.toSet());
         byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, refs, _board);
 
         Announcement announcement = new Announcement(signature, _user, MESSAGE, _references, 0, _board);
@@ -107,10 +109,10 @@ public class AnnouncementTest {
 
     @Test(expected = NullAnnouncementException.class)
     public void nullReferences() throws CommonDomainException {
-        ArrayList<Announcement> refNullElement = new ArrayList<>();
-        refNullElement.add(null);
+        var refs = new HashSet<Announcement>();
+        refs.add(null);
 
-        new Announcement(_signature, _user, MESSAGE, refNullElement, 0, _board);
+        new Announcement(_signature, _user, MESSAGE, refs, 0, _board);
     }
 
     @Test(expected = InvalidSignatureException.class)

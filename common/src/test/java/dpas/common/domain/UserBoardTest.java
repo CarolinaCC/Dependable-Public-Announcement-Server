@@ -12,9 +12,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,8 +44,8 @@ public class UserBoardTest {
         _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, 0, _userBoard);
 
         //Generate References
-        ArrayList<Announcement> references = new ArrayList<>(Collections.singletonList(_announcementValid));
-        List<String> referenceIds = Announcement.getReferenceStrings(references);
+        Set<Announcement> references = Collections.singleton(_announcementValid);
+        Set<String> referenceIds = Announcement.getReferenceStrings(references);
 
         //Generate valid signature for second message
         byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, referenceIds, _userBoard);
