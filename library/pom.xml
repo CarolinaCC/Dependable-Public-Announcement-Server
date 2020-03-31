@@ -24,6 +24,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>SEC.T18</groupId>
+            <artifactId>DPAS-utils</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.9</version>

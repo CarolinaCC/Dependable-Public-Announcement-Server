@@ -92,7 +92,7 @@ public class PersistentServerConcurrencyTest {
         URL res = getClass().getClassLoader().getResource("no_operations_3.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
-        _manager = new PersistenceManager(path, _serverKey);
+        _manager = new PersistenceManager(path);
         _manager.clearSaveFile();
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
@@ -173,7 +173,7 @@ public class PersistentServerConcurrencyTest {
     }
 
     @Test
-    public void concurrencyPostTest() throws CommonDomainException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, InterruptedException {
+    public void concurrencyPostTest() throws CommonDomainException, GeneralSecurityException, IOException, InterruptedException {
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
                 new ArrayList<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
         HashSet<Integer> sequencers = new HashSet<>();
@@ -233,7 +233,7 @@ public class PersistentServerConcurrencyTest {
 
 
     @Test
-    public void concurrencyPostGeneralTest() throws CommonDomainException, InterruptedException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    public void concurrencyPostGeneralTest() throws CommonDomainException, InterruptedException, GeneralSecurityException, IOException {
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE, new ArrayList<>(), "DPAS-GENERAL-BOARD");
         HashSet<Integer> sequencers = new HashSet<>();
         Thread[] threads = new Thread[NUMBER_THREADS];

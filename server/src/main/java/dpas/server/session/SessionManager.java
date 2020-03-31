@@ -18,12 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SessionManager {
 
     private Map<String, Session> _sessions;
-    private long _keyValidity; //in Milliseconds
+    private long _sessionTime; //in Milliseconds
 
-    public SessionManager(long keyValidity) {
+    public SessionManager(long sessionTime) {
         _sessions = new ConcurrentHashMap<>();
-        _keyValidity = keyValidity;
-        new Thread(new SessionCleanup(this, keyValidity)).start();
+        _sessionTime = sessionTime;
+        new Thread(new SessionCleanup(this, sessionTime)).start();
     }
 
     //Testing purposes only
@@ -33,7 +33,7 @@ public class SessionManager {
 
     public long createSession(PublicKey pubKey, String sessionNonce) throws SessionException {
         long seq = new SecureRandom().nextLong();
-        Session s = new Session(seq, pubKey, sessionNonce, LocalDateTime.now().plusNanos(_keyValidity * 1000000));
+        Session s = new Session(seq, pubKey, sessionNonce, LocalDateTime.now().plusNanos(_sessionTime * 1000000));
         var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
             throw new SessionException("Session already exists!");
@@ -122,7 +122,7 @@ public class SessionManager {
 
         session.nextSequenceNumber();
         //Update Validity
-        session.setValidity(LocalDateTime.now().plusNanos(_keyValidity * 1000));
+        session.setValidity(LocalDateTime.now().plusNanos(_sessionTime * 1000));
         return session.getSequenceNumber();
     }
 

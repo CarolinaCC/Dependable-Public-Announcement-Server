@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
-    private PersistenceManager _manager;
+    protected PersistenceManager _manager;
 
     public ServiceDPASPersistentImpl(PersistenceManager manager) {
         super();

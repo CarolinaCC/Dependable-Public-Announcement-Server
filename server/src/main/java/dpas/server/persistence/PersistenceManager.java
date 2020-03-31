@@ -2,6 +2,8 @@ package dpas.server.persistence;
 
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.server.service.ServiceDPASPersistentImpl;
+import dpas.server.service.ServiceDPASSafeImpl;
+import dpas.server.session.SessionManager;
 import org.apache.commons.io.FileUtils;
 
 import javax.json.*;
@@ -10,9 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -23,11 +23,10 @@ public class PersistenceManager {
     private String _path;
     private File _swapFile;
     private File _file;
-    private PublicKey _pubKey;
 
 
-    public PersistenceManager(String path, PublicKey pubKey) throws IOException {
-        if (path == null || pubKey == null) {
+    public PersistenceManager(String path) throws IOException {
+        if (path == null) {
             throw new RuntimeException();
         }
         if (Files.isDirectory(Paths.get(path))) {
@@ -44,7 +43,6 @@ public class PersistenceManager {
         _swapFile = new File(file.getPath() + ".swap");
         _swapFile.createNewFile();
         _file = file;
-        _pubKey = pubKey;
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
@@ -55,9 +53,6 @@ public class PersistenceManager {
         arrayBuilder.add(operation);
 
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-
-        String pubKey = Base64.getEncoder().encodeToString(_pubKey.getEncoded());
-        objectBuilder.add("PublicKey", pubKey);
         objectBuilder.add("Operations", arrayBuilder.build());
 
         try (JsonWriter jsonWriter = Json.createWriter(new BufferedWriter(new FileWriter(_swapFile, false)))) {
@@ -66,13 +61,22 @@ public class PersistenceManager {
         Files.move(Paths.get(_swapFile.getPath()), Paths.get(_path), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public synchronized ServiceDPASPersistentImpl load() throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException, IOException {
-        int counter = 0;
-
+    public synchronized ServiceDPASPersistentImpl load() throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
-
         ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
+        parseJsonArray(jsonArray, service);
+        return service;
+    }
 
+    public synchronized ServiceDPASSafeImpl load(SessionManager manager, PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
+        JsonArray jsonArray = readSaveFile();
+        ServiceDPASSafeImpl service = new ServiceDPASSafeImpl(this, privateKey, manager);
+        parseJsonArray(jsonArray, service);
+        return service;
+    }
+
+    private void parseJsonArray(JsonArray jsonArray, ServiceDPASPersistentImpl service) throws GeneralSecurityException, CommonDomainException {
+        int counter = 0;
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
 
@@ -100,7 +104,6 @@ public class PersistenceManager {
             }
         }
         service.setCounter(counter);
-        return service;
     }
 
     public JsonArray readSaveFile() throws FileNotFoundException {

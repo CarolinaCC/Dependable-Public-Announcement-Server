@@ -6,6 +6,8 @@ import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullPublicKeyException;
+import dpas.common.domain.exception.NullUserException;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionException;
@@ -24,23 +26,23 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 
 import static io.grpc.Status.*;
 
-public class ServiceDPASSafeImpl extends ServiceDPASImpl {
+public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     private PrivateKey _privateKey;
-    private PersistenceManager _persistenceManager;
     private SessionManager _sessionManager;
 
     public ServiceDPASSafeImpl(PersistenceManager manager, PrivateKey privKey, SessionManager sessionManager) {
-        _persistenceManager = manager;
+        super(manager);
         _privateKey = privKey;
         _sessionManager = sessionManager;
     }
 
     //Use with tests only
     public ServiceDPASSafeImpl(PrivateKey privKey, SessionManager sessionManager) {
-        _persistenceManager = null;
+        super(null);
         _privateKey = privKey;
         _sessionManager = sessionManager;
     }
@@ -200,15 +202,14 @@ public class ServiceDPASSafeImpl extends ServiceDPASImpl {
         return new Announcement(signature, user, message, getListOfReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
     }
 
-
     public SessionManager getSessionManager() {
         return _sessionManager;
     }
 
     //Don't want to save when testing
     private void save(JsonObject object) throws IOException {
-        if (_persistenceManager != null) {
-            _persistenceManager.save(object);
+        if (_manager != null) {
+            _manager.save(object);
         }
     }
 }

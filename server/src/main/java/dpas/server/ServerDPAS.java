@@ -1,6 +1,7 @@
 package dpas.server;
 
 import dpas.server.persistence.PersistenceManager;
+import dpas.server.session.SessionManager;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -18,9 +19,9 @@ public class ServerDPAS {
         System.out.println(ServerDPAS.class.getSimpleName());
 
         // check arguments
-        if (args.length < 6) {
+        if (args.length < 7) {
             System.err.println("Argument(s) missing!");
-            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword %s %n",
+            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword KeyValidity %s %n",
                     ServerDPAS.class.getName());
             return;
         }
@@ -29,6 +30,7 @@ public class ServerDPAS {
         String jksPassword = args[3];
         String keyPairAlias = args[4];
         String privKeyPassword = args[5];
+        long sessionTime = Long.parseLong(args[6]);
 
         if (!jksPath.endsWith(".jks")) {
             System.out.println("Invalid argument: Client key store must be a JKS file!");
@@ -48,7 +50,7 @@ public class ServerDPAS {
         try (FileInputStream fis = new FileInputStream(jksFile)) {
             ks.load(fis, jksPassword.toCharArray());
             privKey = (PrivateKey) ks.getKey(keyPairAlias, privKeyPassword.toCharArray());
-            pubKey = (PublicKey) ks.getCertificate(keyPairAlias).getPublicKey();
+            pubKey = ks.getCertificate(keyPairAlias).getPublicKey();
         } catch (IOException e) {
             System.out.println("Error: Could not get server key pair from KeyStore! (Are the password and alias correct?)");
             System.exit(-1);
@@ -64,18 +66,16 @@ public class ServerDPAS {
 
         System.out.println("Retrieved server key pair successfully!");
 
-
-        Server server = startServer(Integer.parseInt(args[0]), args[1], pubKey);
+        Server server = startServer(Integer.parseInt(args[0]), args[1], privKey, sessionTime);
 
         // Do not exit the main thread. Wait until server is terminated.
         server.awaitTermination();
     }
 
-    public static Server startServer(int port, String saveFile, PublicKey pubKey) {
+    public static Server startServer(int port, String saveFile, PrivateKey privateKey, long sessionTime) {
         try {
-            final BindableService impl = new PersistenceManager(saveFile, pubKey).load();
+            final BindableService impl = new PersistenceManager(saveFile).load(new SessionManager(sessionTime), privateKey);
             final Server server = NettyServerBuilder.forPort(port).addService(impl).build();
-
             server.start();
             return server;
         } catch (Exception e) {
