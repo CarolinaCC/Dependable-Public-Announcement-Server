@@ -57,10 +57,11 @@ public class Library {
         }
         return _sessions.get(pubKey);
     }
+
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
             var session = checkSession(publicKey, privkey);
-            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(),  publicKey, privkey));
+            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(), publicKey, privkey));
             if (!MacVerifier.verifyMac(_serverKey, reply)) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
@@ -94,7 +95,10 @@ public class Library {
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
             var sessions = checkSession(pubKey, privateKey);
-            var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(), GENERAL_BOARD_IDENTIFIER, a));
+            var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey,
+                    privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(),
+                    GENERAL_BOARD_IDENTIFIER, a));
+
             if (!MacVerifier.verifyMac(_serverKey, safePostGeneralReply)) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
