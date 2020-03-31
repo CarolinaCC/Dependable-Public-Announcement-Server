@@ -217,27 +217,13 @@ public class App {
         } catch (NullPointerException e) {
             System.out.println("Invalid Argument: Could not get certificate with that alias");
         } catch (UnrecoverableKeyException e) {
-            System.out.println("Error: Probably mistake in key alias");
+            System.out.println("Error: Wrong key password");
         } catch (NoSuchAlgorithmException e) {
             //Should never happen
-            System.out.println("Error: JKS does not exist");
+            System.out.println("Error: Key algorithm does not exist");
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
         }
-    }
-
-    private static File openKeyStore(String[] split) throws IllegalArgumentException {
-        String jksPath = split[1];
-
-        if (!jksPath.endsWith(".jks")) {
-            throw new IllegalArgumentException("Invalid argument: Client key store must be a JKS file!");
-        }
-
-        File jksFile = new File(jksPath);
-        if (!jksFile.exists() || jksFile.isDirectory()) {
-            throw new IllegalArgumentException("Invalid Argument: Client Key Store File must exist and must not be a directory!");
-        }
-        return jksFile;
     }
 
     private static PublicKey loadPublicKey() throws KeyStoreException, NullPointerException {
