@@ -27,11 +27,13 @@ public class Library {
 
     public ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     public Map<PublicKey, Session> _sessions;
+    private PublicKey _serverKey;
 
-    public Library(String host, int port) {
+    public Library(String host, int port, PublicKey serverKey) {
         var _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
         _sessions = new HashMap<>();
+        _serverKey = serverKey;
     }
 
     private void newSession(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
@@ -52,8 +54,8 @@ public class Library {
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
             var session = checkSession(publicKey, privkey);
-            //_stub.register(ContractGenerator.generateRegisterRequest(session.getSeq(), session.getSessionNonce(), publicKey, privkey
-            //));
+            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(),  publicKey, privkey));
+            //MacVerifier.verifyMac()
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
