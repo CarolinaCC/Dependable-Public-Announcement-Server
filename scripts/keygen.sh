@@ -14,7 +14,27 @@ keytool -genkeypair \
 
 #generate client KeyStore
 keytool -genkeypair \
-        -alias client \
+        -alias client-1 \
+        -dname "CN=localhost" \
+        -keyalg RSA \
+        -keysize 4096 \
+        -validity 365 \
+        -storepass client-password \
+        -keystore client.jks
+
+#generate second client key
+keytool -genkeypair \
+        -alias client-2 \
+        -dname "CN=localhost" \
+        -keyalg RSA \
+        -keysize 4096 \
+        -validity 365 \
+        -storepass client-password \
+        -keystore client.jks
+
+#generate client KeyStore
+keytool -genkeypair \
+        -alias client-3 \
         -dname "CN=localhost" \
         -keyalg RSA \
         -keysize 4096 \
