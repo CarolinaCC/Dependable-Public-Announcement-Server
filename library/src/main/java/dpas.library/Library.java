@@ -1,6 +1,7 @@
 package dpas.library;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
@@ -78,10 +79,11 @@ public class Library {
         }
     }
 
-    public void postGeneral(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
+    public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            var sessions = checkSession(key, privateKey);
-            _stub.safePostGeneral(ContractGenerator.generatePostRequest());
+            var sessions = checkSession(pubKey, privateKey);
+            var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(), GENERAL_BOARD_IDENTIFIER, a));
+            MacVerifier.verifyMac(pubKey, safePostGeneralReply);
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
