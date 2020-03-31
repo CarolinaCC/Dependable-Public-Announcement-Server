@@ -95,16 +95,21 @@ public class Library {
         try {
             var sessions = checkSession(pubKey, privateKey);
             var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(), GENERAL_BOARD_IDENTIFIER, a));
-            MacVerifier.verifyMac(pubKey, safePostGeneralReply);
+            if (!MacVerifier.verifyMac(_serverKey, safePostGeneralReply)) {
+                System.out.println("An error occurred: Unable to validate server response");
+            }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (CommonDomainException e) {
-            System.out.println("Could not create signature from values provided");
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (status.getDescription().equals("Session is expired")) {
+                System.out.println("Creating new session and retrying...");
+                newSession(pubKey, privateKey);
+                register(pubKey, privateKey);
+            }
+        } catch (GeneralSecurityException | CommonDomainException | IOException e) {
+            //Should never happen
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
         }
     }
 
