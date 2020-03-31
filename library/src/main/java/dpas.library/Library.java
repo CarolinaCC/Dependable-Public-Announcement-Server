@@ -70,16 +70,22 @@ public class Library {
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
             Session session = checkSession(key, privateKey);
-            _stub.post(createPostRequest(key, message, a, privateKey));
+            var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey, String.valueOf(message) , session.getSessionNonce(), session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
+
+            if (! MacVerifier.verifyMac(_serverKey, reply)) {
+                System.out.println("An error occurred: Unable to validate server response.");
+            }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
+            if (status.getDescription().equals("Session is expired")) {
+                System.out.println("Creating a new session and retrying...");
+                newSession(key, privateKey);
+            }
         } catch (CommonDomainException e) {
             //Should never happen
             System.out.println("Could not create signature from values provided");
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -150,4 +156,6 @@ public class Library {
                                           PrivateKey privateKey) throws CommonDomainException {
         return createPostRequest(Base64.getEncoder().encodeToString(key.getEncoded()), key, message, a, privateKey);
     }
+
+
 }
