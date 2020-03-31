@@ -6,11 +6,14 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.*;
@@ -31,25 +34,32 @@ public class Library {
         _sessions = new HashMap<>();
     }
 
-    private void newSession(PublicKey pubKey) {
-
+    private void newSession(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        var hello = _stub.newSession(ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString()));
+        long seq = hello.getSeq();
+        String nonce = hello.getSessionNonce();
+        Session session = new Session(nonce, seq);
+        _sessions.put(pubKey, session);
     }
 
-    private void checkSession(PublicKey pubKey) {
+    private Session checkSession(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
         if (!_sessions.containsKey(pubKey)) {
-            newSession(pubKey);
+            newSession(pubKey, privKey);
         }
+        return _sessions.get(pubKey);
     }
 
-    public void register(PublicKey publicKey) {
+    public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
-            checkSession(publicKey);
-            _stub.register(Contract.RegisterRequest.newBuilder()
-                    .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-                    .build());
+            checkSession(publicKey, privkey);
+            //_stub.register(ContractGenerator.generateRegisterRequest(_session));
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
