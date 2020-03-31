@@ -10,7 +10,9 @@ keytool -genkeypair \
         -keysize 4096 \
         -validity 365 \
         -storepass server-password \
-        -keystore server.jks
+        -keystore server.jks \
+        -storetype jks \
+        -keypass server-password
 
 #generate client KeyStore
 keytool -genkeypair \
@@ -20,7 +22,10 @@ keytool -genkeypair \
         -keysize 4096 \
         -validity 365 \
         -storepass client-password \
-        -keystore client.jks
+        -keystore client.jks \
+        -storetype jks \
+        -keypass client-1-password
+
 
 #generate second client key
 keytool -genkeypair \
@@ -30,7 +35,10 @@ keytool -genkeypair \
         -keysize 4096 \
         -validity 365 \
         -storepass client-password \
-        -keystore client.jks
+        -keystore client.jks \
+        -storetype jks \
+        -keypass client-2-password
+
 
 #generate client KeyStore
 keytool -genkeypair \
@@ -38,9 +46,12 @@ keytool -genkeypair \
         -dname "CN=localhost" \
         -keyalg RSA \
         -keysize 4096 \
-        -validity 365 \z\
+        -validity 365 \
         -storepass client-password \
-        -keystore client.jks
+        -keystore client.jks \
+        -storetype jks \
+        -keypass client-3-password
+
 
 #store server public certificate
 keytool -exportcert \
