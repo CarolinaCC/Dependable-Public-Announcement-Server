@@ -1,6 +1,7 @@
 package dpas.library;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
@@ -90,14 +91,25 @@ public class Library {
         }
     }
 
-    public void postGeneral(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
+    public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            _stub.postGeneral(createPostGeneralRequest(key, message, a, privateKey));
+            var sessions = checkSession(pubKey, privateKey);
+            var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(), GENERAL_BOARD_IDENTIFIER, a));
+            if (!MacVerifier.verifyMac(_serverKey, safePostGeneralReply)) {
+                System.out.println("An error occurred: Unable to validate server response");
+            }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (CommonDomainException e) {
-            System.out.println("Could not create signature from values provided");
+            if (status.getDescription().equals("Session is expired")) {
+                System.out.println("Creating new session and retrying...");
+                newSession(pubKey, privateKey);
+                register(pubKey, privateKey);
+            }
+        } catch (GeneralSecurityException | CommonDomainException | IOException e) {
+            //Should never happen
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
         }
     }
 
