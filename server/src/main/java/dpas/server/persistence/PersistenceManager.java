@@ -12,8 +12,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -33,16 +35,15 @@ public class PersistenceManager {
             throw new RuntimeException();
         }
 
-        File file = new File(path);
-        if (!Files.exists(Paths.get(path))) {
+        _file = new File(path);
+        if (!_file.exists()) {
             //File does not exist, start a new save file
-            file.createNewFile();
+            _file.createNewFile();
             clearSaveFile();
         }
         _path = path;
-        _swapFile = new File(file.getPath() + ".swap");
+        _swapFile = new File(_file.getPath() + ".swap");
         _swapFile.createNewFile();
-        _file = file;
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
@@ -113,6 +114,6 @@ public class PersistenceManager {
     }
 
     public void clearSaveFile() throws IOException {
-        FileUtils.writeStringToFile(_file, "{ \"Operations\" : [] }", StandardCharsets.UTF_8);
+        FileUtils.write(_file, "{ \"Operations\" : [] }", StandardCharsets.UTF_8, false);
     }
 }

@@ -107,6 +107,30 @@ public class SafeServicePostGeneralTest {
     }
 
     @Test
+    public void nonFreshPost() throws GeneralSecurityException, IOException {
+        var reply = _stub.safePostGeneral(_request);
+        assertEquals(reply.getSessionNonce(), SESSION_NONCE);
+        assertEquals(reply.getSeq(), 4);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        assertEquals(_impl._announcements.size(), 1);
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid sequence number");
+        _stub.safePostGeneral(_request);
+    }
+
+    @Test
+    public void stealSeqPost() throws GeneralSecurityException, IOException {
+        var reply = _stub.safePostGeneral(_request);
+        assertEquals(reply.getSessionNonce(), SESSION_NONCE);
+        assertEquals(reply.getSeq(), 4);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        assertEquals(_impl._announcements.size(), 1);
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid mac");
+        _stub.safePostGeneral(Contract.SafePostRequest.newBuilder(_request).setSeq(5).build());
+    }
+
+    @Test
     public void invalidSessionPost() {
         var request = Contract.SafePostRequest.newBuilder(_request).setSessionNonce(INVALID_SESSION_NONCE).build();
         exception.expect(StatusRuntimeException.class);

@@ -95,7 +95,6 @@ public class SafeServiceRegisterTest {
         assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
     }
 
-
     @Test
     public void invalidSessionNonceRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);

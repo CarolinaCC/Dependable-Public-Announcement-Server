@@ -39,7 +39,7 @@ public class SafeServicePostTest {
 
     private static PublicKey _invalidPubKey;
     private static String _nonce ;
-    private static long seq;
+    private static long _seq;
     private static String _invalidNonce;
 
     private static final String MESSAGE = "Message";
@@ -65,7 +65,7 @@ public class SafeServicePostTest {
 
         _nonce = UUID.randomUUID().toString();
         _invalidNonce = UUID.randomUUID().toString();
-        seq = new SecureRandom().nextLong();
+        _seq = new SecureRandom().nextLong();
 
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
@@ -81,10 +81,10 @@ public class SafeServicePostTest {
         _invalidPubKey = keyPair.getPublic();
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _nonce, seq + 3, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
 
         _longRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                LONGMESSAGE, _nonce, seq + 3, CipherUtils.keyToString(_pubKey), null);
+                LONGMESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
 
     }
 
@@ -94,7 +94,7 @@ public class SafeServicePostTest {
 
         SessionManager _sessionManager = new SessionManager(50000000);
 
-        _sessionManager.getSessions().put(_nonce, new Session(seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
+        _sessionManager.getSessions().put(_nonce, new Session(_seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -108,7 +108,7 @@ public class SafeServicePostTest {
 
 
 
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, seq + 1, _pubKey, _privKey));
+        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
 
     }
 
@@ -122,7 +122,7 @@ public class SafeServicePostTest {
     public void validPost() throws GeneralSecurityException, IOException {
         var reply = _stub.safePost(_request);
         assertEquals(reply.getSessionNonce(), _nonce);
-        assertEquals(reply.getSeq(), seq + 4);
+        assertEquals(reply.getSeq(), _seq + 4);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
         assertEquals(_impl._announcements.size(), 1);
     }
@@ -131,9 +131,33 @@ public class SafeServicePostTest {
     public void validLongPost() throws GeneralSecurityException, IOException {
         var reply = _stub.safePost(_longRequest);
         assertEquals(reply.getSessionNonce(), _nonce);
-        assertEquals(reply.getSeq(), seq + 4);
+        assertEquals(reply.getSeq(), _seq + 4);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
         assertEquals(_impl._announcements.size(), 1);
+    }
+
+    @Test
+    public void nonFreshPost() throws GeneralSecurityException, IOException {
+        var reply = _stub.safePost(_request);
+        assertEquals(reply.getSessionNonce(), _nonce);
+        assertEquals(reply.getSeq(), _seq + 4);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        assertEquals(_impl._announcements.size(), 1);
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid sequence number");
+        _stub.safePost(_request);
+    }
+
+    @Test
+    public void stealSeqPost() throws GeneralSecurityException, IOException {
+        var reply = _stub.safePost(_request);
+        assertEquals(reply.getSessionNonce(), _nonce);
+        assertEquals(reply.getSeq(), _seq + 4);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        assertEquals(_impl._announcements.size(), 1);
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid mac");
+        _stub.safePost(Contract.SafePostRequest.newBuilder(_request).setSeq(_seq+5).build());
     }
 
     @Test
