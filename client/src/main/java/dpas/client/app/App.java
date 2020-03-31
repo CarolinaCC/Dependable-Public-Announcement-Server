@@ -14,17 +14,39 @@ import java.util.Base64;
 
 public class App {
 
-    public static void main(String[] args) {
+    private static KeyStore _keystore;
 
-        if (args.length < 3) {
+    public static void main(String[] args) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
+
+        if (args.length < 5) {
             System.out.println("Argument(s) missing!");
-            System.out.printf("<Usage> java ServerAddress ServerPort ServerKey %s %n", App.class.getName());
+            System.out.printf("<Usage> java ServerAddress ServerPort AppJksFile AppJkspassword ServerKeyAlias %s %n", App.class.getName());
             System.exit(-1);
         }
         String serverAddr = args[0];
         int port = Integer.parseInt(args[1]);
 
-        Library lib = new Library(serverAddr, port, null);
+        String jksPath = args[2];
+
+        if (!jksPath.endsWith(".jks")) {
+            throw new IllegalArgumentException("Invalid argument: Client key store must be a JKS file!");
+        }
+
+        File jksFile = new File(jksPath);
+        if (!jksFile.exists() || jksFile.isDirectory()) {
+            throw new IllegalArgumentException("Invalid Argument: Client Key Store File must exist and must not be a directory!");
+        }
+
+        char[] jksPassword = args[3].toCharArray();
+        String alias = args[4];
+        _keystore = KeyStore.getInstance("JKS");
+
+        PublicKey pubKey;
+        try (FileInputStream fis = new FileInputStream(jksFile)) {
+            _keystore.load(fis, jksPassword);
+            pubKey = _keystore.getCertificate(alias).getPublicKey();
+        }
+        Library lib = new Library(serverAddr, port, pubKey);
         mainLoop(lib);
     }
 
@@ -72,8 +94,7 @@ public class App {
                 return;
             }
 
-            File jksFile = openKeyStore(split);
-            KeyPair keyPair = loadKeyPair(jksFile);
+            KeyPair keyPair = loadKeyPair();
             PublicKey pubKey = keyPair.getPublic();
             PrivateKey privKey = keyPair.getPrivate();
 
@@ -90,13 +111,6 @@ public class App {
             lib.register(pubKey, privKey);
         } catch (KeyStoreException e) {
             System.out.println("Invalid Argument: Could not load JKS keystore");
-        } catch (CertificateException e) {
-            System.out.println("Invalid Argument: Could not get certificate with that alias");
-        } catch (FileNotFoundException e) {
-            //Should never happen
-            System.out.println("Invalid Argument: File provided does not exist");
-        } catch (IOException e) {
-            System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
         } catch (NoSuchAlgorithmException e) {
             //Should never happen
             System.out.println("Error: JKS does not exist");
@@ -117,13 +131,12 @@ public class App {
                 return;
             }
             int number = Integer.parseInt(readSplit[2]);
-            File jksFile = openKeyStore(readSplit);
-            PublicKey pubKey = loadPublicKey(jksFile);
+            PublicKey pubKey = loadPublicKey();
             Announcement[] a = lib.read(pubKey, number);
             printAnnouncements(a);
-        } catch (IOException | KeyStoreException | NoSuchAlgorithmException e) {
+        } catch (KeyStoreException e) {
             System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
-        } catch (CertificateException | NullPointerException e) {
+        } catch (NullPointerException e) {
             System.out.println("Error: Could not load key store (Wrong alias)!");
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
@@ -248,33 +261,25 @@ public class App {
         return jksFile;
     }
 
-    private static PublicKey loadPublicKey(File jksFile) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NullPointerException {
-        char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
+    private static PublicKey loadPublicKey() throws KeyStoreException, NullPointerException {
+
         String alias = System.console().readLine("Insert Certificate Alias: ");
-        KeyStore ks = KeyStore.getInstance("JKS");
 
         PublicKey pubKey;
-        try (FileInputStream fis = new FileInputStream(jksFile)) {
-            ks.load(fis, jksPassword);
-            pubKey = ks.getCertificate(alias).getPublicKey();
-        }
+        pubKey = _keystore.getCertificate(alias).getPublicKey();
+
         return pubKey;
     }
 
-    private static KeyPair loadKeyPair(File jksFile) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NullPointerException, UnrecoverableKeyException {
-        char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
+    private static KeyPair loadKeyPair() throws KeyStoreException, NoSuchAlgorithmException, NullPointerException, UnrecoverableKeyException {
         String alias = System.console().readLine("Insert Certificate Alias: ");
         char[] keyPassword = System.console().readPassword("Insert PrivateKey Alias: ");
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-
         PublicKey pubKey;
         PrivateKey privKey;
-        try (FileInputStream fis = new FileInputStream(jksFile)) {
-            ks.load(fis, jksPassword);
-            pubKey = ks.getCertificate(alias).getPublicKey();
-            privKey = (PrivateKey) ks.getKey(alias, keyPassword);
-        }
+        pubKey = _keystore.getCertificate(alias).getPublicKey();
+        privKey = (PrivateKey) _keystore.getKey(alias, keyPassword);
+
         return new KeyPair(pubKey, privKey);
     }
 }

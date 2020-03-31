@@ -15,8 +15,6 @@
         <server.port>9000</server.port>
         <client.KeyStoreFile>src/main/resources/client.jks</client.KeyStoreFile>
         <client.KeyStorePassword>client-password</client.KeyStorePassword>
-        <client.KeyPairAlias>client</client.KeyPairAlias>
-        <client.PrivateKeyPassword>client-password</client.PrivateKeyPassword>
         <server.PublicKeyAlias>server</server.PublicKeyAlias>
         <mainclass>dpas.client.app.App</mainclass>
     </properties>
@@ -53,8 +51,6 @@
                         <argument>${server.port}</argument>
                         <argument>${client.KeyStoreFile}</argument>
                         <argument>${client.KeyStorePassword}</argument>
-                        <argument>${client.KeyPairAlias}</argument>
-                        <argument>${client.PrivateKeyPassword}</argument>
                         <argument>${server.PublicKeyAlias}</argument>
                     </arguments>
                 </configuration>
