@@ -6,14 +6,12 @@ import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidUserException;
-import dpas.common.domain.exception.NullPublicKeyException;
-import dpas.common.domain.exception.NullUserException;
 import dpas.grpc.contract.Contract;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionException;
 import dpas.server.session.SessionManager;
-import dpas.utils.ContractGenerator;
 import dpas.utils.CipherUtils;
+import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -26,7 +24,6 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
 
 import static io.grpc.Status.*;
 
@@ -105,7 +102,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             long seq = _sessionManager.validateSessionRequest(request);
             String sessionNonce = request.getSessionNonce();
             Announcement announcement = generateAnnouncement(request, _generalBoard);
-
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());

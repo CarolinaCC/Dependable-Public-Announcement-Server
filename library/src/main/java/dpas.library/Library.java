@@ -16,7 +16,10 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
@@ -64,7 +67,9 @@ public class Library {
         Session session = null;
         try {
             session = getSession(publicKey, privkey);
-            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(), publicKey, privkey));
+            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(),
+                    session.getSeq(), publicKey, privkey));
+
             if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
@@ -91,7 +96,9 @@ public class Library {
         Session session = null;
         try {
             session = getSession(key, privateKey);
-            var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey, String.valueOf(message), session.getSessionNonce(), session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
+            var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
+                    String.valueOf(message), session.getSessionNonce(),
+                    session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
 
             if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response.");
@@ -99,7 +106,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().equals("expired")) {
+            if (status.getDescription().contains("expired")) {
                 System.out.println("Creating a new session and retrying...");
                 newSession(key, privateKey);
                 post(key, message, a, privateKey);
@@ -129,7 +136,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().equals("expired")) {
+            if (status.getDescription().contains("expired")) {
                 System.out.println("Creating new session and retrying...");
                 newSession(pubKey, privateKey);
                 postGeneral(pubKey, message, a, privateKey);
