@@ -51,8 +51,9 @@ public class Library {
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
-            checkSession(publicKey, privkey);
-            //_stub.register(ContractGenerator.generateRegisterRequest(_session));
+            var session = checkSession(publicKey, privkey);
+            //_stub.register(ContractGenerator.generateRegisterRequest(session.getSeq(), session.getSessionNonce(), publicKey, privkey
+            //));
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
