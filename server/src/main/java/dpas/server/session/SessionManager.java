@@ -122,7 +122,7 @@ public class SessionManager {
 
         session.nextSequenceNumber();
         //Update Validity
-        session.setValidity(LocalDateTime.now().plusNanos(_sessionTime * 1000));
+        session.setValidity(LocalDateTime.now().plusNanos(_sessionTime * 1000000));
         return session.getSequenceNumber();
     }
 

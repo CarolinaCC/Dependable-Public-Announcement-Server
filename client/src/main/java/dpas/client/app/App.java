@@ -80,6 +80,7 @@ public class App {
                 case "quit":
                     return;
                 default:
+                    lib.finish();
                     printHelp();
             }
         }
@@ -88,11 +89,6 @@ public class App {
 
     public static void parseRegisterLine(String line, Library lib) {
         try {
-            String[] split = line.split(" ");
-            if (split.length != 2) {
-                System.out.println("Invalid argument: Must be register <KeystorePath>");
-                return;
-            }
 
             KeyPair keyPair = loadKeyPair();
             PublicKey pubKey = keyPair.getPublic();
@@ -126,11 +122,11 @@ public class App {
     public static void parseReadLine(String read, Library lib) {
         try {
             String[] readSplit = read.split(" ");
-            if (readSplit.length != 3) {
-                System.out.println("Invalid argument: Must be read <KeystorePath> <number>");
+            if (readSplit.length != 2) {
+                System.out.println("Invalid argument: Must be read <number>");
                 return;
             }
-            int number = Integer.parseInt(readSplit[2]);
+            int number = Integer.parseInt(readSplit[1]);
             PublicKey pubKey = loadPublicKey();
             Announcement[] a = lib.read(pubKey, number);
             printAnnouncements(a);
@@ -174,10 +170,10 @@ public class App {
     public static void printHelp() {
         System.out.println();
         System.out.println("Avaliable commands:");
-        System.out.println("\tregister <KeyStorePath>");
-        System.out.println("\tpost <KeyStorePath> <message> <numReferences> <references...>");
-        System.out.println("\tpostGeneral <KeyStorePath> <message> <numReferences> <references...>");
-        System.out.println("\tread <KeyStorePath> <number>");
+        System.out.println("\tregister");
+        System.out.println("\tpost <message> <numReferences> <references...>");
+        System.out.println("\tpostGeneral <message> <numReferences> <references...>");
+        System.out.println("\tread <number>");
         System.out.println("\treadGeneral <number>");
         System.out.println("\tquit");
         System.out.println();
@@ -187,37 +183,25 @@ public class App {
     public static void parsePostLine(String line, Library lib) {
         try {
             String[] split = line.split(" ");
-            if (split.length < 3) {
-                System.out.println("Invalid argument: Must be post/postGeneral <KeyStorePath> <message> <numReferences <references...>");
+            if (split.length < 2) {
+                System.out.println("Invalid argument: Must be post/postGeneral <message> <numReferences <references...>");
                 return;
             }
-            if (split.length != 4 + Integer.parseInt(split[3])) {
+            if (split.length != 3 + Integer.parseInt(split[2])) {
                 System.out.println("Invalid Argument: Number of references provided does not match real value");
                 return;
             }
 
-            File jksFile = openKeyStore(split);
+            String message = split[1];
 
-            String message = split[2];
+            KeyPair keyPair = loadKeyPair();
+            PublicKey pubKey = keyPair.getPublic();
+            PrivateKey priKey = keyPair.getPrivate();
 
-            char[] jksPassword = System.console().readPassword("Insert JKS Password: ");
-            String keyPairAlias = System.console().readLine("Insert Certificate Alias: ");
-
-            char[] privKeyPassword = System.console().readPassword("Insert PrivateKey Password: ");
-            KeyStore ks = KeyStore.getInstance("JKS");
-
-            PublicKey pubKey;
-            PrivateKey priKey;
-            try (FileInputStream fis = new FileInputStream(jksFile)) {
-                ks.load(fis, jksPassword);
-                pubKey = ks.getCertificate(keyPairAlias).getPublicKey();
-                priKey = (PrivateKey) ks.getKey(keyPairAlias, privKeyPassword);
-            }
-
-            int numberOfReferences = Integer.parseInt(split[3]);
+            int numberOfReferences = Integer.parseInt(split[2]);
 
             Contract.Announcement[] refs = new Contract.Announcement[numberOfReferences];
-            for (int i = 4, j = 0; i < 4 + numberOfReferences; i++, j++) {
+            for (int i = 3, j = 0; i < 3 + numberOfReferences; i++, j++) {
                 refs[j] = Contract.Announcement.newBuilder()
                         .setHash(split[i])
                         .build();
@@ -230,12 +214,7 @@ public class App {
 
         } catch (KeyStoreException e) {
             System.out.println("Invalid Argument: Could not load JKS keystore");
-        } catch (FileNotFoundException e) {
-            //Should never happen
-            System.out.println("Invalid Argument: File provided does not exist");
-        } catch (IOException e) {
-            System.out.println("Error: Could not retrieve keys from KeyStore (Did you input the correct passwords and aliases?)!");
-        } catch (CertificateException | NullPointerException e) {
+        } catch (NullPointerException e) {
             System.out.println("Invalid Argument: Could not get certificate with that alias");
         } catch (UnrecoverableKeyException e) {
             System.out.println("Error: Probably mistake in key alias");
@@ -273,7 +252,7 @@ public class App {
 
     private static KeyPair loadKeyPair() throws KeyStoreException, NoSuchAlgorithmException, NullPointerException, UnrecoverableKeyException {
         String alias = System.console().readLine("Insert Certificate Alias: ");
-        char[] keyPassword = System.console().readPassword("Insert PrivateKey Alias: ");
+        char[] keyPassword = System.console().readPassword("Insert Private Key password: ");
 
         PublicKey pubKey;
         PrivateKey privKey;

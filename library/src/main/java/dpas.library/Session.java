@@ -16,5 +16,9 @@ public class Session {
     public long getSeq() {
         return seq;
     }
+
+    public void updateSeq() {
+        seq += 2;
+    }
 }
 

@@ -46,6 +46,7 @@
                     <!-- to prevent deprecation warning: -->
                     <killAfter>-1</killAfter>
                     <mainClass>${mainclass}</mainClass>
+                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
                     <arguments>
                         <argument>${server.ip}</argument>
                         <argument>${server.port}</argument>

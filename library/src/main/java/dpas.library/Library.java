@@ -7,6 +7,7 @@ import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
+import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -25,18 +26,23 @@ public class Library {
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Map<PublicKey, Session> _sessions;
     private PublicKey _serverKey;
+    private ManagedChannel _channel;
 
     public Library(String host, int port, PublicKey serverKey) {
-        var _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
+        _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
         _sessions = new HashMap<>();
         _serverKey = serverKey;
     }
 
+    public void finish() {
+        _channel.shutdown();
+    }
+
     private void newSession(PublicKey pubKey, PrivateKey privKey) {
         try {
             var hello = _stub.newSession(ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString()));
-            long seq = hello.getSeq();
+            long seq = hello.getSeq() + 1;
             String nonce = hello.getSessionNonce();
             Session session = new Session(nonce, seq);
             _sessions.put(pubKey, session);
@@ -55,16 +61,17 @@ public class Library {
     }
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
+        Session session = null;
         try {
-            var session = getSession(publicKey, privkey);
+            session = getSession(publicKey, privkey);
             var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(), publicKey, privkey));
-            if (!MacVerifier.verifyMac(_serverKey, reply)) {
+            if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().equals("Session is expired")) {
+            if (status.getDescription().contains("expired")) {
                 System.out.println("Creating new session and retrying...");
                 newSession(publicKey, privkey);
                 register(publicKey, privkey);
@@ -73,21 +80,26 @@ public class Library {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
+        } finally {
+            if (session != null) {
+                session.updateSeq();
+            }
         }
     }
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
+        Session session = null;
         try {
-            Session session = getSession(key, privateKey);
+            session = getSession(key, privateKey);
             var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey, String.valueOf(message), session.getSessionNonce(), session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
 
-            if (!MacVerifier.verifyMac(_serverKey, reply)) {
+            if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response.");
             }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().equals("Session is expired")) {
+            if (status.getDescription().equals("expired")) {
                 System.out.println("Creating a new session and retrying...");
                 newSession(key, privateKey);
                 post(key, message, a, privateKey);
@@ -96,23 +108,28 @@ public class Library {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
+        } finally {
+            if (session != null) {
+                session.updateSeq();
+            }
         }
     }
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
+        Session session = null;
         try {
-            var sessions = getSession(pubKey, privateKey);
-            var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey,
-                    privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(),
+            session = getSession(pubKey, privateKey);
+            var reply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey,
+                    privateKey, String.valueOf(message), session.getSessionNonce(), session.getSeq(),
                     GENERAL_BOARD_IDENTIFIER, a));
 
-            if (!MacVerifier.verifyMac(_serverKey, safePostGeneralReply)) {
+            if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().equals("Session is expired")) {
+            if (status.getDescription().equals("expired")) {
                 System.out.println("Creating new session and retrying...");
                 newSession(pubKey, privateKey);
                 postGeneral(pubKey, message, a, privateKey);
@@ -121,7 +138,12 @@ public class Library {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
+        } finally {
+            if (session != null) {
+                session.updateSeq();
+            }
         }
+
     }
 
     public Announcement[] read(PublicKey publicKey, int number) {
