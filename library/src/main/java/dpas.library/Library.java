@@ -25,8 +25,8 @@ import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
 public class Library {
 
-    public ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-    public Map<PublicKey, Session> _sessions;
+    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+    private Map<PublicKey, Session> _sessions;
     private PublicKey _serverKey;
 
     public Library(String host, int port, PublicKey serverKey) {
@@ -36,33 +36,45 @@ public class Library {
         _serverKey = serverKey;
     }
 
-    private void newSession(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        var hello = _stub.newSession(ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString()));
-        long seq = hello.getSeq();
-        String nonce = hello.getSessionNonce();
-        Session session = new Session(nonce, seq);
-        _sessions.put(pubKey, session);
+    private void newSession(PublicKey pubKey, PrivateKey privKey) {
+        try {
+            var hello = _stub.newSession(ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString()));
+            long seq = hello.getSeq();
+            String nonce = hello.getSessionNonce();
+            Session session = new Session(nonce, seq);
+            _sessions.put(pubKey, session);
+        } catch (GeneralSecurityException | IOException e) {
+            //Should never happen
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
+        }
     }
 
-    private Session checkSession(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
+    private Session checkSession(PublicKey pubKey, PrivateKey privKey) {
         if (!_sessions.containsKey(pubKey)) {
             newSession(pubKey, privKey);
         }
         return _sessions.get(pubKey);
     }
-
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
             var session = checkSession(publicKey, privkey);
             var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(),  publicKey, privkey));
-            //MacVerifier.verifyMac()
+            if (!MacVerifier.verifyMac(_serverKey, reply)) {
+                System.out.println("An error occurred: Unable to validate server response");
+            }
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (status.getDescription().equals("Session is expired")) {
+                System.out.println("Creating new session and retrying...");
+                newSession(publicKey, privkey);
+                register(publicKey, privkey);
+            }
+        } catch (GeneralSecurityException | IOException e) {
+            //Should never happen
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
         }
     }
 
