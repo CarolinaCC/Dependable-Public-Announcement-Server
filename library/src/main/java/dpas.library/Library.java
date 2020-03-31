@@ -1,12 +1,9 @@
 package dpas.library;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Empty;
-import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
-import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
@@ -19,8 +16,6 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
@@ -52,7 +47,7 @@ public class Library {
         }
     }
 
-    private Session checkSession(PublicKey pubKey, PrivateKey privKey) {
+    private Session getSession(PublicKey pubKey, PrivateKey privKey) {
         if (!_sessions.containsKey(pubKey)) {
             newSession(pubKey, privKey);
         }
@@ -61,7 +56,7 @@ public class Library {
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
-            var session = checkSession(publicKey, privkey);
+            var session = getSession(publicKey, privkey);
             var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(), session.getSeq(), publicKey, privkey));
             if (!MacVerifier.verifyMac(_serverKey, reply)) {
                 System.out.println("An error occurred: Unable to validate server response");
@@ -83,10 +78,10 @@ public class Library {
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            Session session = checkSession(key, privateKey);
-            var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey, String.valueOf(message) , session.getSessionNonce(), session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
+            Session session = getSession(key, privateKey);
+            var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey, String.valueOf(message), session.getSessionNonce(), session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
 
-            if (! MacVerifier.verifyMac(_serverKey, reply)) {
+            if (!MacVerifier.verifyMac(_serverKey, reply)) {
                 System.out.println("An error occurred: Unable to validate server response.");
             }
         } catch (StatusRuntimeException e) {
@@ -97,7 +92,7 @@ public class Library {
                 newSession(key, privateKey);
                 post(key, message, a, privateKey);
             }
-        }  catch (GeneralSecurityException | CommonDomainException| IOException e) {
+        } catch (GeneralSecurityException | CommonDomainException | IOException e) {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
@@ -106,7 +101,7 @@ public class Library {
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            var sessions = checkSession(pubKey, privateKey);
+            var sessions = getSession(pubKey, privateKey);
             var safePostGeneralReply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey,
                     privateKey, String.valueOf(message), sessions.getSessionNonce(), sessions.getSeq(),
                     GENERAL_BOARD_IDENTIFIER, a));
@@ -120,7 +115,7 @@ public class Library {
             if (status.getDescription().equals("Session is expired")) {
                 System.out.println("Creating new session and retrying...");
                 newSession(pubKey, privateKey);
-                register(pubKey, privateKey);
+                postGeneral(pubKey, message, a, privateKey);
             }
         } catch (GeneralSecurityException | CommonDomainException | IOException e) {
             //Should never happen
@@ -157,33 +152,4 @@ public class Library {
             return new Announcement[0];
         }
     }
-
-    private PostRequest createPostRequest(String boardIdentifier, PublicKey key, char[] message, Announcement[] a,
-                                          PrivateKey privateKey) throws CommonDomainException {
-
-        List<String> references = a == null ? new ArrayList<>()
-                : Stream.of(a).map(Announcement::getHash).collect(Collectors.toList());
-
-        byte[] signature = dpas.common.domain.Announcement.generateSignature(privateKey, String.valueOf(message),
-                references, boardIdentifier);
-
-        return PostRequest.newBuilder()
-                .setMessage(String.copyValueOf(message))
-                .setPublicKey(ByteString.copyFrom(key.getEncoded()))
-                .addAllReferences(references)
-                .setSignature(ByteString.copyFrom(signature))
-                .build();
-    }
-
-    private PostRequest createPostGeneralRequest(PublicKey key, char[] message, Announcement[] a,
-                                                 PrivateKey privateKey) throws CommonDomainException {
-        return createPostRequest(GENERAL_BOARD_IDENTIFIER, key, message, a, privateKey);
-    }
-
-    private PostRequest createPostRequest(PublicKey key, char[] message, Announcement[] a,
-                                          PrivateKey privateKey) throws CommonDomainException {
-        return createPostRequest(Base64.getEncoder().encodeToString(key.getEncoded()), key, message, a, privateKey);
-    }
-
-
 }
