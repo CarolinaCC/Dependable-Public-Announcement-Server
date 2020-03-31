@@ -78,12 +78,17 @@ public class Library {
 
     public void postGeneral(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            _stub.postGeneral(createPostGeneralRequest(key, message, a, privateKey));
+            var sessions = checkSession(key, privateKey);
+            _stub.safePostGeneral(ContractGenerator.generatePostRequest());
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
         } catch (CommonDomainException e) {
             System.out.println("Could not create signature from values provided");
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
