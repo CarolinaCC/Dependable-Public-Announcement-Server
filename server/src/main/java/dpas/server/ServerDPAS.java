@@ -19,9 +19,9 @@ public class ServerDPAS {
         System.out.println(ServerDPAS.class.getSimpleName());
 
         // check arguments
-        if (args.length < 7) {
+        if (args.length < 8) {
             System.err.println("Argument(s) missing!");
-            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword KeyValidity %s %n",
+            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword SessionValidity newSessionValidity %s %n",
                     ServerDPAS.class.getName());
             return;
         }
@@ -31,6 +31,7 @@ public class ServerDPAS {
         String keyPairAlias = args[4];
         String privKeyPassword = args[5];
         long sessionTime = Long.parseLong(args[6]);
+        long newSessionTime = Long.parseLong(args[7]);
 
         if (!jksPath.endsWith(".jks")) {
             System.out.println("Invalid argument: Client key store must be a JKS file!");
@@ -66,15 +67,15 @@ public class ServerDPAS {
 
         System.out.println("Retrieved server key pair successfully!");
 
-        Server server = startServer(Integer.parseInt(args[0]), args[1], privKey, sessionTime);
+        Server server = startServer(Integer.parseInt(args[0]), args[1], privKey, sessionTime, newSessionTime);
 
         // Do not exit the main thread. Wait until server is terminated.
         server.awaitTermination();
     }
 
-    public static Server startServer(int port, String saveFile, PrivateKey privateKey, long sessionTime) {
+    public static Server startServer(int port, String saveFile, PrivateKey privateKey, long sessionTime, long newSessionTime) {
         try {
-            final BindableService impl = new PersistenceManager(saveFile).load(new SessionManager(sessionTime), privateKey);
+            final BindableService impl = new PersistenceManager(saveFile).load(new SessionManager(sessionTime, newSessionTime), privateKey);
             final Server server = NettyServerBuilder.forPort(port).addService(impl).build();
             server.start();
             return server;

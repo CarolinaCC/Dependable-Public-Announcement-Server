@@ -19,10 +19,20 @@ public class SessionManager {
 
     private Map<String, Session> _sessions;
     private long _sessionTime; //in Milliseconds
+    private long _newSessionTime; //Sessions are short before the first request
 
     public SessionManager(long sessionTime) {
         _sessions = new ConcurrentHashMap<>();
         _sessionTime = sessionTime;
+        _newSessionTime = sessionTime;
+        new Thread(new SessionCleanup(this, sessionTime)).start();
+    }
+
+
+    public SessionManager(long sessionTime, long newSessionTime) {
+        _sessions = new ConcurrentHashMap<>();
+        _sessionTime = sessionTime;
+        _newSessionTime = newSessionTime;
         new Thread(new SessionCleanup(this, sessionTime)).start();
     }
 
@@ -33,7 +43,7 @@ public class SessionManager {
 
     public long createSession(PublicKey pubKey, String sessionNonce) throws SessionException {
         long seq = new SecureRandom().nextLong();
-        Session s = new Session(seq, pubKey, sessionNonce, LocalDateTime.now().plusNanos(_sessionTime * 1000000));
+        Session s = new Session(seq, pubKey, sessionNonce, LocalDateTime.now().plusNanos(_newSessionTime * 1000000));
         var session = _sessions.putIfAbsent(sessionNonce, s);
         if (session != null) {
             throw new SessionException("Session already exists!");
