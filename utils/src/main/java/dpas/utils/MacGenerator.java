@@ -12,6 +12,10 @@ import java.util.Set;
 
 public class MacGenerator {
 
+    public static byte[] generateMac(String message, String sessionNonce, long seq, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return generateMac(ByteUtils.toByteArray(message, sessionNonce, seq), privKey);
+    }
+
     public static byte[] generateMac(String sessionNonce, long seq, PrivateKey privKey) throws IOException, GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(sessionNonce, seq), privKey);
     }
@@ -33,7 +37,7 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 
-    private static byte[] generateMac(byte[] content, PrivateKey privKey) throws GeneralSecurityException {
+    public static byte[] generateMac(byte[] content, PrivateKey privKey) throws GeneralSecurityException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(content);
 

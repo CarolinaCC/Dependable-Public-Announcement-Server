@@ -1,6 +1,8 @@
 package dpas.server.session;
 
 import dpas.grpc.contract.Contract;
+import dpas.server.session.exception.IllegalMacException;
+import dpas.server.session.exception.SessionException;
 import dpas.utils.ByteUtils;
 import dpas.utils.MacVerifier;
 
@@ -56,7 +58,7 @@ public class SessionManager {
     }
 
 
-    public long validateSessionRequest(Contract.SafeRegisterRequest request) throws GeneralSecurityException, IOException, SessionException {
+    public long validateSessionRequest(Contract.SafeRegisterRequest request) throws GeneralSecurityException, IOException, SessionException, IllegalMacException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         String nonce = request.getSessionNonce();
         byte[] content = ByteUtils.toByteArray(request);
@@ -66,7 +68,7 @@ public class SessionManager {
     }
 
 
-    public void validateSessionRequest(Contract.GoodByeRequest request) throws GeneralSecurityException, IOException, SessionException {
+    public void validateSessionRequest(Contract.GoodByeRequest request) throws GeneralSecurityException, IOException, SessionException, IllegalMacException {
         byte[] content = ByteUtils.toByteArray(request);
         byte[] mac = request.getMac().toByteArray();
         String sessionNonce = request.getSessionNonce();
@@ -74,7 +76,7 @@ public class SessionManager {
         validateSessionRequest(sessionNonce, mac, content, seq);
     }
 
-    public long validateSessionRequest(Contract.SafePostRequest request) throws GeneralSecurityException, IOException, SessionException {
+    public long validateSessionRequest(Contract.SafePostRequest request) throws GeneralSecurityException, IOException, SessionException, IllegalMacException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] content = ByteUtils.toByteArray(request);
         byte[] mac = request.getMac().toByteArray();
@@ -83,7 +85,7 @@ public class SessionManager {
         return validateSessionRequest(sessionNonce, mac, content, seq, key);
     }
 
-    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException, IOException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException, IllegalMacException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
@@ -102,7 +104,7 @@ public class SessionManager {
     }
 
 
-    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber, PublicKey pubKey) throws GeneralSecurityException, SessionException, IOException {
+    public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber, PublicKey pubKey) throws GeneralSecurityException, SessionException, IllegalMacException {
 
         Session session = _sessions.getOrDefault(sessionNonce, null);
 
@@ -125,10 +127,10 @@ public class SessionManager {
     }
 
 
-    private long validateRequest(byte[] mac, byte[] content, Session session) throws GeneralSecurityException, SessionException, IOException {
+    private long validateRequest(byte[] mac, byte[] content, Session session) throws GeneralSecurityException, IllegalMacException {
 
         if (!MacVerifier.verifyMac(session.getPublicKey(), content, mac))
-            throw new IllegalArgumentException("Invalid mac");
+            throw new IllegalMacException("Invalid mac");
 
         session.nextSequenceNumber();
         //Update Validity

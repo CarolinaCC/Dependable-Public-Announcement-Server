@@ -1,6 +1,10 @@
 package dpas.utils;
 
 import dpas.grpc.contract.Contract;
+import dpas.utils.handler.ErrorGenerator;
+import io.grpc.Metadata;
+import io.grpc.StatusRuntimeException;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -89,13 +93,20 @@ public class MacVerifier {
     }
 
 
-    public static boolean verifyMac(PublicKey pubKey, byte[] content, byte[] mac) throws GeneralSecurityException, IOException {
+    public static boolean verifyMac(PublicKey pubKey, byte[] content, byte[] mac) throws GeneralSecurityException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, pubKey);
         byte[] hash = cipher.doFinal(mac);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] dig = digest.digest(content);
         return Arrays.equals(digest.digest(content), hash);
+    }
+
+    public static boolean verifyMac(PublicKey key, StatusRuntimeException e) throws GeneralSecurityException {
+        Metadata data = e.getTrailers();
+       byte[] content = ArrayUtils.addAll(data.get(ErrorGenerator.contentKey), e.getMessage().getBytes());
+        byte[] mac = data.get(ErrorGenerator.macKey);
+        return MacVerifier.verifyMac(key, content, mac);
+
     }
 }

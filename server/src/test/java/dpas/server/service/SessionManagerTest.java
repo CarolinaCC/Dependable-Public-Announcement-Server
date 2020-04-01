@@ -1,7 +1,8 @@
 package dpas.server.service;
 
 import dpas.server.session.Session;
-import dpas.server.session.SessionException;
+import dpas.server.session.exception.IllegalMacException;
+import dpas.server.session.exception.SessionException;
 import dpas.server.session.SessionManager;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -249,7 +250,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void validateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
+    public void validateSessionRequestTest() throws GeneralSecurityException, SessionException, IllegalMacException {
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
         PublicKey pubKey = keyPair.getPublic();
@@ -275,7 +276,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidKeySessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
+    public void invalidKeySessionRequestTest() throws GeneralSecurityException, SessionException, IOException, IllegalMacException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid Public Key for request");
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
@@ -306,7 +307,7 @@ public class SessionManagerTest {
 
     @Test
 
-    public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
+    public void invalidSessionIdValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException, IllegalMacException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid Session, doesn't exist or has expired");
 
@@ -332,7 +333,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidSeqNumberValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
+    public void invalidSeqNumberValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IllegalMacException {
         exception.expect(SessionException.class);
         exception.expectMessage("Invalid sequence number");
 
@@ -360,8 +361,8 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void invalidMacValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
-        exception.expect(IllegalArgumentException.class);
+    public void invalidMacValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IllegalMacException {
+        exception.expect(IllegalMacException.class);
         exception.expectMessage("Invalid mac");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
@@ -390,7 +391,7 @@ public class SessionManagerTest {
 
 
     @Test
-    public void sessionExpiredValidateTest() throws GeneralSecurityException, SessionException, IOException {
+    public void sessionExpiredValidateTest() throws GeneralSecurityException, SessionException, IllegalMacException {
         exception.expect(SessionException.class);
         exception.expectMessage("Session is expired");
 
@@ -417,7 +418,7 @@ public class SessionManagerTest {
     }
 
     @Test
-    public void sessionExpiredValidateTestWithKey() throws GeneralSecurityException, SessionException, IOException {
+    public void sessionExpiredValidateTestWithKey() throws GeneralSecurityException, SessionException, IOException, IllegalMacException {
         exception.expect(SessionException.class);
         exception.expectMessage("Session is expired");
 

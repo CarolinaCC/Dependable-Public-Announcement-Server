@@ -63,6 +63,18 @@ public class ByteUtils {
         }
     }
 
+    public static byte[] toByteArray(String message, String sessionNonce, long sequence) throws IOException {
+        byte[] messageBytes = message.getBytes();
+        byte[] seq = LongUtils.longToBytes(sequence);
+        byte[] nonce = sessionNonce.getBytes();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(messageBytes);
+            stream.writeBytes(seq);
+            stream.writeBytes(nonce);
+            return stream.toByteArray();
+        }
+    }
+
     public static byte[] toByteArray(String sessionNonce, PublicKey publicKey) throws IOException {
         byte[] nonce = sessionNonce.getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {

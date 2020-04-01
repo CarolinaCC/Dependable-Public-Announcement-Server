@@ -3,14 +3,11 @@ package dpas.server.service;
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.utils.handler.ErrorGenerator;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
-import dpas.utils.ContractGenerator;
-import dpas.utils.MacVerifier;
-import dpas.utils.MacGenerator;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.StatusRuntimeException;
+import dpas.utils.*;
+import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.*;
@@ -99,42 +96,74 @@ public class SafeServiceRegisterTest {
     public void invalidSessionNonceRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Session");
-
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest("invalid", 1, _pubKey, _privKey));
+        var request = ContractGenerator.generateRegisterRequest("invalid", 1, _pubKey, _privKey);
+        try {
+            _stub.safeRegister(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
     public void invalidSeqRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid sequence number");
-
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(SESSION_NONCE, 7, _pubKey, _privKey));
+        var request = ContractGenerator.generateRegisterRequest(SESSION_NONCE, 7, _pubKey, _privKey);
+        try {
+            _stub.safeRegister(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
     public void invalidMacRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid mac");
-
-        byte[] requestMAC = MacGenerator.generateMac("ola", 1,_pubKey, _privKey );
-        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+        byte[] requestMAC = MacGenerator.generateMac("ola", 1, _pubKey, _privKey);
+        var request = Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce(SESSION_NONCE)
                 .setSeq(1)
                 .setMac(ByteString.copyFrom(requestMAC))
-                .build());
+                .build();
+        try {
+            _stub.safeRegister(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
-    public void noMacRegister() {
+    public void noMacRegister() throws GeneralSecurityException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
-
-        _stub.safeRegister(Contract.SafeRegisterRequest.newBuilder()
+        var request = Contract.SafeRegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setSessionNonce(SESSION_NONCE)
                 .setSeq(1)
-                .build());
+                .build();
+        try {
+            _stub.safeRegister(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
 }

@@ -7,8 +7,10 @@ import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
+import dpas.server.session.exception.IllegalMacException;
+import dpas.utils.handler.ErrorGenerator;
 import dpas.server.persistence.PersistenceManager;
-import dpas.server.session.SessionException;
+import dpas.server.session.exception.SessionException;
 import dpas.server.session.SessionManager;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
@@ -91,7 +93,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
-        } catch (CommonDomainException | IllegalArgumentException e) {
+        } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
@@ -117,7 +119,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
-        } catch (CommonDomainException | IllegalArgumentException e) {
+        } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
@@ -126,10 +128,11 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
     @Override
     public void safeRegister(Contract.SafeRegisterRequest request, StreamObserver<Contract.SafeRegisterReply> responseObserver) {
+        String nonce = null;
         try {
+            nonce = request.getSessionNonce();
             long nextSeq = _sessionManager.validateSessionRequest(request);
 
-            String nonce = request.getSessionNonce();
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             var user = new User(pubKey);
@@ -141,12 +144,14 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                 responseObserver.onNext(ContractGenerator.generateRegisterReply(nonce, nextSeq, _privateKey));
                 responseObserver.onCompleted();
             }
-        } catch (CommonDomainException | IllegalArgumentException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (CommonDomainException | IllegalMacException e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
-        } catch (IOException | GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request , _privateKey));
+        } catch (IOException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         }
     }
 
@@ -161,7 +166,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException | GeneralSecurityException e) {
             responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalMacException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
