@@ -62,9 +62,11 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         } catch (GeneralSecurityException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid security values provided").asRuntimeException());
         } catch (SessionException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription("Unspecified Error at server side").asRuntimeException());
+        } catch(IllegalArgumentException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -89,7 +91,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
-        } catch (CommonDomainException e) {
+        } catch (CommonDomainException | IllegalArgumentException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
@@ -115,7 +117,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
         } catch (IOException e) {
             responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
-        } catch (CommonDomainException e) {
+        } catch (CommonDomainException | IllegalArgumentException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
@@ -139,7 +141,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                 responseObserver.onNext(ContractGenerator.generateRegisterReply(nonce, nextSeq, _privateKey));
                 responseObserver.onCompleted();
             }
-        } catch (CommonDomainException e) {
+        } catch (CommonDomainException | IllegalArgumentException e) {
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (SessionException e) {
             responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
@@ -159,6 +161,8 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
         } catch (IOException | GeneralSecurityException e) {
             responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 

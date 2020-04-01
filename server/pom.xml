@@ -19,6 +19,7 @@
         <server.KeyStorePassword>server-password</server.KeyStorePassword>
         <server.PrivateKeyPassword>server-password</server.PrivateKeyPassword>
         <server.sessionTime>180000</server.sessionTime>
+        <server.newSessionTime>20000</server.newSessionTime>
     </properties>
     <dependencies>
         <dependency>
@@ -82,6 +83,7 @@
                         <argument>${server.publicKeyAlias}</argument>
                         <argumennt>${server.PrivateKeyPassword}</argumennt>
                         <argument>${server.sessionTime}</argument>
+                        <argument>${server.newSessionTime}</argument>
                         </arguments>
                 </configuration>
             </plugin>

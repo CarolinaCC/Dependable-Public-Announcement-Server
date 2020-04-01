@@ -276,7 +276,7 @@ public class SessionManagerTest {
 
     @Test
     public void invalidKeySessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
-        exception.expect(SessionException.class);
+        exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid Public Key for request");
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
         KeyPair keyPair = keyFactory.generateKeyPair();
@@ -361,7 +361,7 @@ public class SessionManagerTest {
 
     @Test
     public void invalidMacValidateSessionRequestTest() throws GeneralSecurityException, SessionException, IOException {
-        exception.expect(SessionException.class);
+        exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid mac");
 
         KeyPairGenerator keyFactory = KeyPairGenerator.getInstance("RSA");
