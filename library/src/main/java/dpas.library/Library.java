@@ -76,7 +76,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().contains("expired")) {
+            if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
                 System.out.println("Creating new session and retrying...");
                 newSession(publicKey, privkey);
                 register(publicKey, privkey);
@@ -106,7 +106,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().contains("expired")) {
+            if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
                 System.out.println("Creating a new session and retrying...");
                 newSession(key, privateKey);
                 post(key, message, a, privateKey);
@@ -136,7 +136,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getDescription().contains("expired")) {
+            if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
                 System.out.println("Creating new session and retrying...");
                 newSession(pubKey, privateKey);
                 postGeneral(pubKey, message, a, privateKey);

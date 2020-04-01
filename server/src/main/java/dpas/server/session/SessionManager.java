@@ -108,7 +108,7 @@ public class SessionManager {
                 throw new SessionException("Invalid sequence number");
 
             if (!Arrays.equals(session.getPublicKey().getEncoded(), pubKey.getEncoded()))
-                throw new SessionException("Invalid Public Key for request");
+                throw new IllegalArgumentException("Invalid Public Key for request");
 
             return validateRequest(mac, content, session);
         }
@@ -118,7 +118,7 @@ public class SessionManager {
     private long validateRequest(byte[] mac, byte[] content, Session session) throws GeneralSecurityException, SessionException, IOException {
 
         if (!MacVerifier.verifyMac(session.getPublicKey(), content, mac))
-            throw new SessionException("Invalid mac");
+            throw new IllegalArgumentException("Invalid mac");
 
         session.nextSequenceNumber();
         //Update Validity
