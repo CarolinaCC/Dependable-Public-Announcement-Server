@@ -106,10 +106,10 @@ public class Library {
         Session session = null;
         SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
+            session = getSession(key, privateKey);
             request = ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
                     String.valueOf(message), session.getSessionNonce(),
                     session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
-            session = getSession(key, privateKey);
             var reply = _stub.safePost(request);
 
             if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
@@ -179,7 +179,7 @@ public class Library {
     public Announcement[] validateReadResponse(ReadRequest request, ReadReply reply) throws GeneralSecurityException {
         if (!MacVerifier.verifyMac(_serverKey, request.getNonce().getBytes(), reply.getMac().toByteArray())) {
             System.out.println("An error occurred: Unable to validate server response");
-            return new Announcement[];
+            return new Announcement[0];
         }
         var a = new Announcement[reply.getAnnouncementsCount()];
         reply.getAnnouncementsList().toArray(a);
@@ -199,7 +199,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                return new Announcement[];
+                return new Announcement[0];
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
@@ -207,6 +207,7 @@ public class Library {
         } catch (GeneralSecurityException e) {
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
+            return new Announcement[0];
         }
     }
 
@@ -222,7 +223,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                return new Announcement[];
+                return new Announcement[0];
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
@@ -230,6 +231,7 @@ public class Library {
         } catch (GeneralSecurityException e) {
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
+            return new Announcement[0];
         }
     }
 
