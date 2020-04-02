@@ -237,19 +237,23 @@ public class Library {
 
     private boolean verifyError(StatusRuntimeException e, byte[] request, PublicKey key) {
         if (e.getTrailers() == null) {
+            System.out.println(1);
             return false;
         }
         var trailers = e.getTrailers();
 
         if (trailers.get(ErrorGenerator.contentKey) == null) {
+            System.out.println(2);
             return false;
         }
 
         if (trailers.get(ErrorGenerator.macKey) == null) {
+            System.out.println(3);
             return false;
         }
 
         if (!Arrays.equals(request, trailers.get(ErrorGenerator.contentKey))) {
+            System.out.println(4);
             return false;
         }
 

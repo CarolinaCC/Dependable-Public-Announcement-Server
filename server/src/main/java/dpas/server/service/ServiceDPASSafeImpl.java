@@ -164,8 +164,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(_users.containsKey(key))) {
-                responseObserver.onError(INVALID_ARGUMENT.withDescription("User with public key does not exist")
-                        .asRuntimeException());
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with public key does not exist", request, _privateKey));
             } else {
 
                 var announcements = _users.get(key).getUserBoard().read(request.getNumber());
