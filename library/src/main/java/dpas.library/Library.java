@@ -63,15 +63,21 @@ public class Library {
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         Session session = null;
+        SafeRegisterRequest request = null;
         try {
             session = getSession(publicKey, privkey);
-            var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(session.getSessionNonce(),
-                    session.getSeq(), publicKey, privkey));
+            request = ContractGenerator.generateRegisterRequest(session.getSessionNonce(),
+                    session.getSeq(), publicKey, privkey);
+            var reply = _stub.safeRegister(request);
 
             if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
+            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+                System.out.println("Unable to authenticate server response");
+                System.exit(1);
+            }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
             if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
