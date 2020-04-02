@@ -46,7 +46,7 @@ public class SafeServiceNewSessionTest {
     private SessionManager _sessionManager;
 
     @BeforeClass
-    public static void oneTimeSetup() throws NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException {
+    public static void oneTimeSetup() throws NoSuchAlgorithmException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
         KeyPair keyPair = keygen.generateKeyPair();

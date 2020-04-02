@@ -5,9 +5,9 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.StatusRuntimeException;
+import dpas.utils.MacVerifier;
+import dpas.utils.handler.ErrorGenerator;
+import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.*;
@@ -87,16 +87,34 @@ public class SafeServiceGoodbyeTest {
     public void goodbyeInvalidSeq() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid sequence number");
-        _stub.goodbye(ContractGenerator.generateGoodbyeRequest(_privKey, SESSION_NONCE, _seq + 3));
-        assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        var request = ContractGenerator.generateGoodbyeRequest(_privKey, SESSION_NONCE, _seq + 3);
+        try {
+            _stub.goodbye(request);
+            assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
     public void goodbyeInvalidNonce() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Session");
-        _stub.goodbye(ContractGenerator.generateGoodbyeRequest(_privKey, "Invalid", _seq + 1));
-        assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        var request = ContractGenerator.generateGoodbyeRequest(_privKey, "Invalid", _seq + 1);
+        try{
+            _stub.goodbye(request);
+            assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
@@ -106,8 +124,18 @@ public class SafeServiceGoodbyeTest {
         KeyPair keyPair = keygen.generateKeyPair();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
-        _stub.goodbye(ContractGenerator.generateGoodbyeRequest(keyPair.getPrivate(), SESSION_NONCE, _seq + 1));
-        assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        var request = ContractGenerator.generateGoodbyeRequest(keyPair.getPrivate(), SESSION_NONCE, _seq + 1);
+        try {
+            _stub.goodbye(request);
+            assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
+
     }
 
     @Test
@@ -116,8 +144,16 @@ public class SafeServiceGoodbyeTest {
         req = Contract.GoodByeRequest.newBuilder(req).setMac(ByteString.copyFrom(new byte[] {23, 21, 23})).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
-        _stub.goodbye(req);
-        assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        try {
+            _stub.goodbye(req);
+            assertEquals(_impl.getSessionManager().getSessions().size(), 1);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), req.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
 }
