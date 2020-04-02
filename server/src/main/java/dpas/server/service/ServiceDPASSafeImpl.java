@@ -50,7 +50,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
         try {
             if (!MacVerifier.verifyMac(request)) {
-                responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Mac").asRuntimeException());
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Invalid Mac", request, _privateKey));
                 return;
             }
 
