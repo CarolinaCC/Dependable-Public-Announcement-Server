@@ -15,12 +15,8 @@ import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.apache.commons.lang3.ArrayUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
-
 
 import java.io.IOException;
 import java.security.*;
@@ -32,7 +28,7 @@ import java.util.UUID;
 import static org.junit.Assert.*;
 
 public class SafeServiceReadTest {
-
+    @Rule
     public ExpectedException exception = ExpectedException.none();
 
     private static Contract.ReadRequest _readRequest;
@@ -123,8 +119,8 @@ public class SafeServiceReadTest {
         _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
 
         // Posts to Read
-        _stub.safePost(ContractGenerator.generatePostRequest(_serverPKey,_pubKey, _privKey, MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey)
-                , null));
+        _stub.safePost(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey),
+                null));
     }
 
     @After
@@ -136,26 +132,26 @@ public class SafeServiceReadTest {
 
     @Test
     public void readValid() throws GeneralSecurityException {
-            var request = Contract.ReadRequest.newBuilder()
-                    .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                    .setNumber(1)
-                    .setNonce("Nonce")
-                    .build();
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(1)
+                .setNonce("Nonce")
+                .build();
 
-            var reply = _stub.read(request);
+        var reply = _stub.read(request);
 
-            List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
-            assertEquals(announcementsGRPC.size(), 1);
-            assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
-            assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
-            assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _pubKey.getEncoded());
-            assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+        List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
+        assertEquals(announcementsGRPC.size(), 1);
+        assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
+        assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
+        assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _pubKey.getEncoded());
+        assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
-            assertTrue(MacVerifier.verifyMac(_serverPKey, request.getNonce().getBytes(), reply.getMac().toByteArray()));
+        assertTrue(MacVerifier.verifyMac(_serverPKey, request.getNonce().getBytes(), reply.getMac().toByteArray()));
     }
 
     @Test
-    public void readWrongPublicKey() throws NoSuchAlgorithmException {
+    public void readWrongPublicKey() {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User with public key does not exist");
 
@@ -165,8 +161,8 @@ public class SafeServiceReadTest {
                 .setNonce("Nonce1")
                 .build();
 
-        try { _stub.read(request);
-
+        try {
+            _stub.read(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), ArrayUtils.addAll(request.getNonce().getBytes()));
@@ -174,18 +170,17 @@ public class SafeServiceReadTest {
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }
-
     }
 
     @Test
-    public void readWrongMac() throws NoSuchAlgorithmException {
+    public void readWrongMac() {
 
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("User with public key does not exist");
+        exception.expectMessage("number cannot be negative");
 
         _readRequest = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(1)
+                .setNumber(-1)
                 .setNonce("Nonce2")
                 .build();
 
@@ -199,9 +194,7 @@ public class SafeServiceReadTest {
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }
-
     }
-
 
 
 }
