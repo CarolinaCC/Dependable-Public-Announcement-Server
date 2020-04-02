@@ -34,7 +34,7 @@ public class SafeServiceReadTest {
 
     private static Contract.ReadRequest _readRequest;
 
-    private static final int port = 9001;
+    private static final int port = 9000;
     private static final String host = "localhost";
 
     private static ServiceDPASSafeImpl _impl;
@@ -86,6 +86,16 @@ public class SafeServiceReadTest {
         _secondPubKey = keyPair.getPublic();
         _secondPrivKey = keyPair.getPrivate();
 
+
+        //Signatures
+        _signature = Announcement.generateSignature(_privKey, MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
+        _signature2 = Announcement.generateSignature(_privKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
+
+    }
+
+    @Before
+    public void setup() throws IOException {
+
         SessionManager _sessionManager = new SessionManager(50000000);
         _sessionManager.getSessions().put(_nonce, new Session(_seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
         _sessionManager.getSessions().put(_secondNonce, new Session(_secondSeq, _secondPubKey, _secondNonce, LocalDateTime.now().plusHours(2)));
@@ -99,14 +109,6 @@ public class SafeServiceReadTest {
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-        //Signatures
-        _signature = Announcement.generateSignature(_privKey, MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
-        _signature2 = Announcement.generateSignature(_privKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
-
-    }
-
-    @Before
-    public void setup() {
 
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
