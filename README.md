@@ -47,4 +47,6 @@ The ServiceDPASImpl is the base server without dependability guarantees.
 The ServiceDPASPersistentImpl builds on the previous by guaranteeing persistence in the presence of faults
 The ServiceDPASSafeImpl builds on the previous by ensuring the freshness of the requests received.
 
+You can find the report in the docs folder
+
 
