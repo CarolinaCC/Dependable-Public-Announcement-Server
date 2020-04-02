@@ -15,10 +15,7 @@ import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.apache.commons.lang3.ArrayUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 
@@ -32,7 +29,7 @@ import java.util.UUID;
 import static org.junit.Assert.*;
 
 public class SafeServiceReadTest {
-
+    @Rule
     public ExpectedException exception = ExpectedException.none();
 
     private static Contract.ReadRequest _readRequest;
