@@ -82,7 +82,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Post Identifier Already Exists", request, _privateKey));
             } else {
                 save(announcement.toJson("Post"));
                 announcement.getUser().getUserBoard().post(announcement);
@@ -90,13 +90,13 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (IOException e) {
-            responseObserver.onError(CANCELLED.withDescription("An Error ocurred in the server").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request , _privateKey));
         }
     }
 
@@ -108,7 +108,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             Announcement announcement = generateAnnouncement(request, _generalBoard);
             var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
             if (curr != null) {
-                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Post Identifier Already Exists", request, _privateKey));
             } else {
                 save(announcement.toJson("PostGeneral"));
                 _generalBoard.post(announcement);
@@ -116,13 +116,13 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                 responseObserver.onCompleted();
             }
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (IOException e) {
-            responseObserver.onError(CANCELLED.withDescription("An Error occurred in the server").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request , _privateKey));
         }
     }
 
