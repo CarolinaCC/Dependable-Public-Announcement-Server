@@ -2,9 +2,7 @@ package dpas.library;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
-import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.*;
-import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
@@ -58,7 +56,6 @@ public class Library {
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                System.exit(1);
             }
         }
     }
@@ -85,7 +82,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                System.exit(1);
+                return;
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
@@ -109,10 +106,10 @@ public class Library {
         Session session = null;
         SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
+            session = getSession(key, privateKey);
             request = ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
                     String.valueOf(message), session.getSessionNonce(),
                     session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
-            session = getSession(key, privateKey);
             var reply = _stub.safePost(request);
 
             if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
@@ -121,7 +118,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                System.exit(1);
+                return;
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
@@ -157,7 +154,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                System.exit(1);
+                return;
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
@@ -179,50 +176,84 @@ public class Library {
 
     }
 
+    public Announcement[] validateReadResponse(ReadRequest request, ReadReply reply) throws GeneralSecurityException {
+        if (!MacVerifier.verifyMac(_serverKey, request.getNonce().getBytes(), reply.getMac().toByteArray())) {
+            System.out.println("An error occurred: Unable to validate server response");
+            return new Announcement[0];
+        }
+        var a = new Announcement[reply.getAnnouncementsCount()];
+        reply.getAnnouncementsList().toArray(a);
+        return a;
+    }
+
     public Announcement[] read(PublicKey publicKey, int number) {
+        var request = ReadRequest.newBuilder().build();
         try {
-            var reply = _stub.read(ReadRequest.newBuilder()
+            request = ReadRequest.newBuilder()
                     .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
+                    .setNonce(UUID.randomUUID().toString())
                     .setNumber(number)
-                    .build());
-            var a = new Announcement[reply.getAnnouncementsCount()];
-            reply.getAnnouncementsList().toArray(a);
-            return a;
+                    .build();
+            var reply = _stub.read(request);
+            return validateReadResponse(request, reply);
         } catch (StatusRuntimeException e) {
+            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
+                System.out.println("Unable to authenticate server response");
+                return new Announcement[0];
+            }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
+            return new Announcement[0];
+        } catch (GeneralSecurityException e) {
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
             return new Announcement[0];
         }
     }
 
     public Announcement[] readGeneral(int number) {
+        var request = ReadRequest.newBuilder().build();
         try {
-            ReadReply reply = _stub.readGeneral(ReadRequest.newBuilder().setNumber(number).build());
-            var a = new Announcement[reply.getAnnouncementsCount()];
-            reply.getAnnouncementsList().toArray(a);
-            return a;
+            request = ReadRequest.newBuilder()
+                    .setNonce(UUID.randomUUID().toString())
+                    .setNumber(number)
+                    .build();
+            ReadReply reply = _stub.readGeneral(request);
+            return validateReadResponse(request, reply);
         } catch (StatusRuntimeException e) {
+            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
+                System.out.println("Unable to authenticate server response");
+                return new Announcement[0];
+            }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
+            return new Announcement[0];
+        } catch (GeneralSecurityException e) {
+            System.out.println("An error has occurred that has forced the application to shutdown");
+            System.exit(1);
             return new Announcement[0];
         }
     }
 
     private boolean verifyError(StatusRuntimeException e, byte[] request, PublicKey key) {
         if (e.getTrailers() == null) {
+            System.out.println(1);
             return false;
         }
         var trailers = e.getTrailers();
 
         if (trailers.get(ErrorGenerator.contentKey) == null) {
+            System.out.println(2);
             return false;
         }
 
         if (trailers.get(ErrorGenerator.macKey) == null) {
+            System.out.println(3);
             return false;
         }
 
         if (!Arrays.equals(request, trailers.get(ErrorGenerator.contentKey))) {
+            System.out.println(4);
             return false;
         }
 
