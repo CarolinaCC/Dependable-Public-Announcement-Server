@@ -11,6 +11,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -197,7 +198,8 @@ public class Library {
             var reply = _stub.read(request);
             return validateReadResponse(request, reply);
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
+            var content = ArrayUtils.addAll(request.getNonce().getBytes(), e.getMessage().getBytes());
+            if (!verifyError(e, content, _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return new Announcement[0];
             }
@@ -221,7 +223,8 @@ public class Library {
             ReadReply reply = _stub.readGeneral(request);
             return validateReadResponse(request, reply);
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
+            var content = ArrayUtils.addAll(request.getNonce().getBytes(), e.getMessage().getBytes());
+            if (!verifyError(e, content, _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return new Announcement[0];
             }
@@ -237,23 +240,19 @@ public class Library {
 
     private boolean verifyError(StatusRuntimeException e, byte[] request, PublicKey key) {
         if (e.getTrailers() == null) {
-            System.out.println(1);
             return false;
         }
         var trailers = e.getTrailers();
 
         if (trailers.get(ErrorGenerator.contentKey) == null) {
-            System.out.println(2);
             return false;
         }
 
         if (trailers.get(ErrorGenerator.macKey) == null) {
-            System.out.println(3);
             return false;
         }
 
         if (!Arrays.equals(request, trailers.get(ErrorGenerator.contentKey))) {
-            System.out.println(4);
             return false;
         }
 
