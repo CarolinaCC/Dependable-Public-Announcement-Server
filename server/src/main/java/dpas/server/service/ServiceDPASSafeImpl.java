@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
@@ -8,6 +9,7 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
 import dpas.server.session.exception.IllegalMacException;
+import dpas.utils.MacGenerator;
 import dpas.utils.handler.ErrorGenerator;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.exception.SessionException;
@@ -26,6 +28,7 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.stream.Collectors;
 
 import static io.grpc.Status.*;
 
@@ -154,6 +157,49 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         }
     }
+
+    @Override
+    public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+        try {
+            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+
+            if (!(_users.containsKey(key))) {
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("User with public key does not exist")
+                        .asRuntimeException());
+            } else {
+
+                var announcements = _users.get(key).getUserBoard().read(request.getNumber());
+                var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
+
+                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                        .addAllAnnouncements(announcementsGRPC)
+                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, _privateKey)))
+                        .build());
+                responseObserver.onCompleted();
+            }
+        } catch (Exception e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        }
+    }
+
+    @Override
+    public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+
+        try {
+            var announcements = _generalBoard.read(request.getNumber());
+            var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
+
+            responseObserver.onNext(Contract.ReadReply.newBuilder()
+                    .addAllAnnouncements(announcementsGRPC)
+                    .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, _privateKey)))
+                    .build());
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        }
+    }
+
 
     @Override
     public void goodbye(Contract.GoodByeRequest request, StreamObserver<Empty> responseObserver) {

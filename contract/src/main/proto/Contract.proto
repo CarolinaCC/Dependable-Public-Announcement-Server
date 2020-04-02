@@ -99,11 +99,13 @@ message SafePostReply {
 message ReadRequest {
     bytes publicKey = 1;
     int32 number = 2;
+    string nonce = 3; //different from session nonce
 }
 
 //
 message ReadReply {
     repeated Announcement announcements = 1;
+    bytes mac = 2; //mac of nonce
 }
 
 //

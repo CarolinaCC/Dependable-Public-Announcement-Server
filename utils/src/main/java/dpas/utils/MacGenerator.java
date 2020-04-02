@@ -37,6 +37,10 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 
+    public static byte[] generateMac(Contract.ReadRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return generateMac(ByteUtils.toByteArray(request), privKey);
+    }
+
     public static byte[] generateMac(byte[] content, PrivateKey privKey) throws GeneralSecurityException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(content);

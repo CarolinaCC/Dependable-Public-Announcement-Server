@@ -32,6 +32,12 @@ public class ErrorGenerator {
         return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
     }
 
+
+    public static StatusRuntimeException generate(Status status, String message, Contract.ReadRequest request, PrivateKey privKey) {
+        var statusException = status.withDescription(message).asRuntimeException(new Metadata());
+        return fillMetadata(request.getNonce().getBytes(), privKey, statusException);
+    }
+
     public static StatusRuntimeException generate(Status status, String message, Contract.GoodByeRequest request, PrivateKey privKey) {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());
         return fillMetadata(request.getMac().toByteArray(), privKey, statusException);

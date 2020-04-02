@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class ByteUtils {
     public static byte[] toByteArray(Contract.SafePostRequest request) throws IOException {
-        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] seq = NumberUtils.longToBytes(request.getSeq());
         byte[] nonce = request.getSessionNonce().getBytes();
         byte[] pubKey = request.getPublicKey().toByteArray();
         byte[] message = request.getMessage().toByteArray();
@@ -33,7 +33,7 @@ public class ByteUtils {
 
     public static byte[] toByteArray(long sequence, String sessionNonce, PublicKey pubKey, byte[] message,
                                      byte[] signature, Set<String> references) throws IOException {
-        byte[] seq = LongUtils.longToBytes(sequence);
+        byte[] seq = NumberUtils.longToBytes(sequence);
         byte[] nonce = sessionNonce.getBytes();
         byte[] key = pubKey.getEncoded();
 
@@ -54,7 +54,7 @@ public class ByteUtils {
     }
 
     public static byte[] toByteArray(String sessionNonce, long sequence) throws IOException {
-        byte[] seq = LongUtils.longToBytes(sequence);
+        byte[] seq = NumberUtils.longToBytes(sequence);
         byte[] nonce = sessionNonce.getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
@@ -65,7 +65,7 @@ public class ByteUtils {
 
     public static byte[] toByteArray(String message, String sessionNonce, long sequence) throws IOException {
         byte[] messageBytes = message.getBytes();
-        byte[] seq = LongUtils.longToBytes(sequence);
+        byte[] seq = NumberUtils.longToBytes(sequence);
         byte[] nonce = sessionNonce.getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(messageBytes);
@@ -85,7 +85,7 @@ public class ByteUtils {
     }
 
     public static byte[] toByteArray(Contract.SafeRegisterRequest request) throws IOException {
-        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] seq = NumberUtils.longToBytes(request.getSeq());
         byte[] nonce = request.getSessionNonce().getBytes();
         byte[] pubKey = request.getPublicKey().toByteArray();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
@@ -106,7 +106,7 @@ public class ByteUtils {
     }
 
     public static byte[] toByteArray(Contract.ServerHello request) throws IOException {
-        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] seq = NumberUtils.longToBytes(request.getSeq());
         byte[] nonce = request.getSessionNonce().getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
@@ -116,7 +116,7 @@ public class ByteUtils {
     }
 
     public static byte[] toByteArray(Contract.SafeRegisterReply reply) throws IOException {
-        byte[] seq = LongUtils.longToBytes(reply.getSeq());
+        byte[] seq = NumberUtils.longToBytes(reply.getSeq());
         byte[] nonce = reply.getSessionNonce().getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
@@ -126,7 +126,7 @@ public class ByteUtils {
     }
 
     public static byte[] toByteArray(Contract.SafePostReply reply) throws IOException {
-        byte[] seq = LongUtils.longToBytes(reply.getSeq());
+        byte[] seq = NumberUtils.longToBytes(reply.getSeq());
         byte[] nonce = reply.getSessionNonce().getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
@@ -136,7 +136,7 @@ public class ByteUtils {
     }
 
     public static byte[] toByteArray(Contract.GoodByeRequest request) throws IOException {
-        byte[] seq = LongUtils.longToBytes(request.getSeq());
+        byte[] seq = NumberUtils.longToBytes(request.getSeq());
         byte[] nonce = request.getSessionNonce().getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
@@ -145,8 +145,12 @@ public class ByteUtils {
         }
     }
 
+    public static byte[] toByteArray(Contract.ReadRequest request) {
+        return request.getNonce().getBytes();
+    }
+
     public static byte[] toByteArray(String sessionNonce, long sequence, PublicKey pubKey) throws IOException {
-        byte[] seq = LongUtils.longToBytes(sequence);
+        byte[] seq = NumberUtils.longToBytes(sequence);
         byte[] nonce = sessionNonce.getBytes();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
