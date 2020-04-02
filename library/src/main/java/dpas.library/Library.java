@@ -2,6 +2,7 @@ package dpas.library;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.*;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -41,8 +42,11 @@ public class Library {
     }
 
     private void newSession(PublicKey pubKey, PrivateKey privKey) {
+
+        ClientHello request = ClientHello.newBuilder().build();
         try {
-            var hello = _stub.newSession(ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString()));
+            request = ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString());
+            var hello = _stub.newSession(request);
             long seq = hello.getSeq() + 1;
             String nonce = hello.getSessionNonce();
             Session session = new Session(nonce, seq);
@@ -51,6 +55,11 @@ public class Library {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
+        } catch (StatusRuntimeException e) {
+            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+                System.out.println("Unable to authenticate server response");
+                System.exit(1);
+            }
         }
     }
 
