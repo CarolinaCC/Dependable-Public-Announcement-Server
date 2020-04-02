@@ -6,9 +6,8 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.StatusRuntimeException;
+import dpas.utils.handler.ErrorGenerator;
+import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.*;
@@ -89,17 +88,25 @@ public class SafeServiceNewSessionTest {
     }
 
     @Test
-    public void newSessionWrongClientMac() {
+    public void newSessionWrongClientMac() throws GeneralSecurityException {
+
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
 
         byte[] invalidMac = "ThisIsInvalid".getBytes();
+        var request = Contract.ClientHello.newBuilder()
+                .setMac(ByteString.copyFrom(invalidMac))
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setSessionNonce(SESSION_NONCE3)
+                .build();
         try {
-            _stub.newSession(Contract.ClientHello.newBuilder()
-                    .setMac(ByteString.copyFrom(invalidMac))
-                    .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                    .setSessionNonce(SESSION_NONCE3)
-                    .build());
+            _stub.newSession(request);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
         } finally {
             assertEquals(_impl.getSessionManager().getSessions().size(), 0);
         }
@@ -107,7 +114,9 @@ public class SafeServiceNewSessionTest {
 
     @Test
     public void repeatedSessions() throws IOException, GeneralSecurityException {
-        var reply = _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE));
+
+        var request = ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE);
+        var reply = _stub.newSession(request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
 
         assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
@@ -118,7 +127,14 @@ public class SafeServiceNewSessionTest {
         exception.expectMessage("Session already exists!");
         try {
             _stub.newSession(ContractGenerator.generateClientHello(_privKey, _pubKey, SESSION_NONCE));
-        } finally {
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
+        finally {
             assertEquals(_impl.getSessionManager().getSessions().size(), 1);
         }
     }

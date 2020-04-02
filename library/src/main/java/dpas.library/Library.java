@@ -140,6 +140,7 @@ public class Library {
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
+            // if user doesnt have a vlid session
             if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
                 System.out.println("Creating new session and retrying...");
                 newSession(pubKey, privateKey);
