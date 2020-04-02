@@ -62,9 +62,9 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onCompleted();
 
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT,"Invalid Security Values Provided", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT,"Invalid security values provided", request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Unspecified Error at server side", request, _privateKey));
         } catch(IllegalArgumentException e) {
