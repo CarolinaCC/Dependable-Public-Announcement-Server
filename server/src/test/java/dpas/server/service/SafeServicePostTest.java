@@ -77,7 +77,6 @@ public class SafeServicePostTest {
         _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
 
-
         KeyPair keyPair = keygen.generateKeyPair();
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();

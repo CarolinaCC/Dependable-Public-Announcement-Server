@@ -52,7 +52,7 @@ public class SafeServiceReadTest {
     private static PrivateKey _privKey;
     private static PublicKey _secondPubKey;
     private static PrivateKey _secondPrivKey;
-
+    private static PublicKey _invalidPubKey;
 
     private static byte[] _signature;
     private static byte[] _signature2;
@@ -83,13 +83,15 @@ public class SafeServiceReadTest {
         _privKey = keyPair.getPrivate();
 
         keyPair = keygen.generateKeyPair();
+        _invalidPubKey = keyPair.getPublic();
+
+        keyPair = keygen.generateKeyPair();
         _secondPubKey = keyPair.getPublic();
         _secondPrivKey = keyPair.getPrivate();
 
         SessionManager _sessionManager = new SessionManager(50000000);
         _sessionManager.getSessions().put(_nonce, new Session(_seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
         _sessionManager.getSessions().put(_secondNonce, new Session(_secondSeq, _secondPubKey, _secondNonce, LocalDateTime.now().plusHours(2)));
-
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -152,14 +154,10 @@ public class SafeServiceReadTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User with public key does not exist");
 
-        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(4096);
-        KeyPair serverPair = keygen.generateKeyPair();
-        PublicKey pubKey = serverPair.getPublic();
         Contract.ReadReply reply = Contract.ReadReply.newBuilder().build();
 
         try { reply = _stub.read(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
+                .setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded()))
                 .setNumber(1)
                 .build());
 
@@ -178,11 +176,6 @@ public class SafeServiceReadTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("");
 
-        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(4096);
-        KeyPair serverPair = keygen.generateKeyPair();
-        PublicKey pubKey = serverPair.getPublic();
-
         Contract.ReadReply reply = Contract.ReadReply.newBuilder().build();
 
         try { reply = _stub.read(Contract.ReadRequest.newBuilder()
@@ -194,7 +187,7 @@ public class SafeServiceReadTest {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), reply.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
-            assertTrue(MacVerifier.verifyMac(pubKey, e));
+            assertTrue(MacVerifier.verifyMac(_invalidPubKey, e));
             throw e;
         }
 
