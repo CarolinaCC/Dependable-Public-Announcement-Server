@@ -7,8 +7,6 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
-import dpas.utils.CipherUtils;
-import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import dpas.utils.handler.ErrorGenerator;
 import io.grpc.*;
@@ -92,6 +90,7 @@ public class SafeServiceReadTest {
         _sessionManager.getSessions().put(_nonce, new Session(_seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
         _sessionManager.getSessions().put(_secondNonce, new Session(_secondSeq, _secondPubKey, _secondNonce, LocalDateTime.now().plusHours(2)));
 
+
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
@@ -100,7 +99,6 @@ public class SafeServiceReadTest {
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
-
         //Signatures
         _signature = Announcement.generateSignature(_privKey, MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
         _signature2 = Announcement.generateSignature(_privKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
@@ -108,8 +106,7 @@ public class SafeServiceReadTest {
     }
 
     @Before
-    public void setup() throws GeneralSecurityException,
-            IOException, CommonDomainException {
+    public void setup() {
 
         _stub.register(Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
@@ -181,6 +178,11 @@ public class SafeServiceReadTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("");
 
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+        keygen.initialize(4096);
+        KeyPair serverPair = keygen.generateKeyPair();
+        PublicKey pubKey = serverPair.getPublic();
+
         Contract.ReadReply reply = Contract.ReadReply.newBuilder().build();
 
         try { reply = _stub.read(Contract.ReadRequest.newBuilder()
@@ -192,7 +194,7 @@ public class SafeServiceReadTest {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), reply.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
-            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            assertTrue(MacVerifier.verifyMac(pubKey, e));
             throw e;
         }
 
