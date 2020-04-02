@@ -92,6 +92,30 @@ public class SafeServiceRegisterTest {
         assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
     }
 
+
+    @Test
+    public void duplicatedRegister() throws IOException, GeneralSecurityException {
+        var request = ContractGenerator.generateRegisterRequest(SESSION_NONCE, 1, _pubKey, _privKey);
+        var reply = _stub.safeRegister(request);
+
+        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
+        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSequenceNumber(), 2);
+        assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
+        request = ContractGenerator.generateRegisterRequest(SESSION_NONCE, 3, _pubKey, _privKey);
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("User Already Exists");
+        try {
+            _stub.safeRegister(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
+    }
+
+
     @Test
     public void invalidSessionNonceRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);

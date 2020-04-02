@@ -2,11 +2,12 @@ package dpas.library;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
-import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.Contract.*;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
+import dpas.utils.handler.ErrorGenerator;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -16,10 +17,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
@@ -124,16 +122,22 @@ public class Library {
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         Session session = null;
+        SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
             session = getSession(pubKey, privateKey);
-            var reply = _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverKey, pubKey,
-                    privateKey, String.valueOf(message), session.getSessionNonce(), session.getSeq(),
-                    GENERAL_BOARD_IDENTIFIER, a));
+            request = ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message),
+                    session.getSessionNonce(), session.getSeq(), GENERAL_BOARD_IDENTIFIER, a);
+
+            var reply = _stub.safePostGeneral(request);
 
             if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
+            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+                System.out.println("Unable to authenticate server response");
+                return;
+            }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
             if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
@@ -155,7 +159,7 @@ public class Library {
 
     public Announcement[] read(PublicKey publicKey, int number) {
         try {
-            var reply = _stub.read(Contract.ReadRequest.newBuilder()
+            var reply = _stub.read(ReadRequest.newBuilder()
                     .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
                     .setNumber(number)
                     .build());
@@ -171,7 +175,7 @@ public class Library {
 
     public Announcement[] readGeneral(int number) {
         try {
-            Contract.ReadReply reply = _stub.readGeneral(Contract.ReadRequest.newBuilder().setNumber(number).build());
+            ReadReply reply = _stub.readGeneral(ReadRequest.newBuilder().setNumber(number).build());
             var a = new Announcement[reply.getAnnouncementsCount()];
             reply.getAnnouncementsList().toArray(a);
             return a;
@@ -180,5 +184,26 @@ public class Library {
             System.out.println("An error occurred: " + status.getDescription());
             return new Announcement[0];
         }
+    }
+
+    private boolean verifyError(StatusRuntimeException e, byte[] request, PublicKey key) {
+        if (e.getTrailers() == null) {
+            return false;
+        }
+        var trailers = e.getTrailers();
+
+        if (trailers.get(ErrorGenerator.contentKey) == null) {
+            return false;
+        }
+
+        if (trailers.get(ErrorGenerator.macKey) == null) {
+            return false;
+        }
+
+        if (!Arrays.equals(request, trailers.get(ErrorGenerator.contentKey))) {
+            return false;
+        }
+
+        return MacVerifier.verifyMac(_serverKey, e);
     }
 }

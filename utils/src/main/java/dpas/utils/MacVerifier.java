@@ -102,11 +102,15 @@ public class MacVerifier {
         return Arrays.equals(digest.digest(content), hash);
     }
 
-    public static boolean verifyMac(PublicKey key, StatusRuntimeException e) throws GeneralSecurityException {
-        Metadata data = e.getTrailers();
-       byte[] content = ArrayUtils.addAll(data.get(ErrorGenerator.contentKey), e.getMessage().getBytes());
-        byte[] mac = data.get(ErrorGenerator.macKey);
-        return MacVerifier.verifyMac(key, content, mac);
+    public static boolean verifyMac(PublicKey key, StatusRuntimeException e) {
+        try {
+            Metadata data = e.getTrailers();
+            byte[] content = ArrayUtils.addAll(data.get(ErrorGenerator.contentKey), e.getMessage().getBytes());
+            byte[] mac = data.get(ErrorGenerator.macKey);
+            return MacVerifier.verifyMac(key, content, mac);
+        } catch (GeneralSecurityException ex) {
+            return false;
+        }
 
     }
 }

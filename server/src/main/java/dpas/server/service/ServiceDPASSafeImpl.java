@@ -138,7 +138,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
-                responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User Already Exists", request, _privateKey));
             } else {
                 save(user.toJson());
                 responseObserver.onNext(ContractGenerator.generateRegisterReply(nonce, nextSeq, _privateKey));
