@@ -198,8 +198,7 @@ public class Library {
             var reply = _stub.read(request);
             return validateReadResponse(request, reply);
         } catch (StatusRuntimeException e) {
-            var content = ArrayUtils.addAll(request.getNonce().getBytes(), e.getMessage().getBytes());
-            if (!verifyError(e, content, _serverKey)) {
+            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return new Announcement[0];
             }
@@ -223,8 +222,7 @@ public class Library {
             ReadReply reply = _stub.readGeneral(request);
             return validateReadResponse(request, reply);
         } catch (StatusRuntimeException e) {
-            var content = ArrayUtils.addAll(request.getNonce().getBytes(), e.getMessage().getBytes());
-            if (!verifyError(e, content, _serverKey)) {
+            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return new Announcement[0];
             }
