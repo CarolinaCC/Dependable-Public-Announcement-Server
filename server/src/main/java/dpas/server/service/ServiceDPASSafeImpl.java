@@ -50,7 +50,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     public void newSession(Contract.ClientHello request, StreamObserver<Contract.ServerHello> responseObserver) {
         try {
             if (!MacVerifier.verifyMac(request)) {
-                responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid Mac").asRuntimeException());
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Invalid Mac", request, _privateKey));
                 return;
             }
 
@@ -62,13 +62,13 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onCompleted();
 
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription("Invalid security values provided").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT,"Invalid security values provided", request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription("Unspecified Error at server side").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Unspecified Error at server side", request, _privateKey));
         } catch(IllegalArgumentException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         }
     }
 
@@ -163,11 +163,11 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onNext(Empty.newBuilder().build());
             responseObserver.onCompleted();
         } catch (SessionException e) {
-            responseObserver.onError(UNAUTHENTICATED.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (IOException | GeneralSecurityException e) {
-            responseObserver.onError(CANCELLED.withDescription("Invalid security values provided").asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (IllegalArgumentException | IllegalMacException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         }
     }
 
