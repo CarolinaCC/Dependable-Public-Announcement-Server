@@ -32,17 +32,23 @@ public class SafeServicePostTest {
 
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
+    private static PublicKey _secondPubKey;
+    private static PrivateKey _secondPrivKey;
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPKey;
-
     private static PublicKey _invalidPubKey;
-    private static String _nonce ;
+
+    private static String _secondNonce;
+    private static long _secondSeq;
+
+    private static String _nonce;
     private static long _seq;
     private static String _invalidNonce;
 
     private static final String MESSAGE = "Message";
     private static final String LONGMESSAGE = "A".repeat(255);
 
+    private static Contract.SafePostRequest _nonUserequest;
     private static Contract.SafePostRequest _request;
     private static Contract.SafePostRequest _longRequest;
 
@@ -62,8 +68,10 @@ public class SafeServicePostTest {
         keygen.initialize(4096);
 
         _nonce = UUID.randomUUID().toString();
+        _secondNonce = UUID.randomUUID().toString();
         _invalidNonce = UUID.randomUUID().toString();
         _seq = new SecureRandom().nextLong();
+        _secondSeq = new SecureRandom().nextLong();
 
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
@@ -74,12 +82,19 @@ public class SafeServicePostTest {
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
 
+        keyPair = keygen.generateKeyPair();
+        _secondPubKey = keyPair.getPublic();
+        _secondPrivKey = keyPair.getPrivate();
 
         keyPair = keygen.generateKeyPair();
         _invalidPubKey = keyPair.getPublic();
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
                 MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
+
+        _nonUserequest = ContractGenerator.generatePostRequest(_serverPKey, _secondPubKey, _secondPrivKey,
+                MESSAGE, _secondNonce, _secondSeq + 1, CipherUtils.keyToString(_secondPubKey), null);
+
 
         _longRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
                 LONGMESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
@@ -93,6 +108,7 @@ public class SafeServicePostTest {
         SessionManager _sessionManager = new SessionManager(50000000);
 
         _sessionManager.getSessions().put(_nonce, new Session(_seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
+        _sessionManager.getSessions().put(_secondNonce, new Session(_secondSeq, _secondPubKey, _secondNonce, LocalDateTime.now().plusHours(2)));
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -123,6 +139,21 @@ public class SafeServicePostTest {
         assertEquals(reply.getSeq(), _seq + 4);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
         assertEquals(_impl._announcements.size(), 1);
+    }
+
+    @Test
+    public void postNonUser() throws GeneralSecurityException, IOException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("User does not exist");
+        try {
+            var reply = _stub.safePost(_nonUserequest);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _nonUserequest.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
