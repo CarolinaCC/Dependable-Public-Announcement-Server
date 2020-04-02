@@ -10,9 +10,8 @@ import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacGenerator;
 import dpas.utils.MacVerifier;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.StatusRuntimeException;
+import dpas.utils.handler.ErrorGenerator;
+import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.junit.*;
@@ -22,8 +21,7 @@ import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 
 public class SafeServicePostGeneralTest {
@@ -115,7 +113,15 @@ public class SafeServicePostGeneralTest {
         assertEquals(_impl._announcements.size(), 1);
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid sequence number");
-        _stub.safePostGeneral(_request);
+        try {
+            _stub.safePostGeneral(_request);
+        }  catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
@@ -131,27 +137,51 @@ public class SafeServicePostGeneralTest {
     }
 
     @Test
-    public void invalidSessionPost() {
+    public void invalidSessionPost() throws GeneralSecurityException {
         var request = Contract.SafePostRequest.newBuilder(_request).setSessionNonce(INVALID_SESSION_NONCE).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Session");
-        _stub.safePostGeneral(request);
+        try {
+            _stub.safePostGeneral(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
-    public void invalidSeqPost() {
+    public void invalidSeqPost() throws GeneralSecurityException {
         var request = Contract.SafePostRequest.newBuilder(_request).setSeq(7).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid sequence number");
-        _stub.safePostGeneral(request);
+        try {
+            _stub.safePostGeneral(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
-    public void invalidkeyPost() {
+    public void invalidkeyPost() throws GeneralSecurityException {
         var request = Contract.SafePostRequest.newBuilder(_request).setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded())).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Public Key for request");
-        _stub.safePostGeneral(request);
+        try {
+            _stub.safePostGeneral(request);
+        } catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
@@ -161,23 +191,47 @@ public class SafeServicePostGeneralTest {
         request = Contract.SafePostRequest.newBuilder(request).setMac(ByteString.copyFrom(mac)).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
-        _stub.safePostGeneral(request);
+        try {
+            _stub.safePostGeneral(request);
+        }  catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
-    public void invalidMacPost() {
+    public void invalidMacPost() throws GeneralSecurityException {
         var request = Contract.SafePostRequest.newBuilder(_request).setMessage(ByteString.copyFrom(MESSAGE.getBytes())).build();
         request = Contract.SafePostRequest.newBuilder(request).setMac(_request.getMac()).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid mac");
-        _stub.safePostGeneral(request);
+        try {
+            _stub.safePostGeneral(request);
+        }  catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
     @Test
-    public void notAMacPost() {
+    public void notAMacPost() throws GeneralSecurityException {
         var request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("security values provided");
-        _stub.safePostGeneral(request);
+        try {
+            _stub.safePostGeneral(request);
+        }  catch(StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 }
