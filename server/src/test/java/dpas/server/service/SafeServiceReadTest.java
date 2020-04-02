@@ -7,11 +7,14 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
+import dpas.utils.CipherUtils;
+import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import dpas.utils.handler.ErrorGenerator;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -34,7 +37,7 @@ public class SafeServiceReadTest {
 
     private static Contract.ReadRequest _readRequest;
 
-    private static final int port = 9000;
+    private static final int port = 9001;
     private static final String host = "localhost";
 
     private static ServiceDPASSafeImpl _impl;
@@ -63,12 +66,17 @@ public class SafeServiceReadTest {
     private static final String MESSAGE = "Message to sign";
     private static final String SECOND_MESSAGE = "Second message to sign";
 
+    private static String _identifier;
+    private static String _secondIdentifier;
+
     @BeforeClass
     public static void oneTimeSetup() throws GeneralSecurityException, IOException, CommonDomainException {
 
         _secondNonce = UUID.randomUUID().toString();
         _seq = new SecureRandom().nextLong();
         _secondSeq = new SecureRandom().nextLong();
+        _identifier = UUID.randomUUID().toString();
+        _secondIdentifier = UUID.randomUUID().toString();
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
@@ -97,7 +105,7 @@ public class SafeServiceReadTest {
     }
 
     @Before
-    public void setup() throws IOException {
+    public void setup() throws IOException, GeneralSecurityException, CommonDomainException {
 
         SessionManager _sessionManager = new SessionManager(50000000);
         _sessionManager.getSessions().put(_nonce, new Session(_seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
@@ -112,21 +120,11 @@ public class SafeServiceReadTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
 
-        _stub.register(Contract.RegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .build());
+        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
 
         // Posts to Read
-        _stub.post(Contract.PostRequest.newBuilder()
-                .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_signature))
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .build());
-        _stub.post(Contract.PostRequest.newBuilder()
-                .setMessage(SECOND_MESSAGE)
-                .setSignature(ByteString.copyFrom(_signature2))
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .build());
+        _stub.safePost(ContractGenerator.generatePostRequest(_serverPKey,_pubKey, _privKey, MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey)
+                , null));
     }
 
     @After
@@ -137,18 +135,23 @@ public class SafeServiceReadTest {
     }
 
     @Test
-    public void readValid() {
-            var reply = _stub.read(Contract.ReadRequest.newBuilder()
+    public void readValid() throws GeneralSecurityException {
+            var request = Contract.ReadRequest.newBuilder()
                     .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                     .setNumber(1)
-                    .build());
+                    .setNonce("Nonce")
+                    .build();
+
+            var reply = _stub.read(request);
 
             List<Contract.Announcement> announcementsGRPC = reply.getAnnouncementsList();
             assertEquals(announcementsGRPC.size(), 1);
-            assertEquals(announcementsGRPC.get(0).getMessage(), SECOND_MESSAGE);
+            assertEquals(announcementsGRPC.get(0).getMessage(), MESSAGE);
             assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
             assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _pubKey.getEncoded());
-            assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature2);
+            assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+
+            assertTrue(MacVerifier.verifyMac(_serverPKey, request.getNonce().getBytes(), reply.getMac().toByteArray()));
     }
 
     @Test
@@ -156,16 +159,17 @@ public class SafeServiceReadTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User with public key does not exist");
 
-        Contract.ReadReply reply = Contract.ReadReply.newBuilder().build();
-
-        try { reply = _stub.read(Contract.ReadRequest.newBuilder()
+        var request = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded()))
                 .setNumber(1)
-                .build());
+                .setNonce("Nonce1")
+                .build();
+
+        try { _stub.read(request);
 
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), reply.getMac().toByteArray());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), ArrayUtils.addAll(request.getNonce().getBytes()));
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
@@ -175,21 +179,24 @@ public class SafeServiceReadTest {
 
     @Test
     public void readWrongMac() throws NoSuchAlgorithmException {
+
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("");
+        exception.expectMessage("User with public key does not exist");
 
-        Contract.ReadReply reply = Contract.ReadReply.newBuilder().build();
-
-        try { reply = _stub.read(Contract.ReadRequest.newBuilder()
+        _readRequest = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(1)
-                .build());
+                .setNonce("Nonce2")
+                .build();
+
+        try {
+            _stub.read(_readRequest);
 
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), reply.getMac().toByteArray());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), ArrayUtils.addAll(_readRequest.getNonce().getBytes()));
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
-            assertTrue(MacVerifier.verifyMac(_invalidPubKey, e));
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }
 
