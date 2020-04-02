@@ -173,7 +173,7 @@ public class SafeServiceReadTest {
     }
 
     @Test
-    public void readWrongMac() {
+    public void readNegativeNumber() {
 
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("number cannot be negative");
