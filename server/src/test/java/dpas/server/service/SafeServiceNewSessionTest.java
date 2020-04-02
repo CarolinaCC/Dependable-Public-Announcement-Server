@@ -88,7 +88,7 @@ public class SafeServiceNewSessionTest {
     }
 
     @Test
-    public void newSessionWrongClientMac() throws GeneralSecurityException {
+    public void newSessionWrongClientMac() {
 
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");

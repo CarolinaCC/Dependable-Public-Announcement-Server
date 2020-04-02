@@ -92,16 +92,22 @@ public class Library {
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         Session session = null;
+        SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
-            session = getSession(key, privateKey);
-            var reply = _stub.safePost(ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
+            request = ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
                     String.valueOf(message), session.getSessionNonce(),
-                    session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a));
+                    session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
+            session = getSession(key, privateKey);
+            var reply = _stub.safePost(request);
 
             if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
                 System.out.println("An error occurred: Unable to validate server response.");
             }
         } catch (StatusRuntimeException e) {
+            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+                System.out.println("Unable to authenticate server response");
+                System.exit(1);
+            }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
             if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
@@ -136,7 +142,7 @@ public class Library {
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                return;
+                System.exit(1);
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
@@ -205,6 +211,6 @@ public class Library {
             return false;
         }
 
-        return MacVerifier.verifyMac(_serverKey, e);
+        return MacVerifier.verifyMac(key, e);
     }
 }
