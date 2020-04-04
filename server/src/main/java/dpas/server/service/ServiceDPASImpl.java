@@ -1,6 +1,22 @@
 package dpas.server.service;
 
+import static io.grpc.Status.INVALID_ARGUMENT;
+import static io.grpc.Status.UNAVAILABLE;
+
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
 import com.google.protobuf.Empty;
+
 import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.GeneralBoard;
@@ -15,22 +31,6 @@ import dpas.grpc.contract.Contract.ReadRequest;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.stub.StreamObserver;
-
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static io.grpc.Status.INVALID_ARGUMENT;
-import static io.grpc.Status.UNAVAILABLE;
 
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {

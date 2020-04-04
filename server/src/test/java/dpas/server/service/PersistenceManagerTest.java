@@ -1,41 +1,54 @@
 package dpas.server.service;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonObject;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
 import com.google.protobuf.ByteString;
+
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
-import dpas.server.service.ServiceDPASPersistentImpl;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.*;
-import org.junit.rules.ExpectedException;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonObject;
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-
-import static org.junit.Assert.*;
 
 public class PersistenceManagerTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
-
-    private PublicKey _serverKey;
 
     private static final String encodedServerKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCjjcgcWE6gIo11rgDwn5Al1P/U68HV6aTvabmmDzhb0xngRKbqxplMtH58QRiq8VerruCuFccmFXtsl505SvgimC9s1QmEpyuXoACYiirlPJPhSlrrNBk2dgSo9lDAW3iAmm2jrnyuOjEnkjkSybok4lNsV9UjPwCtixs9wj3dvwIDAQAB";
     private static final String encodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCFtJcLhRw+6TkWS1VKAHjiOvtxF9giZrKqS+wc9J4aqrzIduyhljuGByAWMQ3uG3lvsTF/ibmIvuHtsPmjT2lk+kW9h63W+iREng98boLij5LUttG7jAN7gEfkpqSBJlHrUmJNk0tpbo9bDCZW7UlpyF9Z1dbghFF+1if+6+1viwIDAQAB";
@@ -48,7 +61,7 @@ public class PersistenceManagerTest {
     @Before
     public void setup() throws InvalidKeySpecException, NoSuchAlgorithmException {
         byte[] encoded = Base64.getDecoder().decode(encodedServerKey);
-        _serverKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encoded));
+        KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encoded));
     }
 
     @After
@@ -249,8 +262,6 @@ public class PersistenceManagerTest {
     @Test
     public void validPost() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
 
-        ClassLoader classLoader = getClass().getClassLoader();
-
         URL res = getClass().getClassLoader().getResource("valid_load_target_2.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
@@ -291,8 +302,6 @@ public class PersistenceManagerTest {
     @Test
     public void validVariousPost()
             throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, URISyntaxException {
-
-        ClassLoader classLoader = getClass().getClassLoader();
 
         URL res = getClass().getClassLoader().getResource("valid_load_target_2.json");
         File file = Paths.get(res.toURI()).toFile();
@@ -337,8 +346,6 @@ public class PersistenceManagerTest {
     @Test
     public void invalidPostGeneral() throws IOException, GeneralSecurityException,
             CommonDomainException, URISyntaxException {
-
-        ClassLoader classLoader = getClass().getClassLoader();
 
         URL res = getClass().getClassLoader().getResource("valid_load_target_7.json");
         File file = Paths.get(res.toURI()).toFile();

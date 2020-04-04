@@ -1,25 +1,39 @@
 package dpas.server.service;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
 import com.google.protobuf.ByteString;
+
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import dpas.utils.handler.ErrorGenerator;
-import io.grpc.*;
+import io.grpc.ManagedChannel;
+import io.grpc.Metadata;
+import io.grpc.Server;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.junit.*;
-import org.junit.rules.ExpectedException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import java.io.IOException;
-import java.security.*;
-
-import static org.junit.Assert.*;
 
 public class SafeServiceNewSessionTest {
 
@@ -31,8 +45,6 @@ public class SafeServiceNewSessionTest {
     private static final String SESSION_NONCE = "NONCE";
     private static final String SESSION_NONCE2 = "NONCE2";
     private static final String SESSION_NONCE3 = "NONCE3";
-    private static byte[] _clientMac;
-
     private static final int port = 9001;
     private static final String host = "localhost";
 

@@ -39,7 +39,6 @@ public class SafeServiceReadTest {
     private static ServiceDPASSafeImpl _impl;
     private static long _seq;
     private static long _secondSeq;
-    private static int _number;
     private static String _nonce = "Nonce";
     private static String _secondNonce = "Nonce";
 
@@ -50,20 +49,14 @@ public class SafeServiceReadTest {
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
     private static PublicKey _secondPubKey;
-    private static PrivateKey _secondPrivKey;
     private static PublicKey _invalidPubKey;
 
     private static byte[] _signature;
-    private static byte[] _signature2;
-
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPKey;
 
     private static final String MESSAGE = "Message to sign";
     private static final String SECOND_MESSAGE = "Second message to sign";
-
-    private static String _identifier;
-    private static String _secondIdentifier;
 
     @BeforeClass
     public static void oneTimeSetup() throws GeneralSecurityException, IOException, CommonDomainException {
@@ -71,8 +64,8 @@ public class SafeServiceReadTest {
         _secondNonce = UUID.randomUUID().toString();
         _seq = new SecureRandom().nextLong();
         _secondSeq = new SecureRandom().nextLong();
-        _identifier = UUID.randomUUID().toString();
-        _secondIdentifier = UUID.randomUUID().toString();
+        UUID.randomUUID().toString();
+        UUID.randomUUID().toString();
 
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
@@ -80,8 +73,6 @@ public class SafeServiceReadTest {
         _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
         _nonce = UUID.randomUUID().toString();
-        _number = 0;
-
         KeyPair keyPair = keygen.generateKeyPair();
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
@@ -91,12 +82,12 @@ public class SafeServiceReadTest {
 
         keyPair = keygen.generateKeyPair();
         _secondPubKey = keyPair.getPublic();
-        _secondPrivKey = keyPair.getPrivate();
+        keyPair.getPrivate();
 
 
         //Signatures
         _signature = Announcement.generateSignature(_privKey, MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
-        _signature2 = Announcement.generateSignature(_privKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
+        Announcement.generateSignature(_privKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
 
     }
 

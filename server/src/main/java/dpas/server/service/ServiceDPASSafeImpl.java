@@ -1,26 +1,10 @@
 package dpas.server.service;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Empty;
-import dpas.common.domain.Announcement;
-import dpas.common.domain.AnnouncementBoard;
-import dpas.common.domain.User;
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidUserException;
-import dpas.grpc.contract.Contract;
-import dpas.server.session.exception.IllegalMacException;
-import dpas.utils.MacGenerator;
-import dpas.utils.handler.ErrorGenerator;
-import dpas.server.persistence.PersistenceManager;
-import dpas.server.session.exception.SessionException;
-import dpas.server.session.SessionManager;
-import dpas.utils.CipherUtils;
-import dpas.utils.ContractGenerator;
-import dpas.utils.MacVerifier;
-import io.grpc.Status;
-import io.grpc.stub.StreamObserver;
+import static io.grpc.Status.CANCELLED;
+import static io.grpc.Status.INVALID_ARGUMENT;
+import static io.grpc.Status.UNAUTHENTICATED;
+import static io.grpc.Status.UNAVAILABLE;
 
-import javax.json.JsonObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -30,7 +14,27 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.stream.Collectors;
 
-import static io.grpc.Status.*;
+import javax.json.JsonObject;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
+
+import dpas.common.domain.Announcement;
+import dpas.common.domain.AnnouncementBoard;
+import dpas.common.domain.User;
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.grpc.contract.Contract;
+import dpas.server.persistence.PersistenceManager;
+import dpas.server.session.SessionManager;
+import dpas.server.session.exception.IllegalMacException;
+import dpas.server.session.exception.SessionException;
+import dpas.utils.CipherUtils;
+import dpas.utils.ContractGenerator;
+import dpas.utils.MacGenerator;
+import dpas.utils.MacVerifier;
+import dpas.utils.handler.ErrorGenerator;
+import io.grpc.stub.StreamObserver;
 
 public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     private PrivateKey _privateKey;

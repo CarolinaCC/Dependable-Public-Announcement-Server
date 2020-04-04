@@ -1,8 +1,26 @@
 package dpas.library;
 
+import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import com.google.protobuf.ByteString;
+
 import dpas.common.domain.exception.CommonDomainException;
-import dpas.grpc.contract.Contract.*;
+import dpas.grpc.contract.Contract.Announcement;
+import dpas.grpc.contract.Contract.ClientHello;
+import dpas.grpc.contract.Contract.ReadReply;
+import dpas.grpc.contract.Contract.ReadRequest;
+import dpas.grpc.contract.Contract.SafePostRequest;
+import dpas.grpc.contract.Contract.SafeRegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
@@ -11,15 +29,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
-import org.apache.commons.lang3.ArrayUtils;
-
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.*;
-
-import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
 
 public class Library {

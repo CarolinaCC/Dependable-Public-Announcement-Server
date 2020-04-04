@@ -17,8 +17,6 @@ public class GeneralBoardTest {
 
     private Announcement _announcement;
     private GeneralBoard _generalBoard;
-    private String _identifier;
-
     @Before
     public void setup() throws CommonDomainException, NoSuchAlgorithmException {
         // generate user
@@ -29,7 +27,7 @@ public class GeneralBoardTest {
         PublicKey publicKey = keyPair.getPublic();
         User userA = new User(publicKey);
 
-        _identifier = UUID.randomUUID().toString();
+        UUID.randomUUID().toString();
 
         // Generate Board
         _generalBoard = new GeneralBoard();

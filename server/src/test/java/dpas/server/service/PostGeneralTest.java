@@ -41,7 +41,6 @@ public class PostGeneralTest {
     private static byte[] _firstSignature;
     private static byte[] _secondSignature;
     private static byte[] _secondSignatureWithRef;
-    private static byte[] _signatureForSameId;
     private static byte[] _bigMessageSignature;
 
     private ManagedChannel _channel;
@@ -73,7 +72,7 @@ public class PostGeneralTest {
         _secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
 
-        _signatureForSameId = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
+        Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
 
 

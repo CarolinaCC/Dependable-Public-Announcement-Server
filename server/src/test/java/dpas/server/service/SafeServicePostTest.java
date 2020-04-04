@@ -143,7 +143,7 @@ public class SafeServicePostTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User does not exist");
         try {
-            var reply = _stub.safePost(_nonUserequest);
+            _stub.safePost(_nonUserequest);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), _nonUserequest.getMac().toByteArray());
