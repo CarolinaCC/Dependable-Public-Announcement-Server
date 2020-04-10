@@ -64,7 +64,6 @@ public class SafeServicePostGeneralTest {
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
 
-
         keyPair = keygen.generateKeyPair();
         _invalidPubKey = keyPair.getPublic();
 
@@ -86,7 +85,6 @@ public class SafeServicePostGeneralTest {
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
         _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
-
     }
 
     @After
