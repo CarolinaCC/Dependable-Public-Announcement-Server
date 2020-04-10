@@ -33,6 +33,5 @@ public class CipherUtils {
 
     public static String keyToString(Key key) {
         return Base64.getEncoder().encodeToString(key.getEncoded());
-
     }
 }

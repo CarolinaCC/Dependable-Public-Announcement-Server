@@ -15,7 +15,7 @@ import dpas.server.session.exception.SessionException;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacGenerator;
-import dpas.utils.handler.ErrorGenerator;
+import dpas.utils.ErrorGenerator;
 import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
@@ -104,8 +104,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             }
         } catch (CommonDomainException | IllegalMacException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
-        } catch (SessionException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (GeneralSecurityException e) {
@@ -187,7 +185,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         } catch (SessionException e) {
             responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         }
-
     }
 
     protected Announcement generateAnnouncement(Contract.PostRequest request, AnnouncementBoard board, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
@@ -207,10 +204,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             throw new InvalidUserException("User does not exist");
         }
         return new Announcement(signature, user, message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
-    }
-
-    public SessionManager getSessionManager() {
-        return _sessionManager;
     }
 
     //Don't want to save when testing

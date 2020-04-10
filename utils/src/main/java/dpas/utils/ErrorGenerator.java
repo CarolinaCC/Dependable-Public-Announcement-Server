@@ -1,4 +1,4 @@
-package dpas.utils.handler;
+package dpas.utils;
 
 import dpas.grpc.contract.Contract;
 import dpas.utils.MacGenerator;

@@ -10,13 +10,6 @@ import java.util.stream.Collectors;
 
 public class ByteUtils {
 
-    public static byte[] toByteArray(Contract.MacReply reply) throws IOException {
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            byte[] res = stream.toByteArray();
-            return res;
-        }
-    }
-
     public static byte[] toByteArray(Contract.PostRequest request) throws IOException {
         byte[] seq = NumberUtils.longToBytes(request.getSeq());
         byte[] pubKey = request.getPublicKey().toByteArray();
@@ -31,8 +24,7 @@ public class ByteUtils {
             for (var ref : references) {
                 stream.writeBytes(ref);
             }
-            byte[] res = stream.toByteArray();
-            return res;
+            return stream.toByteArray();
         }
     }
 
@@ -52,8 +44,7 @@ public class ByteUtils {
             for (var ref : refs) {
                 stream.writeBytes(ref);
             }
-            byte[] res = stream.toByteArray();
-            return res;
+            return stream.toByteArray();
         }
     }
 
@@ -61,8 +52,7 @@ public class ByteUtils {
         byte[] key = pubKey.getEncoded();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(key);
-            byte[] res = stream.toByteArray();
-            return res;
+            return stream.toByteArray();
         }
     }
 
@@ -96,7 +86,6 @@ public class ByteUtils {
             return stream.toByteArray();
         }
     }
-
 
     public static byte[] toByteArray(Contract.RegisterRequest request) throws IOException {
         byte[] pubKey = request.getPublicKey().toByteArray();

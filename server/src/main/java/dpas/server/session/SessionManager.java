@@ -10,23 +10,17 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
 
 
     public void validateSessionRequest(Contract.RegisterRequest request) throws GeneralSecurityException, IOException, IllegalMacException {
         PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] contentOfMac = ByteUtils.toByteArray(request);
+        byte[] content = ByteUtils.toByteArray(request);
         byte[] mac = request.getMac().toByteArray();
-        if (!MacVerifier.verifyMac(publicKey, contentOfMac, mac))
+        if (!MacVerifier.verifyMac(publicKey, content, mac))
             throw new IllegalMacException("Invalid mac");
-
     }
 
     public void validateSessionRequest(Contract.PostRequest request, long currSeq) throws GeneralSecurityException, IOException, SessionException, IllegalMacException {
@@ -38,7 +32,6 @@ public class SessionManager {
     }
 
     public void validateSessionRequest(byte[] mac, byte[] content, long seq, PublicKey pubKey, long currSeq) throws GeneralSecurityException, SessionException, IllegalMacException {
-
         if (currSeq + 1 != seq)
             throw new SessionException("Invalid sequence number");
 
@@ -46,7 +39,6 @@ public class SessionManager {
     }
 
     private void validateRequest(byte[] mac, byte[] content, PublicKey key) throws GeneralSecurityException, IllegalMacException {
-
         if (!MacVerifier.verifyMac(key, content, mac))
             throw new IllegalMacException("Invalid mac");
 

@@ -21,9 +21,9 @@ import java.util.*;
 
 
 public class PersistenceManager {
-    private String _path;
-    private File _swapFile;
-    private File _file;
+    private final String _path;
+    private final File _swapFile;
+    private final File _file;
 
 
     public PersistenceManager(String path) throws IOException {

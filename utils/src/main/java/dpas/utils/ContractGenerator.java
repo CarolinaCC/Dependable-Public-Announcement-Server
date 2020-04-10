@@ -2,8 +2,10 @@ package dpas.utils;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
-import dpas.grpc.contract.Contract.*;
-import io.grpc.netty.shaded.io.netty.handler.codec.base64.Base64;
+import dpas.grpc.contract.Contract.Announcement;
+import dpas.grpc.contract.Contract.MacReply;
+import dpas.grpc.contract.Contract.PostRequest;
+import dpas.grpc.contract.Contract.RegisterRequest;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -17,8 +19,8 @@ import java.util.stream.Stream;
 public class ContractGenerator {
 
     public static PostRequest generatePostRequest(PublicKey serverKey, PublicKey pubKey, PrivateKey privKey,
-                                                          String message, long seq,
-                                                          String boardIdentifier, Announcement[] a)
+                                                  String message, long seq,
+                                                  String boardIdentifier, Announcement[] a)
             throws GeneralSecurityException, IOException, CommonDomainException {
         String encodedMessage = CipherUtils.cipherAndEncode(message.getBytes(), serverKey);
 

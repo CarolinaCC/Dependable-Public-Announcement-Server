@@ -7,7 +7,7 @@ import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacGenerator;
 import dpas.utils.MacVerifier;
-import dpas.utils.handler.ErrorGenerator;
+import dpas.utils.ErrorGenerator;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;

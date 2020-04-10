@@ -1,7 +1,6 @@
 package dpas.utils;
 
 import dpas.grpc.contract.Contract;
-import dpas.utils.handler.ErrorGenerator;
 import io.grpc.Metadata;
 import io.grpc.StatusRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
@@ -9,28 +8,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import javax.crypto.Cipher;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
 public class MacVerifier {
-
-
-    public static boolean verifyMac(Contract.RegisterRequest request) throws GeneralSecurityException, IOException {
-        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] mac = request.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(request);
-
-        return Arrays.equals(digest.digest(content), hash);
-    }
-
 
     public static boolean verifyMac(Contract.RegisterRequest request, Contract.MacReply reply, PublicKey serverKey) throws GeneralSecurityException, IOException {
         byte[] mac = reply.getMac().toByteArray();
@@ -43,19 +25,6 @@ public class MacVerifier {
 
         return Arrays.equals(content, hash);
     }
-
-    public static boolean verifyMac(PublicKey pubKey, Contract.PostRequest request) throws GeneralSecurityException, IOException {
-        byte[] mac = request.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(request);
-
-        return Arrays.equals(digest.digest(content), hash);
-    }
-
 
     public static boolean verifyMac(PublicKey pubKey, byte[] content, byte[] mac) throws GeneralSecurityException {
         Cipher cipher = Cipher.getInstance("RSA");
@@ -75,7 +44,6 @@ public class MacVerifier {
         } catch (GeneralSecurityException ex) {
             return false;
         }
-
     }
 
     public static boolean verifyMac(PublicKey pubKey, Contract.MacReply reply, Contract.PostRequest request) throws GeneralSecurityException {

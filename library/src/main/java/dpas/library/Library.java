@@ -6,7 +6,7 @@ import dpas.grpc.contract.Contract.*;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
-import dpas.utils.handler.ErrorGenerator;
+import dpas.utils.ErrorGenerator;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
