@@ -105,7 +105,7 @@ public class SafeServiceGoodbyeTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Session");
         var request = ContractGenerator.generateGoodbyeRequest(_privKey, "Invalid", _seq + 1);
-        try{
+        try {
             _stub.goodbye(request);
             assertEquals(_impl.getSessionManager().getSessions().size(), 1);
         } catch (StatusRuntimeException e) {
@@ -141,7 +141,7 @@ public class SafeServiceGoodbyeTest {
     @Test
     public void invalicMac() throws GeneralSecurityException, IOException {
         var req = ContractGenerator.generateGoodbyeRequest(_privKey, SESSION_NONCE, _seq + 1);
-        req = Contract.GoodByeRequest.newBuilder(req).setMac(ByteString.copyFrom(new byte[] {23, 21, 23})).build();
+        req = Contract.GoodByeRequest.newBuilder(req).setMac(ByteString.copyFrom(new byte[]{23, 21, 23})).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
         try {

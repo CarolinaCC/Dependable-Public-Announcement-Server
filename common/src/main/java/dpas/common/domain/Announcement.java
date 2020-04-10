@@ -7,7 +7,9 @@ import dpas.grpc.contract.Contract;
 import javax.json.Json;
 import javax.json.JsonObject;
 import java.security.*;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Announcement {
@@ -27,7 +29,7 @@ public class Announcement {
         _message = message;
         _signature = signature;
         _user = user;
-        _references =  references;
+        _references = references;
         _sequencer = sequencer;
         _board = board;
         generateHash();

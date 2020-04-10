@@ -1,25 +1,6 @@
 package dpas.server.service;
 
-import java.io.IOException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashSet;
-
-import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import com.google.protobuf.ByteString;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -30,6 +11,15 @@ import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.*;
+import org.junit.rules.ExpectedException;
+
+import java.io.IOException;
+import java.security.*;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashSet;
 
 public class PostTest {
 

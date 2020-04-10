@@ -115,7 +115,7 @@ public class SafeServicePostGeneralTest {
         exception.expectMessage("Invalid sequence number");
         try {
             _stub.safePostGeneral(_request);
-        }  catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), _request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -143,7 +143,7 @@ public class SafeServicePostGeneralTest {
         exception.expectMessage("Invalid Session");
         try {
             _stub.safePostGeneral(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -159,7 +159,7 @@ public class SafeServicePostGeneralTest {
         exception.expectMessage("Invalid sequence number");
         try {
             _stub.safePostGeneral(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -175,7 +175,7 @@ public class SafeServicePostGeneralTest {
         exception.expectMessage("Invalid Public Key for request");
         try {
             _stub.safePostGeneral(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
@@ -193,7 +193,7 @@ public class SafeServicePostGeneralTest {
         exception.expectMessage("Invalid security values provided");
         try {
             _stub.safePostGeneral(request);
-        }  catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
@@ -210,7 +210,7 @@ public class SafeServicePostGeneralTest {
         exception.expectMessage("Invalid mac");
         try {
             _stub.safePostGeneral(request);
-        }  catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
@@ -226,7 +226,7 @@ public class SafeServicePostGeneralTest {
         exception.expectMessage("security values provided");
         try {
             _stub.safePostGeneral(request);
-        }  catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());

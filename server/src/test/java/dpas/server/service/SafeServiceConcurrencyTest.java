@@ -7,8 +7,8 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
-import dpas.utils.ContractGenerator;
 import dpas.utils.CipherUtils;
+import dpas.utils.ContractGenerator;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -29,7 +29,6 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class SafeServiceConcurrencyTest {

@@ -6,8 +6,8 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
-import dpas.utils.ContractGenerator;
 import dpas.utils.CipherUtils;
+import dpas.utils.ContractGenerator;
 import dpas.utils.MacGenerator;
 import dpas.utils.MacVerifier;
 import dpas.utils.handler.ErrorGenerator;
@@ -173,7 +173,7 @@ public class SafeServicePostTest {
         exception.expectMessage("Invalid sequence number");
         try {
             _stub.safePost(_request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), _request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -191,10 +191,10 @@ public class SafeServicePostTest {
         assertEquals(_impl._announcements.size(), 1);
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid mac");
-        var request = Contract.SafePostRequest.newBuilder(_request).setSeq(_seq+5).build();
+        var request = Contract.SafePostRequest.newBuilder(_request).setSeq(_seq + 5).build();
         try {
             _stub.safePost(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
@@ -210,7 +210,7 @@ public class SafeServicePostTest {
         exception.expectMessage("Invalid Session");
         try {
             _stub.safePost(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -226,7 +226,7 @@ public class SafeServicePostTest {
         exception.expectMessage("Invalid sequence number");
         try {
             _stub.safePost(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -242,7 +242,7 @@ public class SafeServicePostTest {
         exception.expectMessage("Invalid Public Key for request");
         try {
             _stub.safePost(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
@@ -260,7 +260,7 @@ public class SafeServicePostTest {
         exception.expectMessage("Invalid security values provided");
         try {
             _stub.safePost(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
@@ -276,7 +276,7 @@ public class SafeServicePostTest {
         exception.expectMessage("Invalid mac");
         try {
             _stub.safePost(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
@@ -287,12 +287,12 @@ public class SafeServicePostTest {
 
     @Test
     public void notAMacPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[] {12, 4, 56, 21})).build();
+        var request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("security values provided");
         try {
             _stub.safePost(request);
-        }  catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());

@@ -1,31 +1,6 @@
 package dpas.server.service;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import com.google.protobuf.ByteString;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
@@ -36,13 +11,21 @@ import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import dpas.utils.handler.ErrorGenerator;
-import io.grpc.ManagedChannel;
-import io.grpc.Metadata;
-import io.grpc.Server;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.apache.commons.lang3.ArrayUtils;
+import org.junit.*;
+import org.junit.rules.ExpectedException;
+
+import java.io.IOException;
+import java.security.*;
+import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.*;
 
 public class SafeServiceReadGeneralTest {
     @Rule

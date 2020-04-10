@@ -1,32 +1,7 @@
 package dpas.server.service;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.Stream;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -37,6 +12,21 @@ import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.io.IOException;
+import java.security.*;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Stream;
+
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class ServerConcurrencyTest {
@@ -116,7 +106,7 @@ public class ServerConcurrencyTest {
                             .build(),
                     new StreamObserver<>() {
                         @Override
-                        public void onNext(Empty value) {
+                        public void onNext(Contract.MacReply value) {
                         }
 
                         @Override
@@ -142,7 +132,7 @@ public class ServerConcurrencyTest {
                             .build(),
                     new StreamObserver<>() {
                         @Override
-                        public void onNext(Empty value) {
+                        public void onNext(Contract.MacReply value) {
                         }
 
                         @Override

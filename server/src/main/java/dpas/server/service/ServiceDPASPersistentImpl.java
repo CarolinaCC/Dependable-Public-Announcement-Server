@@ -1,12 +1,13 @@
 package dpas.server.service;
 
-import com.google.protobuf.Empty;
+import dpas.grpc.contract.Contract.MacReply;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
 import dpas.grpc.contract.Contract.PostRequest;
+import dpas.grpc.contract.Contract.MacReply;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.server.persistence.PersistenceManager;
 import io.grpc.Status;
@@ -30,7 +31,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void register(RegisterRequest request, StreamObserver<Empty> responseObserver) {
+    public void register(RegisterRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -41,7 +42,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
                 _manager.save(user.toJson());
-                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (NullPublicKeyException | InvalidKeySpecException | NoSuchAlgorithmException e) {
@@ -56,7 +57,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void post(PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void post(PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             var announcement = generateAnnouncement(request);
 
@@ -66,7 +67,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             } else {
                 _manager.save(announcement.toJson("Post"));
                 announcement.getUser().getUserBoard().post(announcement);
-                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (CommonDomainException e) {
@@ -81,7 +82,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void postGeneral(PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             Announcement announcement = generateAnnouncement(request, _generalBoard);
 
@@ -91,7 +92,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             } else {
                 _manager.save(announcement.toJson("PostGeneral"));
                 _generalBoard.post(announcement);
-                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (CommonDomainException e) {

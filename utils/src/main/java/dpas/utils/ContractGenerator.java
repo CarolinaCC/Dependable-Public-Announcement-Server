@@ -1,5 +1,9 @@
 package dpas.utils;
 
+import com.google.protobuf.ByteString;
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.grpc.contract.Contract.*;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -8,18 +12,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.protobuf.ByteString;
-
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.grpc.contract.Contract.Announcement;
-import dpas.grpc.contract.Contract.ClientHello;
-import dpas.grpc.contract.Contract.GoodByeRequest;
-import dpas.grpc.contract.Contract.SafePostReply;
-import dpas.grpc.contract.Contract.SafePostRequest;
-import dpas.grpc.contract.Contract.SafeRegisterReply;
-import dpas.grpc.contract.Contract.SafeRegisterRequest;
-import dpas.grpc.contract.Contract.ServerHello;
 
 public class ContractGenerator {
 

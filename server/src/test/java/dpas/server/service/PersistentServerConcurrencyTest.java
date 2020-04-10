@@ -1,37 +1,7 @@
 package dpas.server.service;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.Stream;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -43,6 +13,25 @@ import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
+import java.security.*;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Stream;
+
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class PersistentServerConcurrencyTest {
@@ -96,7 +85,6 @@ public class PersistentServerConcurrencyTest {
     public void setup() throws CommonDomainException, IOException, URISyntaxException {
 
 
-
         URL res = getClass().getClassLoader().getResource("no_operations_3.json");
         File file = Paths.get(res.toURI()).toFile();
         String path = file.getAbsolutePath();
@@ -137,7 +125,7 @@ public class PersistentServerConcurrencyTest {
                             .build(),
                     new StreamObserver<>() {
                         @Override
-                        public void onNext(Empty value) {
+                        public void onNext(Contract.MacReply value) {
                         }
 
                         @Override
@@ -163,7 +151,7 @@ public class PersistentServerConcurrencyTest {
                             .build(),
                     new StreamObserver<>() {
                         @Override
-                        public void onNext(Empty value) {
+                        public void onNext(Contract.MacReply value) {
                         }
 
                         @Override

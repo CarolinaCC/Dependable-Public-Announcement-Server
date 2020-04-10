@@ -3,10 +3,12 @@ package dpas.server.service;
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.utils.handler.ErrorGenerator;
 import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
-import dpas.utils.*;
+import dpas.utils.ContractGenerator;
+import dpas.utils.MacGenerator;
+import dpas.utils.MacVerifier;
+import dpas.utils.handler.ErrorGenerator;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -106,7 +108,7 @@ public class SafeServiceRegisterTest {
         exception.expectMessage("User Already Exists");
         try {
             _stub.safeRegister(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
@@ -123,7 +125,7 @@ public class SafeServiceRegisterTest {
         var request = ContractGenerator.generateRegisterRequest("invalid", 1, _pubKey, _privKey);
         try {
             _stub.safeRegister(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -139,7 +141,7 @@ public class SafeServiceRegisterTest {
         var request = ContractGenerator.generateRegisterRequest(SESSION_NONCE, 7, _pubKey, _privKey);
         try {
             _stub.safeRegister(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
@@ -161,7 +163,7 @@ public class SafeServiceRegisterTest {
                 .build();
         try {
             _stub.safeRegister(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
@@ -181,7 +183,7 @@ public class SafeServiceRegisterTest {
                 .build();
         try {
             _stub.safeRegister(request);
-        } catch(StatusRuntimeException e) {
+        } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());

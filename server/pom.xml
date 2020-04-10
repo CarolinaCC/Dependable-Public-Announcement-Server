@@ -84,7 +84,7 @@
                         <argumennt>${server.PrivateKeyPassword}</argumennt>
                         <argument>${server.sessionTime}</argument>
                         <argument>${server.newSessionTime}</argument>
-                        </arguments>
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

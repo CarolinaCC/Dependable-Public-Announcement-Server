@@ -1,28 +1,17 @@
 package dpas.common.domain;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import dpas.common.domain.exception.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidMessageSizeException;
-import dpas.common.domain.exception.InvalidSignatureException;
-import dpas.common.domain.exception.NullAnnouncementException;
-import dpas.common.domain.exception.NullMessageException;
-import dpas.common.domain.exception.NullSignatureException;
-import dpas.common.domain.exception.NullUserException;
+import java.security.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class AnnouncementTest {
 

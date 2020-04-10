@@ -17,6 +17,7 @@ public class GeneralBoardTest {
 
     private Announcement _announcement;
     private GeneralBoard _generalBoard;
+
     @Before
     public void setup() throws CommonDomainException, NoSuchAlgorithmException {
         // generate user

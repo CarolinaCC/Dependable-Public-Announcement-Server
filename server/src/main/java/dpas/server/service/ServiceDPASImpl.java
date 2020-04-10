@@ -1,7 +1,21 @@
 package dpas.server.service;
 
-import static io.grpc.Status.INVALID_ARGUMENT;
-import static io.grpc.Status.UNAVAILABLE;
+import com.google.protobuf.Empty;
+import dpas.common.domain.Announcement;
+import dpas.common.domain.AnnouncementBoard;
+import dpas.common.domain.GeneralBoard;
+import dpas.common.domain.User;
+import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidReferenceException;
+import dpas.common.domain.exception.InvalidUserException;
+import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.Contract.MacReply;
+import dpas.grpc.contract.Contract.PostRequest;
+import dpas.grpc.contract.Contract.ReadReply;
+import dpas.grpc.contract.Contract.ReadRequest;
+import dpas.grpc.contract.Contract.RegisterRequest;
+import dpas.grpc.contract.ServiceDPASGrpc;
+import io.grpc.stub.StreamObserver;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -15,22 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import com.google.protobuf.Empty;
-
-import dpas.common.domain.Announcement;
-import dpas.common.domain.AnnouncementBoard;
-import dpas.common.domain.GeneralBoard;
-import dpas.common.domain.User;
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidReferenceException;
-import dpas.common.domain.exception.InvalidUserException;
-import dpas.grpc.contract.Contract;
-import dpas.grpc.contract.Contract.PostRequest;
-import dpas.grpc.contract.Contract.ReadReply;
-import dpas.grpc.contract.Contract.ReadRequest;
-import dpas.grpc.contract.Contract.RegisterRequest;
-import dpas.grpc.contract.ServiceDPASGrpc;
-import io.grpc.stub.StreamObserver;
+import static io.grpc.Status.INVALID_ARGUMENT;
+import static io.grpc.Status.UNAVAILABLE;
 
 
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
@@ -49,7 +49,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void register(RegisterRequest request, StreamObserver<Empty> responseObserver) {
+    public void register(RegisterRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             var user = User.fromRequest(request);
 
@@ -58,7 +58,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 //User with public key already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
-                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void post(PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void post(PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
 
             var announcement = generateAnnouncement(request);
@@ -78,7 +78,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 announcement.getUser().getUserBoard().post(announcement);
-                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
@@ -87,7 +87,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void postGeneral(PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             var announcement = generateAnnouncement(request, _generalBoard);
 
@@ -97,7 +97,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
                 _generalBoard.post(announcement);
-                responseObserver.onNext(Empty.newBuilder().build());
+                responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {

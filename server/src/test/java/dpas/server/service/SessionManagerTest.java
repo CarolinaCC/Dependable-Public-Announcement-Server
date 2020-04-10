@@ -1,9 +1,9 @@
 package dpas.server.service;
 
 import dpas.server.session.Session;
+import dpas.server.session.SessionManager;
 import dpas.server.session.exception.IllegalMacException;
 import dpas.server.session.exception.SessionException;
-import dpas.server.session.SessionManager;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;

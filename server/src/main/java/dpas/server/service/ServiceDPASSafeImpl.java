@@ -1,30 +1,14 @@
 package dpas.server.service;
 
-import static io.grpc.Status.CANCELLED;
-import static io.grpc.Status.INVALID_ARGUMENT;
-import static io.grpc.Status.UNAUTHENTICATED;
-import static io.grpc.Status.UNAVAILABLE;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.stream.Collectors;
-
-import javax.json.JsonObject;
-
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
-
 import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
+import dpas.grpc.contract.Contract.MacReply;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.session.SessionManager;
 import dpas.server.session.exception.IllegalMacException;
@@ -36,9 +20,21 @@ import dpas.utils.MacVerifier;
 import dpas.utils.handler.ErrorGenerator;
 import io.grpc.stub.StreamObserver;
 
+import javax.json.JsonObject;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.stream.Collectors;
+
+import static io.grpc.Status.*;
+
 public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
-    private PrivateKey _privateKey;
-    private SessionManager _sessionManager;
+    private final PrivateKey _privateKey;
+    private final SessionManager _sessionManager;
 
     public ServiceDPASSafeImpl(PersistenceManager manager, PrivateKey privKey, SessionManager sessionManager) {
         super(manager);
@@ -69,12 +65,12 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onCompleted();
 
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT,"Invalid security values provided", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Invalid security values provided", request, _privateKey));
         } catch (SessionException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "Unspecified Error at server side", request, _privateKey));
-        } catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         }
     }
@@ -103,7 +99,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request , _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         }
     }
 
@@ -129,7 +125,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request , _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         }
     }
 
@@ -154,7 +150,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         } catch (CommonDomainException | IllegalMacException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (SessionException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request , _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (GeneralSecurityException e) {
@@ -221,18 +217,18 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     }
 
     @Override
-    public void register(Contract.RegisterRequest request, StreamObserver<Empty> responseObserver) {
+    public void register(Contract.RegisterRequest request, StreamObserver<MacReply> responseObserver) {
         responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
 
     @Override
-    public void post(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void post(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
     @Override
-    public void postGeneral(Contract.PostRequest request, StreamObserver<Empty> responseObserver) {
+    public void postGeneral(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
     }
 
