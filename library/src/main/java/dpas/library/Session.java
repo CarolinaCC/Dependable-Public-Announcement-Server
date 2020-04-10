@@ -1,16 +1,10 @@
 package dpas.library;
 
 public class Session {
-    private String sessionNonce;
     private long seq;
 
-    public Session(String sessionNonce, long seq) {
-        this.sessionNonce = sessionNonce;
+    public Session(long seq) {
         this.seq = seq;
-    }
-
-    public String getSessionNonce() {
-        return sessionNonce;
     }
 
     public long getSeq() {
@@ -18,7 +12,7 @@ public class Session {
     }
 
     public void updateSeq() {
-        seq += 2;
+        seq += 1;
     }
 }
 

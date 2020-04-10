@@ -2,6 +2,7 @@ package dpas.library;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.*;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
@@ -39,30 +40,40 @@ public class Library {
         _channel.shutdown();
     }
 
-    private void newSession(PublicKey pubKey, PrivateKey privKey) {
-
-        ClientHello request = ClientHello.newBuilder().build();
+    private void newSession(PublicKey pubKey) {
+        GetSeqRequest request = GetSeqRequest.newBuilder().build();
         try {
-            request = ContractGenerator.generateClientHello(privKey, pubKey, UUID.randomUUID().toString());
-            var hello = _stub.newSession(request);
-            long seq = hello.getSeq() + 1;
-            String nonce = hello.getSessionNonce();
-            Session session = new Session(nonce, seq);
+            String nonce = UUID.randomUUID().toString();
+            request = Contract.GetSeqRequest.newBuilder()
+                    .setNonce(nonce)
+                    .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
+                    .build();
+            var reply = _stub.getSeq(request);
+
+            if (!(MacVerifier.verifyMac(_serverKey, reply, request))) {
+                System.out.println("Unable to authenticate server response");
+                System.out.println("Library will now shutdown");
+                System.exit(1);
+            }
+            long seq = reply.getSeq() + 1;
+            Session session = new Session(seq);
             _sessions.put(pubKey, session);
-        } catch (GeneralSecurityException | IOException e) {
-            //Should never happen
-            System.out.println("An error has occurred that has forced the application to shutdown");
-            System.exit(1);
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
             }
+            System.out.println("Library will now shutdown");
+            System.exit(1);
+        } catch (GeneralSecurityException | IOException e) {
+            System.out.println("An unrecoverable error has ocurred: " + e.getMessage());
+            System.out.println("Library will now shutdown");
+            System.exit(1);
         }
     }
 
-    private Session getSession(PublicKey pubKey, PrivateKey privKey) {
+    private Session getSession(PublicKey pubKey) {
         if (!_sessions.containsKey(pubKey)) {
-            newSession(pubKey, privKey);
+            newSession(pubKey);
         }
         return _sessions.get(pubKey);
     }
@@ -71,7 +82,7 @@ public class Library {
         Session session = null;
         SafeRegisterRequest request = null;
         try {
-            session = getSession(publicKey, privkey);
+            session = getSession(publicKey);
             request = ContractGenerator.generateRegisterRequest(session.getSessionNonce(),
                     session.getSeq(), publicKey, privkey);
             var reply = _stub.safeRegister(request);
@@ -106,7 +117,7 @@ public class Library {
         Session session = null;
         SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
-            session = getSession(key, privateKey);
+            session = getSession(key);
             request = ContractGenerator.generateSafePostRequest(_serverKey, key, privateKey,
                     String.valueOf(message), session.getSessionNonce(),
                     session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
@@ -142,7 +153,7 @@ public class Library {
         Session session = null;
         SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
-            session = getSession(pubKey, privateKey);
+            session = getSession(pubKey);
             request = ContractGenerator.generateSafePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message),
                     session.getSessionNonce(), session.getSeq(), GENERAL_BOARD_IDENTIFIER, a);
 
