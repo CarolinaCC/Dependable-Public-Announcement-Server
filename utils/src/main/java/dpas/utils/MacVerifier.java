@@ -105,6 +105,18 @@ public class MacVerifier {
         return Arrays.equals(digest.digest(content), hash);
     }
 
+    public static boolean verifyMac(PublicKey pubKey, Contract.MacReply reply) throws GeneralSecurityException, IOException {
+        byte[] mac = reply.getMac().toByteArray();
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, pubKey);
+        byte[] hash = cipher.doFinal(mac);
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] content = ByteUtils.toByteArray(reply);
+
+        return Arrays.equals(digest.digest(content), hash);
+    }
+
     public static boolean verifyMac(PublicKey pubKey, Contract.PostRequest request) throws GeneralSecurityException, IOException {
         byte[] mac = request.getMac().toByteArray();
         Cipher cipher = Cipher.getInstance("RSA");

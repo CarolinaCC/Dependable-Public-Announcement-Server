@@ -83,7 +83,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) throws GeneralSecurityException, CommonDomainException, IOException {
+    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             Announcement announcement = generateAnnouncement(request, _generalBoard);
 
