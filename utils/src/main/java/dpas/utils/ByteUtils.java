@@ -1,5 +1,6 @@
 package dpas.utils;
 
+import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 
 import java.io.ByteArrayOutputStream;
