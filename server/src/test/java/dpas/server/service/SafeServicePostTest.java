@@ -119,7 +119,7 @@ public class SafeServicePostTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
 
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
+        _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
 
     }
 
@@ -145,7 +145,7 @@ public class SafeServicePostTest {
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), _nonUserequest.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }
@@ -182,14 +182,14 @@ public class SafeServicePostTest {
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid mac");
+        exception.expectMessage("Invalid sequence number");
         var request = Contract.PostRequest.newBuilder(_request).setSeq(_seq + 5).build();
         try {
             _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }
@@ -216,13 +216,13 @@ public class SafeServicePostTest {
     public void invalidkeyPost() throws GeneralSecurityException {
         var request = Contract.PostRequest.newBuilder(_request).setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded())).build();
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Public Key for request");
+        exception.expectMessage("User does not exist");
         try {
             _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }
