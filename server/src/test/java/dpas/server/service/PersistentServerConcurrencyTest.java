@@ -225,6 +225,10 @@ public class PersistentServerConcurrencyTest {
             assertEquals(announcement.getBoard().getIdentifier(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
             sequencers.add(announcement.getSequencer());
         }
+
+        for (var user : impl.getUsers().values()) {
+            assertEquals(user.getSeq(), NUMBER_POSTS);
+        }
     }
 
 
@@ -281,6 +285,10 @@ public class PersistentServerConcurrencyTest {
             assertFalse(sequencers.contains(announcement.getSequencer()));
             assertEquals(announcement.getBoard().getIdentifier(), "DPAS-GENERAL-BOARD");
             sequencers.add(announcement.getSequencer());
+        }
+
+        for (var user : impl.getUsers().values()) {
+            assertEquals(user.getSeq(), NUMBER_POSTS);
         }
     }
 }

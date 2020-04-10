@@ -5,7 +5,6 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
@@ -23,9 +22,7 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.security.*;
-import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
@@ -38,10 +35,8 @@ public class SafeServiceConcurrencyTest {
 
     private static PublicKey _serverPubKey;
     private static PrivateKey _serverPrivKey;
-    private static PublicKey _publicKey;
-    private static PrivateKey _privateKey;
 
-    private static Session[] _sessions;
+    private static KeyPair[] _users;
 
     private ManagedChannel _channel;
 
@@ -71,14 +66,9 @@ public class SafeServiceConcurrencyTest {
         _serverPubKey = keyPair.getPublic();
         _serverPrivKey = keyPair.getPrivate();
 
-        keyPair = keygen.generateKeyPair();
-        _publicKey = keyPair.getPublic();
-        _privateKey = keyPair.getPrivate();
-
-        _sessions = new Session[NUMBER_THREADS + 1];
+        _users = new KeyPair[NUMBER_THREADS + 1];
         for (int i = 0; i < NUMBER_THREADS + 1; ++i) {
-            Session session = new Session(new SecureRandom().nextLong(), _publicKey, UUID.randomUUID().toString(), LocalDateTime.now().plusHours(2));
-            _sessions[i] = session;
+            _users[i] = keygen.generateKeyPair();
         }
     }
 
@@ -86,9 +76,7 @@ public class SafeServiceConcurrencyTest {
     public void setup() throws GeneralSecurityException, IOException {
 
         SessionManager manager = new SessionManager(50000000);
-        for (int i = 0; i < NUMBER_THREADS + 1; ++i) {
-            manager.getSessions().put(_sessions[i].getSessionNonce(), _sessions[i]);
-        }
+
 
         final BindableService impl = new ServiceDPASSafeImpl(_serverPrivKey, manager);
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
@@ -98,8 +86,9 @@ public class SafeServiceConcurrencyTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
         //Register Users
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_sessions[NUMBER_THREADS].getSessionNonce(),
-                _sessions[NUMBER_THREADS].getSequenceNumber() + 1, _publicKey, _privateKey));
+        for (int i = 0; i < NUMBER_THREADS; i++) {
+            _stub.register(ContractGenerator.generateRegisterRequest(_users[i].getPublic(), _users[i].getPrivate()));
+        }
     }
 
     @After
@@ -110,25 +99,27 @@ public class SafeServiceConcurrencyTest {
 
 
     private void postRun(int id) throws GeneralSecurityException, IOException, CommonDomainException {
-        long seq = _sessions[id].getSequenceNumber() + 1;
-        String nonce = _sessions[id].getSessionNonce();
+        long seq = 1;
+        PublicKey pub = _users[id].getPublic();
+        PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generateSafePostRequest(_serverPubKey, _publicKey, _privateKey,
-                    MESSAGE, nonce, seq, CipherUtils.keyToString(_publicKey), null);
+            var request = ContractGenerator.generatePostRequest(_serverPubKey, pub, priv,
+                    MESSAGE, seq, CipherUtils.keyToString(pub), null);
 
-            _stub.safePost(request);
-            seq += 2;
+            _stub.post(request);
+            seq += 1;
         }
     }
 
     private void postGeneralRun(int id) throws GeneralSecurityException, IOException, CommonDomainException {
-        long seq = _sessions[id].getSequenceNumber() + 1;
-        String nonce = _sessions[id].getSessionNonce();
+        long seq = 1;
+        PublicKey pub = _users[id].getPublic();
+        PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generateSafePostRequest(_serverPubKey, _publicKey, _privateKey,
-                    MESSAGE, nonce, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
-            _stub.safePostGeneral(request);
-            seq += 2;
+            var request = ContractGenerator.generatePostRequest(_serverPubKey, pub, priv,
+                    MESSAGE, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+            _stub.postGeneral(request);
+            seq += 1;
         }
     }
 
@@ -153,25 +144,26 @@ public class SafeServiceConcurrencyTest {
             thread.join();
         }
 
-        Contract.ReadReply reply = _stub.read(
-                Contract.ReadRequest.newBuilder()
-                        .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
-                        .setNumber(NUMBER_POSTS * 2)
-                        .build());
-        //Check that each announcement was posted correctly
-        assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS);
+        for (int i = 0; i < NUMBER_THREADS; i++) {
+            Contract.ReadReply reply = _stub.read(
+                    Contract.ReadRequest.newBuilder()
+                            .setPublicKey(ByteString.copyFrom(_users[i].getPublic().getEncoded()))
+                            .setNumber(NUMBER_POSTS * 2)
+                            .build());
+            //Check that each announcement was posted correctly
+            assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS / NUMBER_THREADS);
 
-        //Check that each announcement was posted correctly
-        for (var announcement : reply.getAnnouncementsList()) {
-            assertEquals(announcement.getMessage(), MESSAGE);
-            assertArrayEquals(announcement.getPublicKey().toByteArray(), _publicKey.getEncoded());
-            assertTrue(announcement.getSequencer() >= 0);
-            assertTrue(announcement.getSequencer() < NUMBER_POSTS);
-            assertFalse(sequencers.contains(announcement.getSequencer()));
-            sequencers.add(announcement.getSequencer());
+            //Check that each announcement was posted correctly
+            for (var announcement : reply.getAnnouncementsList()) {
+                assertEquals(announcement.getMessage(), MESSAGE);
+                assertArrayEquals(announcement.getPublicKey().toByteArray(), _users[i].getPublic().getEncoded());
+                assertTrue(announcement.getSequencer() >= 0);
+                assertTrue(announcement.getSequencer() < NUMBER_POSTS);
+                assertFalse(sequencers.contains(announcement.getSequencer()));
+                sequencers.add(announcement.getSequencer());
+            }
         }
     }
-
 
     @Test
     public void concurrencyPostGeneralTest() throws InterruptedException {
@@ -194,6 +186,7 @@ public class SafeServiceConcurrencyTest {
             thread.join();
         }
 
+
         Contract.ReadReply reply = _stub.readGeneral(
                 Contract.ReadRequest.newBuilder()
                         .setNumber(NUMBER_POSTS * 2)
@@ -204,7 +197,6 @@ public class SafeServiceConcurrencyTest {
         //Check that each announcement was posted correctly
         for (var announcement : reply.getAnnouncementsList()) {
             assertEquals(announcement.getMessage(), MESSAGE);
-            assertArrayEquals(announcement.getPublicKey().toByteArray(), _publicKey.getEncoded());
             assertTrue(announcement.getSequencer() >= 0);
             assertTrue(announcement.getSequencer() < NUMBER_POSTS);
             assertFalse(sequencers.contains(announcement.getSequencer()));

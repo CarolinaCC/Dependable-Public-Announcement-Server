@@ -17,8 +17,7 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Base64;
+import java.util.*;
 
 
 public class PersistenceManager {
@@ -77,6 +76,7 @@ public class PersistenceManager {
     }
 
     private void parseJsonArray(JsonArray jsonArray, ServiceDPASPersistentImpl service) throws GeneralSecurityException, CommonDomainException {
+        Map<PublicKey, Long> userSeqs = new HashMap<>();
         int counter = 0;
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
@@ -86,6 +86,7 @@ public class PersistenceManager {
 
             if (operation.getString("Type").equals("Register")) {
                 service.addUser(key);
+                userSeqs.put(key, 0L);
             } else {
                 byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
                 JsonArray jsonReferences = operation.getJsonArray("References");
@@ -102,9 +103,11 @@ public class PersistenceManager {
                 else
                     service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, identifier);
                 counter++;
+                userSeqs.put(key, userSeqs.get(key) + 1);
             }
         }
         service.setCounter(counter);
+        service.getUsers().values().forEach(user -> user.incrSeq(userSeqs.get(user.getPublicKey())));
     }
 
     public JsonArray readSaveFile() throws FileNotFoundException {
