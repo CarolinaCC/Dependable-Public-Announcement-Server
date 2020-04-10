@@ -70,6 +70,15 @@ public class ByteUtils {
         }
     }
 
+    public static byte[] toByteArray( PublicKey pubKey) throws IOException {
+        byte[] key = pubKey.getEncoded();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(key);
+            byte[] res = stream.toByteArray();
+            return res;
+        }
+    }
+
     public static byte[] toByteArray(String sessionNonce, long sequence) throws IOException {
         byte[] seq = NumberUtils.longToBytes(sequence);
         byte[] nonce = sessionNonce.getBytes();
@@ -108,6 +117,14 @@ public class ByteUtils {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
             stream.writeBytes(nonce);
+            stream.writeBytes(pubKey);
+            return stream.toByteArray();
+        }
+    }
+
+    public static byte[] toByteArray(Contract.RegisterRequest request) throws IOException {
+        byte[] pubKey = request.getPublicKey().toByteArray();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(pubKey);
             return stream.toByteArray();
         }
