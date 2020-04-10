@@ -1,5 +1,6 @@
 package dpas.utils;
 
+import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 
 import java.io.ByteArrayOutputStream;
@@ -159,4 +160,25 @@ public class ByteUtils {
             return stream.toByteArray();
         }
     }
+
+    public static byte[] toByteArray(long sequence, PublicKey pubKey, byte[] message,
+                                     byte[] signature, Set<String> references) throws IOException {
+        byte[] seq = NumberUtils.longToBytes(sequence);
+        byte[] key = pubKey.getEncoded();
+
+        Set<byte[]> refs = references.stream().map(String::getBytes).collect(Collectors.toSet());
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
+            stream.writeBytes(key);
+            stream.writeBytes(message);
+            stream.writeBytes(signature);
+            stream.writeBytes(message);
+            for (var ref : refs) {
+                stream.writeBytes(ref);
+            }
+            byte[] res = stream.toByteArray();
+            return res;
+        }
+    }
+
 }

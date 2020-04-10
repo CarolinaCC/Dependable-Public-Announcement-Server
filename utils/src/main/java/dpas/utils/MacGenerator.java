@@ -33,11 +33,20 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(seq, nonce, pubKey, message, signature, references), privKey);
     }
 
+    public static byte[] generateMac(long seq, PublicKey pubKey, byte[] message,
+                                     byte[] signature, Set<String> references, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return generateMac(ByteUtils.toByteArray(seq, pubKey, message, signature, references), privKey);
+    }
+
     public static byte[] generateMac(Contract.SafePostRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 
     public static byte[] generateMac(Contract.ReadRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return generateMac(ByteUtils.toByteArray(request), privKey);
+    }
+
+    public static byte[] generateMac(Contract.PostRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 
