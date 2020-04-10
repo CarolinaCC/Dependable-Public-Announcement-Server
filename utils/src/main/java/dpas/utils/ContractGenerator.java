@@ -3,6 +3,7 @@ package dpas.utils;
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract.*;
+import io.grpc.netty.shaded.io.netty.handler.codec.base64.Base64;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -102,6 +103,13 @@ public class ContractGenerator {
                 .setMac(ByteString.copyFrom(MacGenerator.generateMac(sessionNonce, seq, pubKey, privKey)))
                 .setSessionNonce(sessionNonce)
                 .setSeq(seq)
+                .build();
+    }
+
+    public static RegisterRequest generateRegisterRequest(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return RegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(pubKey, privKey)))
                 .build();
     }
 

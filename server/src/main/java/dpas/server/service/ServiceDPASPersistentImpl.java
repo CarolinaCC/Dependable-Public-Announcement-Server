@@ -14,6 +14,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -82,7 +83,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) {
+    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) throws GeneralSecurityException, CommonDomainException, IOException {
         try {
             Announcement announcement = generateAnnouncement(request, _generalBoard);
 
