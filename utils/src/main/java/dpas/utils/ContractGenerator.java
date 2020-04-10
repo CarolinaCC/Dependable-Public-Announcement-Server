@@ -105,6 +105,13 @@ public class ContractGenerator {
                 .build();
     }
 
+    public static RegisterRequest generateRegisterRequest(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return RegisterRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(pubKey, privKey)))
+                .build();
+    }
+
     public static SafeRegisterReply generateRegisterReply(String sessionNonce, long seq, PrivateKey privateKey) throws IOException, GeneralSecurityException {
         byte[] replyMac = MacGenerator.generateMac(sessionNonce, seq, privateKey);
         return SafeRegisterReply.newBuilder()
