@@ -140,7 +140,7 @@ public class ContractGenerator {
     public static MacReply generateMacReply(byte[] mac, PrivateKey privateKey) throws GeneralSecurityException {
         byte[] replyMac = MacGenerator.generateMac(mac, privateKey);
         return MacReply.newBuilder()
-                .setMac(ByteString.copyFrom(mac))
+                .setMac(ByteString.copyFrom(replyMac))
                 .build();
     }
 }

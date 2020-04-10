@@ -261,7 +261,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                     //Announcement with that identifier already exists
                     responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
                 } else {
-                    _manager.save(announcement.toJson("Post"));
+                    save(announcement.toJson("Post"));
                     announcement.getUser().getUserBoard().post(announcement);
                     user.incrSeq(1);
                     responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
@@ -299,7 +299,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                     //Announcement with that identifier already exists
                     responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
                 } else {
-                    _manager.save(announcement.toJson("PostGeneral"));
+                    save(announcement.toJson("PostGeneral"));
                    _generalBoard.post(announcement);
                     user.incrSeq(1);
                     responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
