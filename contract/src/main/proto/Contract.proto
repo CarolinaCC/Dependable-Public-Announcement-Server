@@ -8,6 +8,7 @@ service ServiceDPAS {
     rpc postGeneral (PostRequest) returns (MacReply);
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
+    rpc getSeq(GetSeqRequest) returns (GetSeqReply);
 }
 //
 message RegisterRequest {
@@ -15,6 +16,7 @@ message RegisterRequest {
     bytes mac = 2; // mac of the public key with the private key
 }
 
+//
 message MacReply {
     bytes mac = 1; //Mac of the request mac
 }
@@ -27,6 +29,18 @@ message PostRequest {
     repeated string references = 4;
     int64 seq = 5;
     bytes mac = 6;
+}
+
+//
+message GetSeqRequest {
+    bytes publicKey = 1;
+    string nonce = 2;
+}
+
+//
+message GetSeqReply {
+    int64 seq = 1;
+    bytes mac = 2;
 }
 
 //

@@ -14,8 +14,8 @@ import dpas.server.session.exception.IllegalMacException;
 import dpas.server.session.exception.SessionException;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
-import dpas.utils.MacGenerator;
 import dpas.utils.ErrorGenerator;
+import dpas.utils.MacGenerator;
 import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
@@ -184,6 +184,27 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (SessionException e) {
             responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
+        }
+    }
+
+    @Override
+    public void getSeq(Contract.GetSeqRequest request, StreamObserver<Contract.GetSeqReply> responseObserver) {
+        try {
+            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            var user = _users.get(key);
+            if (user == null) {
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with that public key does not exist", request, _privateKey));
+                return;
+            }
+            synchronized (user) {
+                long seq = user.getSeq();
+                responseObserver.onNext(ContractGenerator.generateSeqReply(seq, request.getNonce(), _privateKey, key));
+                responseObserver.onCompleted();
+            }
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+        } catch (IOException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         }
     }
 

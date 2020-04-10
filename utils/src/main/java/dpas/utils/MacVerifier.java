@@ -8,8 +8,10 @@ import org.apache.commons.lang3.ArrayUtils;
 import javax.crypto.Cipher;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
 public class MacVerifier {
@@ -48,6 +50,13 @@ public class MacVerifier {
 
     public static boolean verifyMac(PublicKey pubKey, Contract.MacReply reply, Contract.PostRequest request) throws GeneralSecurityException {
         byte[] content = request.getMac().toByteArray();
+        byte[] mac = reply.getMac().toByteArray();
+        return verifyMac(pubKey, content, mac);
+    }
+
+    public static boolean verifyMac(PublicKey pubKey, Contract.GetSeqReply reply, Contract.GetSeqRequest request) throws GeneralSecurityException, IOException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] content = ByteUtils.toByteArray(request.getNonce(), reply.getSeq(), key);
         byte[] mac = reply.getMac().toByteArray();
         return verifyMac(pubKey, content, mac);
     }
