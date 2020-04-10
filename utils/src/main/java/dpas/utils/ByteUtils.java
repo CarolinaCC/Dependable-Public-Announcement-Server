@@ -22,7 +22,6 @@ public class ByteUtils {
             stream.writeBytes(pubKey);
             stream.writeBytes(message);
             stream.writeBytes(signature);
-            stream.writeBytes(message);
             for (var ref : references) {
                 stream.writeBytes(ref);
             }
@@ -42,7 +41,6 @@ public class ByteUtils {
             stream.writeBytes(pubKey);
             stream.writeBytes(message);
             stream.writeBytes(signature);
-            stream.writeBytes(message);
             for (var ref : references) {
                 stream.writeBytes(ref);
             }
@@ -64,7 +62,6 @@ public class ByteUtils {
             stream.writeBytes(key);
             stream.writeBytes(message);
             stream.writeBytes(signature);
-            stream.writeBytes(message);
             for (var ref : refs) {
                 stream.writeBytes(ref);
             }
@@ -177,6 +174,24 @@ public class ByteUtils {
             stream.writeBytes(nonce);
             stream.writeBytes(pubKey.getEncoded());
             return stream.toByteArray();
+        }
+    }
+
+    public static byte[] toByteArray(long seq, PublicKey pubKey, String message, byte[] signature, Set<String> references) throws IOException {
+        byte[] seqBytes = NumberUtils.longToBytes(seq);
+        byte[] key = pubKey.getEncoded();
+        byte[] messageBytes = message.getBytes();
+        Set<byte[]> refs = references.stream().map(String::getBytes).collect(Collectors.toSet());
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seqBytes);
+            stream.writeBytes(key);
+            stream.writeBytes(messageBytes);
+            stream.writeBytes(signature);
+            for (var ref : refs) {
+                stream.writeBytes(ref);
+            }
+            byte[] res = stream.toByteArray();
+            return res;
         }
     }
 }

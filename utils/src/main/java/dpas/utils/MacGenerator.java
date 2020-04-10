@@ -49,4 +49,8 @@ public class MacGenerator {
         cipher.init(Cipher.ENCRYPT_MODE, privKey);
         return cipher.doFinal(hash);
     }
+
+    public static byte[] generateMac(long seq, PublicKey pubKey, String message, byte[] signature, Set<String> references, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return generateMac(ByteUtils.toByteArray(seq, pubKey, message, signature, references), privKey);
+    }
 }

@@ -88,14 +88,14 @@ public class SafeServicePostTest {
         keyPair = keygen.generateKeyPair();
         _invalidPubKey = keyPair.getPublic();
 
-        _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+        _request = ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey,
                 MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
 
-        _nonUserequest = ContractGenerator.generatePostRequest(_serverPKey, _secondPubKey, _secondPrivKey,
+        _nonUserequest = ContractGenerator.generateSafePostRequest(_serverPKey, _secondPubKey, _secondPrivKey,
                 MESSAGE, _secondNonce, _secondSeq + 1, CipherUtils.keyToString(_secondPubKey), null);
 
 
-        _longRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+        _longRequest = ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey,
                 LONGMESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
 
     }

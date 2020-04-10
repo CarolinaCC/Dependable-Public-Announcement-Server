@@ -113,7 +113,7 @@ public class SafeServiceConcurrencyTest {
         long seq = _sessions[id].getSequenceNumber() + 1;
         String nonce = _sessions[id].getSessionNonce();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generatePostRequest(_serverPubKey, _publicKey, _privateKey,
+            var request = ContractGenerator.generateSafePostRequest(_serverPubKey, _publicKey, _privateKey,
                     MESSAGE, nonce, seq, CipherUtils.keyToString(_publicKey), null);
 
             _stub.safePost(request);
@@ -125,7 +125,7 @@ public class SafeServiceConcurrencyTest {
         long seq = _sessions[id].getSequenceNumber() + 1;
         String nonce = _sessions[id].getSessionNonce();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generatePostRequest(_serverPubKey, _publicKey, _privateKey,
+            var request = ContractGenerator.generateSafePostRequest(_serverPubKey, _publicKey, _privateKey,
                     MESSAGE, nonce, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
             _stub.safePostGeneral(request);
             seq += 2;
