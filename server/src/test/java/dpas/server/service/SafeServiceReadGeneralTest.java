@@ -108,7 +108,7 @@ public class SafeServiceReadGeneralTest {
         _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
 
         // Posts to Read
-        _stub.safePostGeneral(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _nonce, _seq + 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER,
+        _stub.safePostGeneral(ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _nonce, _seq + 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER,
                 null));
     }
 

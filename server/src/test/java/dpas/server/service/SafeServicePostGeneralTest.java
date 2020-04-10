@@ -69,7 +69,7 @@ public class SafeServicePostGeneralTest {
         _invalidPubKey = keyPair.getPublic();
 
 
-        _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+        _request = ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey,
                 MESSAGE, SESSION_NONCE, 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
     }
 
