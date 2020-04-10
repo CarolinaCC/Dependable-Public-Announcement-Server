@@ -38,7 +38,7 @@ message RegisterRequest {
 }
 
 message MacReply {
-    bytes mac = 1;
+    bytes mac = 1; //Mac of the request mac
 }
 
 //
