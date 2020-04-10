@@ -69,7 +69,7 @@ public class SafeServicePostGeneralTest {
 
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+                MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
     }
 
     @Before
@@ -94,21 +94,29 @@ public class SafeServicePostGeneralTest {
     }
 
     @Test
-    public void validPost() throws GeneralSecurityException, IOException {
+    public void validPost() throws GeneralSecurityException {
         var reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
     }
 
-
     @Test
     public void stealSeqPost() throws GeneralSecurityException, IOException {
-        var reply = _stub.postGeneral(_request);
-        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid mac");
-        _stub.postGeneral(Contract.PostRequest.newBuilder(_request).setSeq(5).build());
+
+        try{
+            var reply = _stub.postGeneral(_request);
+            assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
+            assertEquals(_impl._announcements.size(), 1);
+            exception.expect(StatusRuntimeException.class);
+            exception.expectMessage("Invalid sequence number");
+            _stub.postGeneral(Contract.PostRequest.newBuilder(_request).setSeq(5).build());
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _request.getMac().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
 
@@ -132,7 +140,7 @@ public class SafeServicePostGeneralTest {
     public void invalidkeyPost() {
         var request = Contract.PostRequest.newBuilder(_request).setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded())).build();
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Public Key for request");
+        exception.expectMessage("User with that public key does not exist");
         try {
             _stub.postGeneral(request);
         } catch (StatusRuntimeException e) {
