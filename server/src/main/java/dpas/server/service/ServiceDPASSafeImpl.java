@@ -224,7 +224,32 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
     @Override
     public void post(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
-        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+        try {
+            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            var user = _users.get(key);
+            if (user == null) {
+                responseObserver.onError(INVALID_ARGUMENT.withDescription("User with that public key does not exist").asRuntimeException());
+                return;
+            }
+            synchronized (user) {
+                _sessionManager.validateSessionRequest(request, user.getSeq());
+
+                var announcement = generateAnnouncement(request);
+
+                var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+                if (curr != null) {
+                    //Announcement with that identifier already exists
+                    responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                } else {
+                    announcement.getUser().getUserBoard().post(announcement);
+                    responseObserver.onNext(MacReply.newBuilder().build());
+                    responseObserver.onCompleted();
+                }
+            }
+        } catch (Exception e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        }
+
     }
 
     @Override
