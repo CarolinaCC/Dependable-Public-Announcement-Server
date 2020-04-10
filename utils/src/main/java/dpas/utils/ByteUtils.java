@@ -31,6 +31,13 @@ public class ByteUtils {
         }
     }
 
+    public static byte[] toByteArray(Contract.MacReply reply) throws IOException {
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            byte[] res = stream.toByteArray();
+            return res;
+        }
+    }
+
     public static byte[] toByteArray(Contract.PostRequest request) throws IOException {
         byte[] seq = NumberUtils.longToBytes(request.getSeq());
         byte[] pubKey = request.getPublicKey().toByteArray();
