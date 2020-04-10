@@ -70,8 +70,8 @@ public class SafeServicePostTest {
         _nonce = UUID.randomUUID().toString();
         _secondNonce = UUID.randomUUID().toString();
         _invalidNonce = UUID.randomUUID().toString();
-        _seq = 0;
-        _secondSeq = 0;
+        _seq = 1;
+        _secondSeq = 1;
 
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
@@ -89,14 +89,14 @@ public class SafeServicePostTest {
         _invalidPubKey = keyPair.getPublic();
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _seq + 3, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
 
         _nonUserequest = ContractGenerator.generatePostRequest(_serverPKey, _secondPubKey, _secondPrivKey,
-                MESSAGE, _secondSeq + 1, CipherUtils.keyToString(_secondPubKey), null);
+                MESSAGE, _secondSeq, CipherUtils.keyToString(_secondPubKey), null);
 
 
         _longRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
-                LONGMESSAGE, _seq + 3, CipherUtils.keyToString(_pubKey), null);
+                LONGMESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
 
     }
 
