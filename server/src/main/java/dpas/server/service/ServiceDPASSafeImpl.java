@@ -244,12 +244,64 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
     @Override
     public void post(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
-        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+        try {
+            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            var user = _users.get(key);
+            if (user == null) {
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with that public key does not exist", request, _privateKey));
+                return;
+            }
+            synchronized (user) {
+                _sessionManager.validateSessionRequest(request, user.getSeq());
+
+                var announcement = generateAnnouncement(request, _privateKey);
+
+                var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+                if (curr != null) {
+                    //Announcement with that identifier already exists
+                    responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                } else {
+                    _manager.save(announcement.toJson("Post"));
+                    announcement.getUser().getUserBoard().post(announcement);
+                    user.incrSeq(1);
+                    responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
+                    responseObserver.onCompleted();
+                }
+            }
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+        } catch (IOException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+        } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (SessionException e) {
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
+        }
+
     }
 
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+    }
+
+    protected Announcement generateAnnouncement(Contract.PostRequest request, AnnouncementBoard board, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] signature = request.getSignature().toByteArray();
+        String message = new String(CipherUtils.decipher(request.getMessage(), privKey), StandardCharsets.UTF_8);
+        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
+    }
+
+    protected Announcement generateAnnouncement(Contract.PostRequest request, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] signature = request.getSignature().toByteArray();
+        String message = new String(CipherUtils.decipher(request.getMessage(), privKey), StandardCharsets.UTF_8);
+
+        User user = _users.get(key);
+        if (user == null) {
+            throw new InvalidUserException("User does not exist");
+        }
+        return new Announcement(signature, user, message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
     }
 
     protected Announcement generateAnnouncement(Contract.SafePostRequest request, AnnouncementBoard board) throws GeneralSecurityException, CommonDomainException {
