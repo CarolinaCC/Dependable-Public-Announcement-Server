@@ -84,7 +84,7 @@ public class SafeServicePostGeneralTest {
         //Connect to Server
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(SESSION_NONCE, 1, _pubKey, _privKey));
+        _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
 
     }
 
@@ -97,8 +97,6 @@ public class SafeServicePostGeneralTest {
     @Test
     public void validPost() throws GeneralSecurityException, IOException {
         var reply = _stub.postGeneral(_request);
-        assertEquals(reply.getSessionNonce(), SESSION_NONCE);
-        assertEquals(reply.getSeq(), 4);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
         assertEquals(_impl._announcements.size(), 1);
     }
