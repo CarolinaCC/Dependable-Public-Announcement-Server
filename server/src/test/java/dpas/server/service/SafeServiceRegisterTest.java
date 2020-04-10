@@ -31,8 +31,6 @@ public class SafeServiceRegisterTest {
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
 
-    private static final String SESSION_NONCE = "NONCE";
-
     private static final int port = 9001;
     private static final String host = "localhost";
 
@@ -67,7 +65,7 @@ public class SafeServiceRegisterTest {
     @Before
     public void setup() throws IOException {
         SessionManager _sessionManager = new SessionManager(5000);
-        _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
+        //_sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -87,27 +85,22 @@ public class SafeServiceRegisterTest {
 
     @Test
     public void validRegister() throws IOException, GeneralSecurityException {
-        var reply = _stub.safeRegister(ContractGenerator.generateRegisterRequest(SESSION_NONCE, 1, _pubKey, _privKey));
-
-        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSequenceNumber(), 2);
-        assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
+        var reply = _stub.register(ContractGenerator.generateRegisterRequest( _pubKey, _privKey));
+         assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
     }
 
 
     @Test
     public void duplicatedRegister() throws IOException, GeneralSecurityException {
-        var request = ContractGenerator.generateRegisterRequest(SESSION_NONCE, 1, _pubKey, _privKey);
-        var reply = _stub.safeRegister(request);
+        var request = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
+        var reply = _stub.register(request);
 
-        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSessionNonce(), SESSION_NONCE);
-        assertEquals(_impl.getSessionManager().getSessions().get(SESSION_NONCE).getSequenceNumber(), 2);
         assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
-        request = ContractGenerator.generateRegisterRequest(SESSION_NONCE, 3, _pubKey, _privKey);
+        request = ContractGenerator.generateRegisterRequest( _pubKey, _privKey);
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User Already Exists");
         try {
-            _stub.safeRegister(request);
+            _stub.register(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
