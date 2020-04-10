@@ -48,9 +48,9 @@ public class SafeServicePostTest {
     private static final String MESSAGE = "Message";
     private static final String LONGMESSAGE = "A".repeat(255);
 
-    private static Contract.SafePostRequest _nonUserequest;
-    private static Contract.SafePostRequest _request;
-    private static Contract.SafePostRequest _longRequest;
+    private static Contract.PostRequest _nonUserequest;
+    private static Contract.PostRequest _request;
+    private static Contract.PostRequest _longRequest;
 
     private static final int port = 9001;
     private static final String host = "localhost";
@@ -70,8 +70,8 @@ public class SafeServicePostTest {
         _nonce = UUID.randomUUID().toString();
         _secondNonce = UUID.randomUUID().toString();
         _invalidNonce = UUID.randomUUID().toString();
-        _seq = new SecureRandom().nextLong();
-        _secondSeq = new SecureRandom().nextLong();
+        _seq = 0;
+        _secondSeq = 0;
 
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
@@ -88,15 +88,15 @@ public class SafeServicePostTest {
         keyPair = keygen.generateKeyPair();
         _invalidPubKey = keyPair.getPublic();
 
-        _request = ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
+        _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+                MESSAGE, _seq + 3, CipherUtils.keyToString(_pubKey), null);
 
-        _nonUserequest = ContractGenerator.generateSafePostRequest(_serverPKey, _secondPubKey, _secondPrivKey,
-                MESSAGE, _secondNonce, _secondSeq + 1, CipherUtils.keyToString(_secondPubKey), null);
+        _nonUserequest = ContractGenerator.generatePostRequest(_serverPKey, _secondPubKey, _secondPrivKey,
+                MESSAGE, _secondSeq + 1, CipherUtils.keyToString(_secondPubKey), null);
 
 
-        _longRequest = ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey,
-                LONGMESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey), null);
+        _longRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+                LONGMESSAGE, _seq + 3, CipherUtils.keyToString(_pubKey), null);
 
     }
 
@@ -131,10 +131,8 @@ public class SafeServicePostTest {
 
     @Test
     public void validPost() throws GeneralSecurityException, IOException {
-        var reply = _stub.safePost(_request);
-        assertEquals(reply.getSessionNonce(), _nonce);
-        assertEquals(reply.getSeq(), _seq + 4);
-        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        var reply = _stub.post(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
     }
 
@@ -143,7 +141,7 @@ public class SafeServicePostTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User does not exist");
         try {
-            _stub.safePost(_nonUserequest);
+            _stub.post(_nonUserequest);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), _nonUserequest.getMac().toByteArray());
@@ -155,24 +153,20 @@ public class SafeServicePostTest {
 
     @Test
     public void validLongPost() throws GeneralSecurityException, IOException {
-        var reply = _stub.safePost(_longRequest);
-        assertEquals(reply.getSessionNonce(), _nonce);
-        assertEquals(reply.getSeq(), _seq + 4);
-        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        var reply = _stub.post(_longRequest);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _longRequest));
         assertEquals(_impl._announcements.size(), 1);
     }
 
     @Test
     public void nonFreshPost() throws GeneralSecurityException, IOException {
-        var reply = _stub.safePost(_request);
-        assertEquals(reply.getSessionNonce(), _nonce);
-        assertEquals(reply.getSeq(), _seq + 4);
-        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        var reply = _stub.post(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid sequence number");
         try {
-            _stub.safePost(_request);
+            _stub.post(_request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), _request.getMac().toByteArray());
@@ -184,16 +178,14 @@ public class SafeServicePostTest {
 
     @Test
     public void stealSeqPost() throws GeneralSecurityException, IOException {
-        var reply = _stub.safePost(_request);
-        assertEquals(reply.getSessionNonce(), _nonce);
-        assertEquals(reply.getSeq(), _seq + 4);
-        assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
+        var reply = _stub.post(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid mac");
-        var request = Contract.SafePostRequest.newBuilder(_request).setSeq(_seq + 5).build();
+        var request = Contract.PostRequest.newBuilder(_request).setSeq(_seq + 5).build();
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
@@ -203,29 +195,14 @@ public class SafeServicePostTest {
         }
     }
 
-    @Test
-    public void invalidSessionPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setSessionNonce(_invalidNonce).build();
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Session");
-        try {
-            _stub.safePost(request);
-        } catch (StatusRuntimeException e) {
-            Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
-            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
-            throw e;
-        }
-    }
 
     @Test
     public void invalidSeqPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setSeq(7).build();
+        var request = Contract.PostRequest.newBuilder(_request).setSeq(7).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid sequence number");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
@@ -237,11 +214,11 @@ public class SafeServicePostTest {
 
     @Test
     public void invalidkeyPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded())).build();
+        var request = Contract.PostRequest.newBuilder(_request).setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded())).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Public Key for request");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
@@ -253,13 +230,13 @@ public class SafeServicePostTest {
 
     @Test
     public void nonCipheredPost() throws IOException, GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setMessage(ByteString.copyFrom(MESSAGE.getBytes())).build();
+        var request = Contract.PostRequest.newBuilder(_request).setMessage(MESSAGE).build();
         byte[] mac = MacGenerator.generateMac(request, _privKey);
-        request = Contract.SafePostRequest.newBuilder(request).setMac(ByteString.copyFrom(mac)).build();
+        request = Contract.PostRequest.newBuilder(request).setMac(ByteString.copyFrom(mac)).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
@@ -271,11 +248,11 @@ public class SafeServicePostTest {
 
     @Test
     public void invalidMacPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setMessage(ByteString.copyFrom(MESSAGE.getBytes())).build();
+        var request = Contract.PostRequest.newBuilder(_request).setMessage(MESSAGE).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid mac");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
@@ -287,11 +264,11 @@ public class SafeServicePostTest {
 
     @Test
     public void notAMacPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
+        var request = Contract.PostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("security values provided");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
