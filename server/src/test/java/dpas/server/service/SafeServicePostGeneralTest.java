@@ -32,11 +32,10 @@ public class SafeServicePostGeneralTest {
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
     private static PublicKey _invalidPubKey;
-    private static final String SESSION_NONCE = "NONCE";
-    private static final String INVALID_SESSION_NONCE = "NONCE2";
     private static final String MESSAGE = "Message";
+    private static final String SESSION_NONCE = "Nonce";
 
-    private static Contract.SafePostRequest _request;
+    private static Contract.PostRequest _request;
 
     private static final int port = 9001;
     private static final String host = "localhost";
@@ -69,8 +68,8 @@ public class SafeServicePostGeneralTest {
         _invalidPubKey = keyPair.getPublic();
 
 
-        _request = ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey,
-                MESSAGE, SESSION_NONCE, 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+        _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+                MESSAGE, 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
     }
 
     @Before
@@ -97,7 +96,7 @@ public class SafeServicePostGeneralTest {
 
     @Test
     public void validPost() throws GeneralSecurityException, IOException {
-        var reply = _stub.safePostGeneral(_request);
+        var reply = _stub.postGeneral(_request);
         assertEquals(reply.getSessionNonce(), SESSION_NONCE);
         assertEquals(reply.getSeq(), 4);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply));
