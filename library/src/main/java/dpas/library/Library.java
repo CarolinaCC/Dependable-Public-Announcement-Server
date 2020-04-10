@@ -107,7 +107,7 @@ public class Library {
         SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
             session = getSession(key, privateKey);
-            request = ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
+            request = ContractGenerator.generateSafePostRequest(_serverKey, key, privateKey,
                     String.valueOf(message), session.getSessionNonce(),
                     session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
             var reply = _stub.safePost(request);
@@ -143,7 +143,7 @@ public class Library {
         SafePostRequest request = SafePostRequest.newBuilder().build();
         try {
             session = getSession(pubKey, privateKey);
-            request = ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message),
+            request = ContractGenerator.generateSafePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message),
                     session.getSessionNonce(), session.getSeq(), GENERAL_BOARD_IDENTIFIER, a);
 
             var reply = _stub.safePostGeneral(request);

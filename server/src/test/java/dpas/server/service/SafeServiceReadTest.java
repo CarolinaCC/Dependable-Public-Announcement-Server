@@ -110,7 +110,7 @@ public class SafeServiceReadTest {
         _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
 
         // Posts to Read
-        _stub.safePost(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey),
+        _stub.safePost(ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _nonce, _seq + 3, CipherUtils.keyToString(_pubKey),
                 null));
     }
 

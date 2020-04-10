@@ -23,7 +23,6 @@ public class ByteUtils {
             stream.writeBytes(pubKey);
             stream.writeBytes(message);
             stream.writeBytes(signature);
-            stream.writeBytes(message);
             for (var ref : references) {
                 stream.writeBytes(ref);
             }
@@ -43,7 +42,6 @@ public class ByteUtils {
             stream.writeBytes(pubKey);
             stream.writeBytes(message);
             stream.writeBytes(signature);
-            stream.writeBytes(message);
             for (var ref : references) {
                 stream.writeBytes(ref);
             }
@@ -65,10 +63,18 @@ public class ByteUtils {
             stream.writeBytes(key);
             stream.writeBytes(message);
             stream.writeBytes(signature);
-            stream.writeBytes(message);
             for (var ref : refs) {
                 stream.writeBytes(ref);
             }
+            byte[] res = stream.toByteArray();
+            return res;
+        }
+    }
+
+    public static byte[] toByteArray( PublicKey pubKey) throws IOException {
+        byte[] key = pubKey.getEncoded();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(key);
             byte[] res = stream.toByteArray();
             return res;
         }
@@ -112,6 +118,14 @@ public class ByteUtils {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(seq);
             stream.writeBytes(nonce);
+            stream.writeBytes(pubKey);
+            return stream.toByteArray();
+        }
+    }
+
+    public static byte[] toByteArray(Contract.RegisterRequest request) throws IOException {
+        byte[] pubKey = request.getPublicKey().toByteArray();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(pubKey);
             return stream.toByteArray();
         }
@@ -181,18 +195,16 @@ public class ByteUtils {
         }
     }
 
-    public static byte[] toByteArray(long sequence, PublicKey pubKey, byte[] message,
-                                     byte[] signature, Set<String> references) throws IOException {
-        byte[] seq = NumberUtils.longToBytes(sequence);
+    public static byte[] toByteArray(long seq, PublicKey pubKey, String message, byte[] signature, Set<String> references) throws IOException {
+        byte[] seqBytes = NumberUtils.longToBytes(seq);
         byte[] key = pubKey.getEncoded();
-
+        byte[] messageBytes = message.getBytes();
         Set<byte[]> refs = references.stream().map(String::getBytes).collect(Collectors.toSet());
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
+            stream.writeBytes(seqBytes);
             stream.writeBytes(key);
-            stream.writeBytes(message);
+            stream.writeBytes(messageBytes);
             stream.writeBytes(signature);
-            stream.writeBytes(message);
             for (var ref : refs) {
                 stream.writeBytes(ref);
             }
@@ -200,5 +212,4 @@ public class ByteUtils {
             return res;
         }
     }
-
 }
