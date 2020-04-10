@@ -281,7 +281,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     }
 
     @Override
-    public void postGeneral(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) throws GeneralSecurityException, CommonDomainException, IOException {
+    public void postGeneral(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             var user = _users.get(key);

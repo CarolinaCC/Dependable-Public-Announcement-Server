@@ -89,7 +89,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) throws GeneralSecurityException, CommonDomainException, IOException {
+    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             var announcement = generateAnnouncement(request, _generalBoard);
 

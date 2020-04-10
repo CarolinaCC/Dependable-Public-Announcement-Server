@@ -232,11 +232,11 @@ public class SafeServicePostTest {
     public void nonCipheredPost() throws IOException, GeneralSecurityException {
         var request = Contract.PostRequest.newBuilder(_request).setMessage(MESSAGE).build();
         byte[] mac = MacGenerator.generateMac(request, _privKey);
-        request = Contract.SafePostRequest.newBuilder(request).setMac(ByteString.copyFrom(mac)).build();
+        request = Contract.PostRequest.newBuilder(request).setMac(ByteString.copyFrom(mac)).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
@@ -248,11 +248,11 @@ public class SafeServicePostTest {
 
     @Test
     public void invalidMacPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setMessage(ByteString.copyFrom(MESSAGE.getBytes())).build();
+        var request = Contract.PostRequest.newBuilder(_request).setMessage(MESSAGE).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid mac");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
@@ -264,11 +264,11 @@ public class SafeServicePostTest {
 
     @Test
     public void notAMacPost() throws GeneralSecurityException {
-        var request = Contract.SafePostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
+        var request = Contract.PostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("security values provided");
         try {
-            _stub.safePost(request);
+            _stub.post(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
