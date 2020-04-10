@@ -3,7 +3,6 @@ package dpas.server.service;
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacGenerator;
@@ -16,10 +15,8 @@ import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
-import java.time.LocalDateTime;
 
 import static org.junit.Assert.*;
 
@@ -42,8 +39,10 @@ public class SafeServiceRegisterTest {
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPubKey;
 
+    private static Contract.RegisterRequest _request;
+
     @BeforeClass
-    public static void oneTimeSetup() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+    public static void oneTimeSetup() throws GeneralSecurityException, IOException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
         KeyPair keyPair = keygen.generateKeyPair();
@@ -59,12 +58,13 @@ public class SafeServiceRegisterTest {
         Cipher cipherServer = Cipher.getInstance("RSA");
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
 
+        _request = ContractGenerator.generateRegisterRequest( _pubKey, _privKey);
 
     }
 
     @Before
     public void setup() throws IOException {
-        SessionManager _sessionManager = new SessionManager(5000);
+        SessionManager _sessionManager = new SessionManager();
         //_sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
@@ -85,8 +85,8 @@ public class SafeServiceRegisterTest {
 
     @Test
     public void validRegister() throws IOException, GeneralSecurityException {
-        var reply = _stub.register(ContractGenerator.generateRegisterRequest( _pubKey, _privKey));
-         assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
+        var reply = _stub.register(_request);
+         assertTrue(MacVerifier.verifyMac(_request, reply, _serverPubKey));
     }
 
     @Test
@@ -94,7 +94,7 @@ public class SafeServiceRegisterTest {
         var request = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
         var reply = _stub.register(request);
 
-        assertTrue(MacVerifier.verifyMac(_serverPubKey, reply));
+        assertTrue(MacVerifier.verifyMac(_request, reply, _serverPubKey));
         request = ContractGenerator.generateRegisterRequest( _pubKey, _privKey);
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User Already Exists");

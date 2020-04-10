@@ -17,26 +17,10 @@ public class ErrorGenerator {
     public static final Metadata.Key<byte[]> contentKey = Metadata.Key.of("REQ-bin", Metadata.BINARY_BYTE_MARSHALLER);
     public static final Metadata.Key<byte[]> macKey = Metadata.Key.of("MAC-bin", Metadata.BINARY_BYTE_MARSHALLER);
 
-    public static StatusRuntimeException generate(Status status, String message, Contract.SafeRegisterRequest request, PrivateKey privKey) {
-        var statusException = status.withDescription(message).asRuntimeException(new Metadata());
-        return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
-    }
-
     public static StatusRuntimeException generate(Status status, String message, Contract.RegisterRequest request, PrivateKey privKey) {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());
         return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
     }
-
-    public static StatusRuntimeException generate(Status status, String message, Contract.SafePostRequest request, PrivateKey privKey) {
-        var statusException = status.withDescription(message).asRuntimeException(new Metadata());
-        return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
-    }
-
-    public static StatusRuntimeException generate(Status status, String message, Contract.ClientHello request, PrivateKey privKey) {
-        var statusException = status.withDescription(message).asRuntimeException(new Metadata());
-        return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
-    }
-
 
     public static StatusRuntimeException generate(Status status, String message, Contract.ReadRequest request, PrivateKey privKey) {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());
@@ -47,12 +31,6 @@ public class ErrorGenerator {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());
         return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
     }
-
-    public static StatusRuntimeException generate(Status status, String message, Contract.GoodByeRequest request, PrivateKey privKey) {
-        var statusException = status.withDescription(message).asRuntimeException(new Metadata());
-        return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
-    }
-
 
     private static StatusRuntimeException fillMetadata(byte[] content, PrivateKey privKey, StatusRuntimeException e) {
         var toSign = ArrayUtils.addAll(content, e.getMessage().getBytes());

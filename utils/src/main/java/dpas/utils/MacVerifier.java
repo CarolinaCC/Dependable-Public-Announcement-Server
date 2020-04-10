@@ -17,68 +17,6 @@ import java.util.Arrays;
 
 public class MacVerifier {
 
-    public static boolean verifyMac(Contract.SafePostRequest request) throws GeneralSecurityException, IOException {
-        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] mac = request.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(request);
-
-        return Arrays.equals(digest.digest(content), hash);
-    }
-
-    public static boolean verifyMac(Contract.ClientHello request) throws GeneralSecurityException, IOException {
-        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] mac = request.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(request);
-
-        return Arrays.equals(digest.digest(content), hash);
-    }
-
-    public static boolean verifyMac(PublicKey pubKey, Contract.ServerHello request) throws GeneralSecurityException, IOException {
-        byte[] mac = request.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(request);
-
-        return Arrays.equals(digest.digest(content), hash);
-    }
-
-    public static boolean verifyMac(PublicKey pubKey, Contract.SafePostReply reply) throws GeneralSecurityException, IOException {
-        byte[] mac = reply.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(reply);
-
-        return Arrays.equals(digest.digest(content), hash);
-    }
-
-    public static boolean verifyMac(Contract.SafeRegisterRequest request) throws GeneralSecurityException, IOException {
-        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] mac = request.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(request);
-
-        return Arrays.equals(digest.digest(content), hash);
-    }
 
     public static boolean verifyMac(Contract.RegisterRequest request) throws GeneralSecurityException, IOException {
         PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -93,28 +31,17 @@ public class MacVerifier {
         return Arrays.equals(digest.digest(content), hash);
     }
 
-    public static boolean verifyMac(PublicKey pubKey, Contract.SafeRegisterReply reply) throws GeneralSecurityException, IOException {
+
+    public static boolean verifyMac(Contract.RegisterRequest request, Contract.MacReply reply, PublicKey serverKey) throws GeneralSecurityException, IOException {
         byte[] mac = reply.getMac().toByteArray();
         Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
+        cipher.init(Cipher.DECRYPT_MODE, serverKey);
         byte[] hash = cipher.doFinal(mac);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(reply);
+        byte[] content = digest.digest(request.getMac().toByteArray());
 
-        return Arrays.equals(digest.digest(content), hash);
-    }
-
-    public static boolean verifyMac(PublicKey pubKey, Contract.MacReply reply) throws GeneralSecurityException, IOException {
-        byte[] mac = reply.getMac().toByteArray();
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        byte[] hash = cipher.doFinal(mac);
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] content = ByteUtils.toByteArray(reply);
-
-        return Arrays.equals(digest.digest(content), hash);
+        return Arrays.equals(content, hash);
     }
 
     public static boolean verifyMac(PublicKey pubKey, Contract.PostRequest request) throws GeneralSecurityException, IOException {

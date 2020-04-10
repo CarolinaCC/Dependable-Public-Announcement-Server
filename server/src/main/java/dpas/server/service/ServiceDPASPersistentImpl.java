@@ -1,20 +1,18 @@
 package dpas.server.service;
 
-import dpas.grpc.contract.Contract.MacReply;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
-import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.Contract.MacReply;
+import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.server.persistence.PersistenceManager;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;

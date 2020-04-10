@@ -5,7 +5,6 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacGenerator;
@@ -20,7 +19,6 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 import java.security.*;
 import java.time.LocalDateTime;
-import java.util.Base64;
 
 import static org.junit.Assert.*;
 
@@ -75,8 +73,7 @@ public class SafeServicePostGeneralTest {
     @Before
     public void setup() throws GeneralSecurityException,
             IOException {
-        _sessionManager = new SessionManager(50000000);
-        _sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(2)));
+        _sessionManager = new SessionManager();
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();

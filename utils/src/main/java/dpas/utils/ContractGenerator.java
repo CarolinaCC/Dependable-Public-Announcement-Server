@@ -16,46 +16,6 @@ import java.util.stream.Stream;
 
 public class ContractGenerator {
 
-    public static ServerHello generateServerHello(PrivateKey privateKey, long seq, String sessionNonce) throws IOException, GeneralSecurityException {
-        return ServerHello.newBuilder()
-                .setSeq(seq)
-                .setSessionNonce(sessionNonce)
-                .setMac(ByteString.copyFrom(MacGenerator.generateMac(sessionNonce, seq, privateKey)))
-                .build();
-    }
-
-    public static ClientHello generateClientHello(PrivateKey privateKey, PublicKey publicKey, String sessionNonce) throws IOException, GeneralSecurityException {
-        return ClientHello.newBuilder()
-                .setSessionNonce(sessionNonce)
-                .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-                .setMac(ByteString.copyFrom(MacGenerator.generateMac(sessionNonce, publicKey, privateKey)))
-                .build();
-    }
-
-    public static SafePostRequest generateSafePostRequest(PublicKey serverKey, PublicKey pubKey, PrivateKey privKey,
-                                                          String message, String nonce, long seq,
-                                                          String boardIdentifier, Announcement[] a)
-            throws GeneralSecurityException, IOException, CommonDomainException {
-        byte[] encodedMessage = CipherUtils.cipher(message.getBytes(), serverKey);
-
-        Set<String> references = a == null ? new HashSet<>()
-                : Stream.of(a).map(Announcement::getHash).collect(Collectors.toSet());
-
-        byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier);
-
-        byte[] mac = MacGenerator.generateMac(seq, nonce, pubKey, encodedMessage, signature, references, privKey);
-
-        return SafePostRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
-                .setMessage(ByteString.copyFrom(encodedMessage))
-                .setSignature(ByteString.copyFrom(signature))
-                .addAllReferences(references)
-                .setMac(ByteString.copyFrom(mac))
-                .setSeq(seq)
-                .setSessionNonce(nonce)
-                .build();
-    }
-
     public static PostRequest generatePostRequest(PublicKey serverKey, PublicKey pubKey, PrivateKey privKey,
                                                           String message, long seq,
                                                           String boardIdentifier, Announcement[] a)
@@ -79,61 +39,11 @@ public class ContractGenerator {
                 .build();
     }
 
-    public static SafePostReply generatePostReply(PrivateKey privateKey, String sessionNonce, long seq) throws GeneralSecurityException, IOException {
-        byte[] mac = MacGenerator.generateMac(sessionNonce, seq, privateKey);
-        return SafePostReply.newBuilder()
-                .setSessionNonce(sessionNonce)
-                .setSeq(seq)
-                .setMac(ByteString.copyFrom(mac))
-                .build();
-    }
-
-    public static GoodByeRequest generateGoodbyeRequest(PrivateKey privateKey, String sessionNonce, long seq) throws GeneralSecurityException, IOException {
-        byte[] mac = MacGenerator.generateMac(sessionNonce, seq, privateKey);
-        return GoodByeRequest.newBuilder()
-                .setSeq(seq)
-                .setSessionNonce(sessionNonce)
-                .setMac(ByteString.copyFrom(mac))
-                .build();
-    }
-
-    public static SafeRegisterRequest generateRegisterRequest(String sessionNonce, long seq, PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return SafeRegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
-                .setMac(ByteString.copyFrom(MacGenerator.generateMac(sessionNonce, seq, pubKey, privKey)))
-                .setSessionNonce(sessionNonce)
-                .setSeq(seq)
-                .build();
-    }
 
     public static RegisterRequest generateRegisterRequest(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
         return RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
                 .setMac(ByteString.copyFrom(MacGenerator.generateMac(pubKey, privKey)))
-                .build();
-    }
-
-    public static SafeRegisterReply generateRegisterReply(String sessionNonce, long seq, PrivateKey privateKey) throws IOException, GeneralSecurityException {
-        byte[] replyMac = MacGenerator.generateMac(sessionNonce, seq, privateKey);
-        return SafeRegisterReply.newBuilder()
-                .setMac(ByteString.copyFrom(replyMac))
-                .setSeq(seq)
-                .setSessionNonce(sessionNonce)
-                .build();
-    }
-
-
-    public static SafeRegisterReply generateSafeMacReply(PublicKey publicKey, PrivateKey privateKey) throws IOException, GeneralSecurityException {
-        byte[] replyMac = MacGenerator.generateMac(publicKey, privateKey);
-        return SafeRegisterReply.newBuilder()
-                .setMac(ByteString.copyFrom(replyMac))
-                .build();
-    }
-
-    public static MacReply generateMacReply(PublicKey publicKey, PrivateKey privateKey) throws IOException, GeneralSecurityException {
-        byte[] replyMac = MacGenerator.generateMac(publicKey, privateKey);
-        return MacReply.newBuilder()
-                .setMac(ByteString.copyFrom(replyMac))
                 .build();
     }
 

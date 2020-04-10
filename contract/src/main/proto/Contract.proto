@@ -8,29 +8,7 @@ service ServiceDPAS {
     rpc postGeneral (PostRequest) returns (MacReply);
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
-
-
-    rpc newSession(ClientHello) returns (ServerHello);
-    rpc safePost(SafePostRequest) returns (SafePostReply);
-    rpc safePostGeneral(SafePostRequest) returns (SafePostReply);
-    rpc safeRegister(SafeRegisterRequest) returns (SafeRegisterReply);
-    rpc goodbye(GoodByeRequest) returns (google.protobuf.Empty);
 }
-
-//
-message ClientHello {
-    string sessionNonce = 1;
-    bytes publicKey = 2;
-    bytes mac = 3;
-}
-
-
-message ServerHello {
-    int64 seq = 1;
-    string sessionNonce = 2;
-    bytes mac = 3;
-}
-
 //
 message RegisterRequest {
     bytes publicKey = 1;
@@ -49,45 +27,6 @@ message PostRequest {
     repeated string references = 4;
     int64 seq = 5;
     bytes mac = 6;
-}
-
-//
-message SafeRegisterRequest {
-    bytes publicKey = 1;
-    string sessionNonce = 2;
-    int64 seq = 3;
-    bytes mac = 4;
-}
-
-//
-message SafeRegisterReply {
-    string sessionNonce = 1;
-    int64 seq = 2;
-    bytes mac = 3;
-}
-
-message GoodByeRequest {
-    string sessionNonce = 1;
-    int64 seq = 2;
-    bytes mac = 3;
-}
-
-//
-message SafePostRequest {
-    bytes publicKey = 1;
-    bytes message = 2; //must be encrypted
-    bytes signature = 3;
-    repeated string references = 4;
-    string sessionNonce = 5;
-    int64 seq = 6;
-    bytes mac = 7;
-}
-
-//
-message SafePostReply {
-    string sessionNonce = 1;
-    int64 seq = 2;
-    bytes mac = 3;
 }
 
 //

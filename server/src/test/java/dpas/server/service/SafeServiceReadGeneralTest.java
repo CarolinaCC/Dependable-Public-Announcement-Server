@@ -6,7 +6,6 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.Session;
 import dpas.server.session.SessionManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
@@ -60,8 +59,8 @@ public class SafeServiceReadGeneralTest {
     public static void oneTimeSetup() throws GeneralSecurityException, IOException, CommonDomainException {
 
         _secondNonce = UUID.randomUUID().toString();
-        _seq = new SecureRandom().nextLong();
-        _secondSeq = new SecureRandom().nextLong();
+        _seq = 1;
+        _secondSeq = 1;
         UUID.randomUUID().toString();
         UUID.randomUUID().toString();
 
@@ -92,9 +91,7 @@ public class SafeServiceReadGeneralTest {
     @Before
     public void setup() throws IOException, GeneralSecurityException, CommonDomainException {
 
-        SessionManager _sessionManager = new SessionManager(50000000);
-        _sessionManager.getSessions().put(_nonce, new Session(_seq, _pubKey, _nonce, LocalDateTime.now().plusHours(2)));
-        _sessionManager.getSessions().put(_secondNonce, new Session(_secondSeq, _secondPubKey, _secondNonce, LocalDateTime.now().plusHours(2)));
+        SessionManager _sessionManager = new SessionManager();
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
@@ -105,10 +102,10 @@ public class SafeServiceReadGeneralTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
 
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
+        _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
 
         // Posts to Read
-        _stub.safePostGeneral(ContractGenerator.generateSafePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _nonce, _seq + 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER,
+        _stub.postGeneral(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _seq , GeneralBoard.GENERAL_BOARD_IDENTIFIER,
                 null));
     }
 

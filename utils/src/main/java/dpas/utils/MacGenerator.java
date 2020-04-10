@@ -12,19 +12,8 @@ import java.util.Set;
 
 public class MacGenerator {
 
-    public static byte[] generateMac(String message, String sessionNonce, long seq, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(message, sessionNonce, seq), privKey);
-    }
 
-    public static byte[] generateMac(String sessionNonce, long seq, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(sessionNonce, seq), privKey);
-    }
-
-    public static byte[] generateMac(String sessionNonce, PublicKey publicKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(sessionNonce, publicKey), privKey);
-    }
-
-    public static byte[] generateMac(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
+    public static byte[] generateMac(PublicKey pubKey, PrivateKey privKey) throws GeneralSecurityException {
         return generateMac(pubKey.getEncoded(), privKey);
     }
 
@@ -32,16 +21,8 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(sessionNonce, seq, pubKey), privKey);
     }
 
-    public static byte[] generateMac(long seq, String nonce, PublicKey pubKey, byte[] message,
-                                     byte[] signature, Set<String> references, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(seq, nonce, pubKey, message, signature, references), privKey);
-    }
 
-    public static byte[] generateMac(Contract.SafePostRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(request), privKey);
-    }
-
-    public static byte[] generateMac(Contract.ReadRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {
+    public static byte[] generateMac(Contract.ReadRequest request, PrivateKey privKey) throws GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 

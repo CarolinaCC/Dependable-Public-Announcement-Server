@@ -1,6 +1,5 @@
 package dpas.utils;
 
-import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 
 import java.io.ByteArrayOutputStream;
@@ -10,26 +9,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ByteUtils {
-    public static byte[] toByteArray(Contract.SafePostRequest request) throws IOException {
-        byte[] seq = NumberUtils.longToBytes(request.getSeq());
-        byte[] nonce = request.getSessionNonce().getBytes();
-        byte[] pubKey = request.getPublicKey().toByteArray();
-        byte[] message = request.getMessage().toByteArray();
-        byte[] signature = request.getSignature().toByteArray();
-        Set<byte[]> references = request.getReferencesList().stream().map(String::getBytes).collect(Collectors.toSet());
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
-            stream.writeBytes(nonce);
-            stream.writeBytes(pubKey);
-            stream.writeBytes(message);
-            stream.writeBytes(signature);
-            for (var ref : references) {
-                stream.writeBytes(ref);
-            }
-            byte[] res = stream.toByteArray();
-            return res;
-        }
-    }
 
     public static byte[] toByteArray(Contract.MacReply reply) throws IOException {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
@@ -78,7 +57,7 @@ public class ByteUtils {
         }
     }
 
-    public static byte[] toByteArray( PublicKey pubKey) throws IOException {
+    public static byte[] toByteArray(PublicKey pubKey) throws IOException {
         byte[] key = pubKey.getEncoded();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(key);
@@ -118,71 +97,11 @@ public class ByteUtils {
         }
     }
 
-    public static byte[] toByteArray(Contract.SafeRegisterRequest request) throws IOException {
-        byte[] seq = NumberUtils.longToBytes(request.getSeq());
-        byte[] nonce = request.getSessionNonce().getBytes();
-        byte[] pubKey = request.getPublicKey().toByteArray();
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
-            stream.writeBytes(nonce);
-            stream.writeBytes(pubKey);
-            return stream.toByteArray();
-        }
-    }
 
     public static byte[] toByteArray(Contract.RegisterRequest request) throws IOException {
         byte[] pubKey = request.getPublicKey().toByteArray();
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(pubKey);
-            return stream.toByteArray();
-        }
-    }
-
-    public static byte[] toByteArray(Contract.ClientHello request) throws IOException {
-        byte[] nonce = request.getSessionNonce().getBytes();
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(request.getPublicKey().toByteArray());
-            stream.writeBytes(nonce);
-            return stream.toByteArray();
-        }
-    }
-
-    public static byte[] toByteArray(Contract.ServerHello request) throws IOException {
-        byte[] seq = NumberUtils.longToBytes(request.getSeq());
-        byte[] nonce = request.getSessionNonce().getBytes();
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
-            stream.writeBytes(nonce);
-            return stream.toByteArray();
-        }
-    }
-
-    public static byte[] toByteArray(Contract.SafeRegisterReply reply) throws IOException {
-        byte[] seq = NumberUtils.longToBytes(reply.getSeq());
-        byte[] nonce = reply.getSessionNonce().getBytes();
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
-            stream.writeBytes(nonce);
-            return stream.toByteArray();
-        }
-    }
-
-    public static byte[] toByteArray(Contract.SafePostReply reply) throws IOException {
-        byte[] seq = NumberUtils.longToBytes(reply.getSeq());
-        byte[] nonce = reply.getSessionNonce().getBytes();
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
-            stream.writeBytes(nonce);
-            return stream.toByteArray();
-        }
-    }
-
-    public static byte[] toByteArray(Contract.GoodByeRequest request) throws IOException {
-        byte[] seq = NumberUtils.longToBytes(request.getSeq());
-        byte[] nonce = request.getSessionNonce().getBytes();
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(seq);
-            stream.writeBytes(nonce);
             return stream.toByteArray();
         }
     }

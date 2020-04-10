@@ -75,7 +75,7 @@ public class SafeServiceConcurrencyTest {
     @Before
     public void setup() throws GeneralSecurityException, IOException {
 
-        SessionManager manager = new SessionManager(50000000);
+        SessionManager manager = new SessionManager();
 
 
         final BindableService impl = new ServiceDPASSafeImpl(_serverPrivKey, manager);
