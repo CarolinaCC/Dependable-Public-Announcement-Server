@@ -119,7 +119,7 @@ public class SafeServicePostTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
 
-        _stub.safeRegister(ContractGenerator.generateRegisterRequest(_nonce, _seq + 1, _pubKey, _privKey));
+        _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
 
     }
 
