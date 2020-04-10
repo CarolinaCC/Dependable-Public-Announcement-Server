@@ -67,6 +67,14 @@ public class SessionManager {
         return validateSessionRequest(nonce, mac, content, seq, key);
     }
 
+    public void validateSessionRequest(Contract.RegisterRequest request) throws GeneralSecurityException, IOException, SessionException, IllegalMacException {
+        PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] contentOfMac = ByteUtils.toByteArray(request);
+        byte[] mac = request.getMac().toByteArray();
+        if (!MacVerifier.verifyMac(publicKey, contentOfMac, mac))
+            throw new IllegalMacException("Invalid mac");
+
+    }
 
     public void validateSessionRequest(Contract.GoodByeRequest request) throws GeneralSecurityException, IOException, SessionException, IllegalMacException {
         byte[] content = ByteUtils.toByteArray(request);
@@ -84,6 +92,8 @@ public class SessionManager {
         long seq = request.getSeq();
         return validateSessionRequest(sessionNonce, mac, content, seq, key);
     }
+
+
 
     public long validateSessionRequest(String sessionNonce, byte[] mac, byte[] content, long sequenceNumber) throws GeneralSecurityException, SessionException, IllegalMacException {
 

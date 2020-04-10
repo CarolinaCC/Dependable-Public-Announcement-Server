@@ -91,4 +91,23 @@ public class ContractGenerator {
                 .build();
     }
 
+
+
+    public static SafeRegisterReply generateSafeMacReply(PublicKey publicKey, PrivateKey privateKey) throws IOException, GeneralSecurityException {
+        byte[] replyMac = MacGenerator.generateMac(publicKey, privateKey);
+        return SafeRegisterReply.newBuilder()
+                .setMac(ByteString.copyFrom(replyMac))
+                .build();
+    }
+
+    public static MacReply generateMacReply(PublicKey publicKey, PrivateKey privateKey) throws IOException, GeneralSecurityException {
+        byte[] replyMac = MacGenerator.generateMac(publicKey, privateKey);
+        return MacReply.newBuilder()
+                .setMac(ByteString.copyFrom(replyMac))
+                .build();
+    }
+
+
+
+
 }

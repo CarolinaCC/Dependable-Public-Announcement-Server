@@ -7,6 +7,8 @@ import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.NullPublicKeyException;
+import dpas.common.domain.exception.NullUserException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.MacReply;
 import dpas.server.persistence.PersistenceManager;
@@ -23,10 +25,8 @@ import io.grpc.stub.StreamObserver;
 import javax.json.JsonObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.stream.Collectors;
 
@@ -218,7 +218,27 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
     @Override
     public void register(Contract.RegisterRequest request, StreamObserver<MacReply> responseObserver) {
-        responseObserver.onError(UNAVAILABLE.withDescription("Endpoint Not Active").asRuntimeException());
+        try {
+            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            _sessionManager.validateSessionRequest(request);
+            var user = new User(pubKey);
+            var curr = _users.putIfAbsent(user.getPublicKey(), user);
+            if (curr != null) {
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User Already Exists", request, _privateKey));
+            } else {
+                save(user.toJson());
+                responseObserver.onNext(ContractGenerator.generateMacReply(pubKey, _privateKey));
+                responseObserver.onCompleted();
+            }
+        } catch (CommonDomainException | IllegalMacException e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (SessionException e) {
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
+        } catch (IOException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+        }
     }
 
 

@@ -24,6 +24,10 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(sessionNonce, publicKey), privKey);
     }
 
+    public static byte[] generateMac(PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
+        return generateMac(ByteUtils.toByteArray(pubKey), privKey);
+    }
+
     public static byte[] generateMac(String sessionNonce, long seq, PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(sessionNonce, seq, pubKey), privKey);
     }
