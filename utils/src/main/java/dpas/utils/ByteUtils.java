@@ -5,6 +5,8 @@ import dpas.grpc.contract.Contract;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -95,8 +97,30 @@ public class ByteUtils {
         }
     }
 
-    public static byte[] toByteArray(Contract.ReadRequest request) {
-        return request.getNonce().getBytes();
+    public static byte[] toByteArray(Contract.ReadRequest request, List<Contract.Announcement> reply) throws IOException {
+        Set<byte[]> refs = new HashSet<>();
+        for (Contract.Announcement announcement : reply) {
+            byte[] bytes = toByteArray(announcement);
+            refs.add(bytes);
+        }
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(request.getNonce().getBytes());
+            for (var ref : refs) {
+                stream.writeBytes(ref);
+            }
+            return stream.toByteArray();
+        }
+    }
+
+    private static byte[] toByteArray(Contract.Announcement announcement) throws IOException {
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(announcement.getHash().getBytes());
+            stream.writeBytes(announcement.getSignature().toByteArray());
+            stream.writeBytes(announcement.getMessage().getBytes());
+            stream.writeBytes(announcement.getPublicKey().toByteArray());
+            announcement.getReferencesList().forEach(ref -> stream.writeBytes(ref.getBytes()));
+            return stream.toByteArray();
+        }
     }
 
     public static byte[] toByteArray(String sessionNonce, long sequence, PublicKey pubKey) throws IOException {

@@ -8,6 +8,7 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.List;
 import java.util.Set;
 
 public class MacGenerator {
@@ -20,8 +21,8 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(nonce, seq, pubKey), privKey);
     }
 
-    public static byte[] generateMac(Contract.ReadRequest request, PrivateKey privKey) throws GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(request), privKey);
+    public static byte[] generateMac(Contract.ReadRequest request, List<Contract.Announcement> reply, PrivateKey privKey) throws GeneralSecurityException, IOException {
+        return generateMac(ByteUtils.toByteArray(request, reply), privKey);
     }
 
     public static byte[] generateMac(Contract.PostRequest request, PrivateKey privKey) throws IOException, GeneralSecurityException {

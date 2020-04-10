@@ -6,10 +6,7 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.SessionManager;
-import dpas.utils.CipherUtils;
-import dpas.utils.ContractGenerator;
-import dpas.utils.MacVerifier;
-import dpas.utils.ErrorGenerator;
+import dpas.utils.*;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -117,7 +114,7 @@ public class SafeServiceReadTest {
     }
 
     @Test
-    public void readValid() throws GeneralSecurityException {
+    public void readValid() throws GeneralSecurityException, IOException {
         var request = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(1)
@@ -133,7 +130,7 @@ public class SafeServiceReadTest {
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _pubKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
-        assertTrue(MacVerifier.verifyMac(_serverPKey, request.getNonce().getBytes(), reply.getMac().toByteArray()));
+        assertTrue(MacVerifier.verifyMac(_serverPKey, ByteUtils.toByteArray(request, reply.getAnnouncementsList()), reply.getMac().toByteArray()));
     }
 
     @Test

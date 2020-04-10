@@ -61,7 +61,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
                 responseObserver.onNext(Contract.ReadReply.newBuilder()
                         .addAllAnnouncements(announcementsGRPC)
-                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, _privateKey)))
+                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC, _privateKey)))
                         .build());
                 responseObserver.onCompleted();
             }
@@ -79,7 +79,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
             responseObserver.onNext(Contract.ReadReply.newBuilder()
                     .addAllAnnouncements(announcementsGRPC)
-                    .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, _privateKey)))
+                    .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC, _privateKey)))
                     .build());
             responseObserver.onCompleted();
 

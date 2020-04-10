@@ -7,6 +7,7 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.SessionManager;
+import dpas.utils.ByteUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
 import dpas.utils.ErrorGenerator;
@@ -55,7 +56,7 @@ public class SafeServiceReadGeneralTest {
     private static final String SECOND_MESSAGE = "Second message to sign";
 
     @BeforeClass
-    public static void oneTimeSetup() throws GeneralSecurityException, IOException, CommonDomainException {
+    public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
 
         _secondNonce = UUID.randomUUID().toString();
         _seq = 1;
@@ -116,7 +117,7 @@ public class SafeServiceReadGeneralTest {
     }
 
     @Test
-    public void readValid() throws GeneralSecurityException {
+    public void readValid() throws GeneralSecurityException, IOException {
         var request = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(1)
@@ -132,7 +133,7 @@ public class SafeServiceReadGeneralTest {
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _pubKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
-        assertTrue(MacVerifier.verifyMac(_serverPKey, request.getNonce().getBytes(), reply.getMac().toByteArray()));
+        assertTrue(MacVerifier.verifyMac(_serverPKey, ByteUtils.toByteArray(request, reply.getAnnouncementsList()), reply.getMac().toByteArray()));
     }
 
 
