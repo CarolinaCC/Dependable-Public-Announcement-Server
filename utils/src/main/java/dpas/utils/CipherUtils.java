@@ -16,8 +16,7 @@ public class CipherUtils {
     }
 
     public static byte[] decodeAndDecipher(String content, PrivateKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        byte[] cnt = Base64.getDecoder().decode(content);
-        return decipher(cnt, key);
+        return decipher(Base64.getDecoder().decode(content), key);
     }
 
 
