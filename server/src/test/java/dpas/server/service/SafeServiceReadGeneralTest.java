@@ -83,8 +83,7 @@ public class SafeServiceReadGeneralTest {
 
 
         //Signatures
-        _signature = Announcement.generateSignature(_privKey, MESSAGE, null, GeneralBoard.GENERAL_BOARD_IDENTIFIER);
-        Announcement.generateSignature(_privKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
+        _signature = Announcement.generateSignature(_privKey, MESSAGE, null, GeneralBoard.GENERAL_BOARD_IDENTIFIER, _seq);
 
     }
 

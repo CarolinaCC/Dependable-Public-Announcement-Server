@@ -76,8 +76,6 @@ public class SafeServiceConcurrencyTest {
     public void setup() throws GeneralSecurityException, IOException {
 
         SessionManager manager = new SessionManager();
-
-
         final BindableService impl = new ServiceDPASSafeImpl(_serverPrivKey, manager);
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();
@@ -126,7 +124,6 @@ public class SafeServiceConcurrencyTest {
     @Test
     public void concurrencyPostTest() throws InterruptedException {
         Thread[] threads = new Thread[NUMBER_THREADS];
-        HashSet<Integer> sequencers = new HashSet<>();
         for (int i = 0; i < NUMBER_THREADS; i++) {
             final int id = i;
             threads[id] = new Thread(() -> {
@@ -153,14 +150,13 @@ public class SafeServiceConcurrencyTest {
             //Check that each announcement was posted correctly
             assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS / NUMBER_THREADS);
 
+            int j = 1;
             //Check that each announcement was posted correctly
             for (var announcement : reply.getAnnouncementsList()) {
                 assertEquals(announcement.getMessage(), MESSAGE);
                 assertArrayEquals(announcement.getPublicKey().toByteArray(), _users[i].getPublic().getEncoded());
-                assertTrue(announcement.getSequencer() >= 0);
-                assertTrue(announcement.getSequencer() < NUMBER_POSTS);
-                assertFalse(sequencers.contains(announcement.getSequencer()));
-                sequencers.add(announcement.getSequencer());
+                assertEquals(announcement.getSeq(), j);
+                j++;
             }
         }
     }
@@ -168,7 +164,6 @@ public class SafeServiceConcurrencyTest {
     @Test
     public void concurrencyPostGeneralTest() throws InterruptedException {
         Thread[] threads = new Thread[NUMBER_THREADS];
-        HashSet<Integer> sequencers = new HashSet<>();
         for (int i = 0; i < NUMBER_THREADS; i++) {
             final int id = i;
             threads[i] = new Thread(() -> {
@@ -197,10 +192,8 @@ public class SafeServiceConcurrencyTest {
         //Check that each announcement was posted correctly
         for (var announcement : reply.getAnnouncementsList()) {
             assertEquals(announcement.getMessage(), MESSAGE);
-            assertTrue(announcement.getSequencer() >= 0);
-            assertTrue(announcement.getSequencer() < NUMBER_POSTS);
-            assertFalse(sequencers.contains(announcement.getSequencer()));
-            sequencers.add(announcement.getSequencer());
+            assertTrue(announcement.getSeq() >= 0);
+            assertTrue(announcement.getSeq() <= NUMBER_POSTS / NUMBER_THREADS);
         }
     }
 }

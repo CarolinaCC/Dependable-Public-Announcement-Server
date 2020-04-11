@@ -77,7 +77,6 @@ public class PersistenceManager {
 
     private void parseJsonArray(JsonArray jsonArray, ServiceDPASPersistentImpl service) throws GeneralSecurityException, CommonDomainException {
         Map<PublicKey, Long> userSeqs = new HashMap<>();
-        int counter = 0;
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
 
@@ -96,18 +95,15 @@ public class PersistenceManager {
                 for (int j = 0; j < jsonReferences.size(); j++) {
                     references.add(jsonReferences.getString(j));
                 }
-                int identifier = operation.getInt("Sequencer");
+                long seq = operation.getInt("Sequencer");
 
                 if (operation.getString("Type").equals("Post"))
-                    service.addAnnouncement(operation.getString("Message"), key, signature, references, identifier);
+                    service.addAnnouncement(operation.getString("Message"), key, signature, references, seq);
                 else
-                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, identifier);
-                counter++;
+                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, seq);
                 userSeqs.put(key, userSeqs.get(key) + 1);
             }
         }
-        service.setCounter(counter);
-        service.getUsers().values().forEach(user -> user.incrSeq(userSeqs.get(user.getPublicKey())));
     }
 
     public JsonArray readSaveFile() throws FileNotFoundException {

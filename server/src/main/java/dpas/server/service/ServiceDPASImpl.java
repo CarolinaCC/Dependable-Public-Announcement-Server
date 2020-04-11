@@ -156,7 +156,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
-        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
+        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()),  board, request.getSeq());
     }
 
     protected Announcement generateAnnouncement(PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
@@ -168,6 +168,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         if (user == null) {
             throw new InvalidUserException("User does not exist");
         }
-        return new Announcement(signature, user, message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
+        return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());
     }
 }

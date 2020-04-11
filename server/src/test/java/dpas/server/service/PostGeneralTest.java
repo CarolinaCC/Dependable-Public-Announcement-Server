@@ -37,6 +37,7 @@ public class PostGeneralTest {
     private static PrivateKey _firstPrivateKey;
     private static PrivateKey _secondPrivateKey;
 
+    private static long _seq;
 
     private static byte[] _firstSignature;
     private static byte[] _secondSignature;
@@ -64,20 +65,17 @@ public class PostGeneralTest {
         _secondPublicKey = keyPair.getPublic();
         _secondPrivateKey = keyPair.getPrivate();
 
+        _seq = 1;
 
         //Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
+                new HashSet<>(), GENERAL_BOARD_IDENTIFIER, _seq);
 
         _secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
-
-        Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
-
+                new HashSet<>(), GENERAL_BOARD_IDENTIFIER, _seq);
 
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
-                new HashSet<>(), GENERAL_BOARD_IDENTIFIER);
+                new HashSet<>(), GENERAL_BOARD_IDENTIFIER, _seq + 1);
 
     }
 
@@ -115,6 +113,7 @@ public class PostGeneralTest {
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
+                .setSeq(_seq)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
     }
@@ -123,12 +122,16 @@ public class PostGeneralTest {
     public void twoPostsSuccess() {
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+                .setMessage(MESSAGE)
+                .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSeq(_seq)
                 .build());
 
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
-                .setMessage(SECOND_MESSAGE).setSignature(ByteString.copyFrom(_secondSignature))
+                .setSeq(_seq)
+                .setMessage(SECOND_MESSAGE)
+                .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
     }
 
@@ -137,6 +140,7 @@ public class PostGeneralTest {
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
+                .setSeq(_seq)
                 .build());
 
         var firstIdentifier = _stub.readGeneral(Contract.ReadRequest
@@ -147,7 +151,7 @@ public class PostGeneralTest {
                 .getHash();
 
         _secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                Collections.singleton(firstIdentifier), GENERAL_BOARD_IDENTIFIER);
+                Collections.singleton(firstIdentifier), GENERAL_BOARD_IDENTIFIER, _seq);
 
 
         _stub.postGeneral(Contract.PostRequest.newBuilder()
@@ -155,6 +159,7 @@ public class PostGeneralTest {
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(firstIdentifier)
                 .setSignature(ByteString.copyFrom(_secondSignatureWithRef))
+                .setSeq(_seq)
                 .build());
     }
 
@@ -167,6 +172,7 @@ public class PostGeneralTest {
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSeq(_seq)
                 .build());
     }
 
@@ -179,6 +185,7 @@ public class PostGeneralTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(INVALID_MESSAGE)
                 .setSignature(ByteString.copyFrom(_bigMessageSignature))
+                .setSeq(_seq)
                 .build());
     }
 
@@ -190,6 +197,7 @@ public class PostGeneralTest {
         _stub.postGeneral(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
+                .setSeq(_seq)
                 .build());
     }
 
@@ -202,6 +210,7 @@ public class PostGeneralTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_secondSignature))
+                .setSeq(_seq)
                 .build());
     }
 

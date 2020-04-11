@@ -13,44 +13,48 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Announcement {
-    private byte[] _signature;
-    private User _user;
-    private String _message;
-    private Set<Announcement> _references; // Can be null
-    private int _sequencer;
+    private final byte[] _signature;
+    private final User _user;
+    private final String _message;
+    private final Set<Announcement> _references; // Can be null
     private String _hash;
-    private AnnouncementBoard _board;
+    private final AnnouncementBoard _board;
+    private final long _seq;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
-                        int sequencer, AnnouncementBoard board) throws CommonDomainException {
+                        AnnouncementBoard board, long seq) throws CommonDomainException {
 
-        checkArguments(signature, user, message, sequencer, references, board);
-        checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier());
+        checkArguments(signature, user, message, references, board, seq);
+        checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
         _message = message;
         _signature = signature;
         _user = user;
         _references = references;
-        _sequencer = sequencer;
         _board = board;
+        _seq = seq;
         generateHash();
+        _user.incrSeq(1);
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
-                        int sequencer, AnnouncementBoard board) throws CommonDomainException {
+                        AnnouncementBoard board, long seq) throws CommonDomainException {
 
-        this(generateSignature(signatureKey, message, getReferenceStrings(references), board),
-                user, message, references, sequencer, board);
+        this(generateSignature(signatureKey, message, getReferenceStrings(references), board, seq),
+                user, message, references, board, seq);
     }
 
 
-    public void checkArguments(byte[] signature, User user, String message, int identifier,
-                               Set<Announcement> references, AnnouncementBoard board) throws CommonDomainException {
+    public void checkArguments(byte[] signature, User user, String message,
+                               Set<Announcement> references, AnnouncementBoard board, long seq) throws CommonDomainException {
 
         if (signature == null) {
             throw new NullSignatureException("Invalid Signature provided: null");
         }
         if (user == null) {
             throw new NullUserException("Invalid User provided: null");
+        }
+        if (seq != user.getSeq() + 1) {
+            throw new InvalidSeqException("Invalid Seq provided: " + seq);
         }
         if (message == null) {
             throw new NullMessageException("Invalid Message Provided: null");
@@ -69,10 +73,10 @@ public class Announcement {
     }
 
     public void checkSignature(byte[] signature, User user, String message,
-                               Set<String> references, String boardIdentifier) throws CommonDomainException {
+                               Set<String> references, String boardIdentifier, long seq) throws CommonDomainException {
         try {
 
-            byte[] messageBytes = generateMessageBytes(message, references, boardIdentifier);
+            byte[] messageBytes = generateMessageBytes(message, references, boardIdentifier, seq);
             PublicKey publicKey = user.getPublicKey();
 
             Signature sign = Signature.getInstance("SHA256withRSA");
@@ -103,10 +107,6 @@ public class Announcement {
         return _user;
     }
 
-    public int getSequencer() {
-        return _sequencer;
-    }
-
     public String getHash() {
         return _hash;
     }
@@ -115,11 +115,16 @@ public class Announcement {
         return _board;
     }
 
+    public long getSeq() {
+        return _seq;
+    }
+
+
     private void generateHash() throws CommonDomainException {
         try {
             var builder = new StringBuilder();
             builder.append(_message)
-                    .append(_sequencer)
+                    .append(_seq)
                     .append(Base64.getEncoder().encodeToString(_signature))
                     .append(_board.getIdentifier())
                     .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
@@ -144,7 +149,7 @@ public class Announcement {
                 .addAllReferences(references)
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setSignature(ByteString.copyFrom(_signature))
-                .setSequencer(_sequencer)
+                .setSeq(_seq)
                 .setHash(_hash)
                 .build();
     }
@@ -162,16 +167,16 @@ public class Announcement {
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("Message", _message);
         jsonBuilder.add("Signature", sign);
-        jsonBuilder.add("Sequencer", _sequencer);
+        jsonBuilder.add("Sequencer", _seq);
         jsonBuilder.add("References", arrayBuilder.build());
 
         return jsonBuilder.build();
     }
 
     public static byte[] generateSignature(PrivateKey privKey, String message,
-                                           Set<String> references, String boadIdentifier) throws CommonDomainException {
+                                           Set<String> references, String boadIdentifier, long seq) throws CommonDomainException {
         try {
-            var messageBytes = generateMessageBytes(message, references, boadIdentifier);
+            var messageBytes = generateMessageBytes(message, references, boadIdentifier, seq);
             var sign = Signature.getInstance("SHA256withRSA");
             sign.initSign(privKey);
             sign.update(messageBytes);
@@ -181,11 +186,10 @@ public class Announcement {
         }
     }
 
-
     public static byte[] generateSignature(PrivateKey privKey, String message,
-                                           Set<String> references, AnnouncementBoard board) throws CommonDomainException {
+                                           Set<String> references, AnnouncementBoard board, long seq) throws CommonDomainException {
 
-        return generateSignature(privKey, message, references, board.getIdentifier());
+        return generateSignature(privKey, message, references, board.getIdentifier(), seq);
     }
 
     public static Set<String> getReferenceStrings(Set<Announcement> references) {
@@ -193,13 +197,14 @@ public class Announcement {
                 : references.stream().map(Announcement::getHash).collect(Collectors.toSet());
     }
 
-    private static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier) {
+    private static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier, long seq) {
         var builder = new StringBuilder();
         builder.append(message);
         if (references != null) {
             references.forEach(builder::append);
         }
         builder.append(boardIdentifier);
+        builder.append(seq);
         return builder.toString().getBytes();
     }
 }

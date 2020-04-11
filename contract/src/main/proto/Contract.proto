@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
 package dpas.grpc.contract;
 
 service ServiceDPAS {
@@ -62,7 +61,7 @@ message Announcement {
     repeated string references = 3;
     bytes publicKey = 4;
     bytes signature = 5;
-    int32 sequencer = 6;
+    int64 seq = 6;
     string hash = 7;
 }
 

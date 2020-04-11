@@ -109,26 +109,26 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         _users.put(key, user);
     }
 
-    public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int sequencer)
+    public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
             throws CommonDomainException {
 
         var refs = getReferences(references);
         var user = _users.get(key);
         var board = user.getUserBoard();
 
-        var announcement = new Announcement(signature, user, message, refs, sequencer, board);
+        var announcement = new Announcement(signature, user, message, refs, board, seq);
         board.post(announcement);
         _announcements.put(announcement.getHash(), announcement);
     }
 
-    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int sequencer)
+    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
             throws CommonDomainException {
 
         var refs = getReferences(references);
         var user = _users.get(key);
         var board = _generalBoard;
 
-        var announcement = new Announcement(signature, user, message, refs, sequencer, board);
+        var announcement = new Announcement(signature, user, message, refs, board, seq);
         _generalBoard.post(announcement);
         _announcements.put(announcement.getHash(), announcement);
     }

@@ -81,9 +81,7 @@ public class SafeServiceReadTest {
 
 
         //Signatures
-        _signature = Announcement.generateSignature(_privKey, MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
-        Announcement.generateSignature(_privKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()));
-
+        _signature = Announcement.generateSignature(_privKey, MESSAGE, null, Base64.getEncoder().encodeToString(_pubKey.getEncoded()), _seq);
     }
 
     @Before

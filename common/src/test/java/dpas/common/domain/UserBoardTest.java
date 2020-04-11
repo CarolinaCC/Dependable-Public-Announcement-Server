@@ -25,6 +25,8 @@ public class UserBoardTest {
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
 
+    private long _seq;
+
 
     private static final String FIRST_MESSAGE = "Message";
     private static final String SECOND_MESSAGE = "Second Message";
@@ -38,21 +40,23 @@ public class UserBoardTest {
         PublicKey publicKey = keyPair.getPublic();
         User user = new User(publicKey);
 
+        _seq = 1;
+
         _userBoard = user.getUserBoard();
 
-        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard);
+        byte[] signature = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard, _seq);
 
         // Generate Announcement A
-        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, 0, _userBoard);
+        _announcementValid = new Announcement(signature, user, FIRST_MESSAGE, null, _userBoard, _seq);
 
         //Generate References
         Set<Announcement> references = Collections.singleton(_announcementValid);
         Set<String> referenceIds = Announcement.getReferenceStrings(references);
 
         //Generate valid signature for second message
-        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, referenceIds, _userBoard);
+        byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, referenceIds, _userBoard, _seq + 1);
 
-        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, references, 1, _userBoard);
+        _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, references, _userBoard, _seq + 1);
 
         // Get UserBoard
         _userBoard = user.getUserBoard();
@@ -64,10 +68,10 @@ public class UserBoardTest {
         publicKey = keyPair.getPublic();
         user = new User(publicKey);
 
-        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard);
+        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard, _seq );
 
         // Generate Announcement B
-        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, 2, _userBoard);
+        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null,  _userBoard, _seq);
     }
 
     @After

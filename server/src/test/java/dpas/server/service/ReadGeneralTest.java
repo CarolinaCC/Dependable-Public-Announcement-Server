@@ -32,6 +32,8 @@ public class ReadGeneralTest {
     private ManagedChannel _channel;
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
 
+    private static long _seq;
+
     private static PublicKey _publicKey;
     private static PrivateKey _privateKey;
 
@@ -51,7 +53,9 @@ public class ReadGeneralTest {
         _publicKey = keyPair.getPublic();
         _privateKey = keyPair.getPrivate();
 
-        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, GENERAL_BOARD_IDENTIFIER);
+        _seq = 1;
+
+        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, GENERAL_BOARD_IDENTIFIER, _seq);
     }
 
     @Before
@@ -77,6 +81,7 @@ public class ReadGeneralTest {
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_signature))
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .setSeq(_seq)
                 .build());
     }
 

@@ -6,10 +6,7 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.session.SessionManager;
-import dpas.utils.ContractGenerator;
-import dpas.utils.MacGenerator;
-import dpas.utils.MacVerifier;
-import dpas.utils.ErrorGenerator;
+import dpas.utils.*;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -30,10 +27,13 @@ public class SafeServicePostGeneralTest {
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
     private static PublicKey _invalidPubKey;
+    private static PrivateKey _invalidPrivKey;
     private static final String MESSAGE = "Message";
     private static final String SESSION_NONCE = "Nonce";
 
     private static Contract.PostRequest _request;
+    private static Contract.PostRequest _invalidSeqRequest;
+    private static Contract.PostRequest _invalidPubKeyRequest;
 
     private static final int port = 9001;
     private static final String host = "localhost";
@@ -63,10 +63,17 @@ public class SafeServicePostGeneralTest {
 
         keyPair = keygen.generateKeyPair();
         _invalidPubKey = keyPair.getPublic();
-
+        _invalidPrivKey = keyPair.getPrivate();
 
         _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
                 MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+
+        _invalidSeqRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+                MESSAGE, 1 + 10, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+
+        _invalidPubKeyRequest = ContractGenerator.generatePostRequest(_serverPKey, _invalidPubKey, _invalidPrivKey,
+                MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+
     }
 
     @Before
@@ -104,8 +111,8 @@ public class SafeServicePostGeneralTest {
             assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
             assertEquals(_impl._announcements.size(), 1);
             exception.expect(StatusRuntimeException.class);
-            exception.expectMessage("Invalid sequence number");
-            _stub.postGeneral(Contract.PostRequest.newBuilder(_request).setSeq(5).build());
+            exception.expectMessage("Invalid Seq provided");
+            _stub.postGeneral(_request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), _request.getMac().toByteArray());
@@ -118,14 +125,13 @@ public class SafeServicePostGeneralTest {
 
     @Test
     public void invalidSeqPost() throws GeneralSecurityException {
-        var request = Contract.PostRequest.newBuilder(_request).setSeq(8).build();
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid sequence number");
+        exception.expectMessage("Invalid Seq provided");
         try {
-            _stub.postGeneral(request);
+            _stub.postGeneral(_invalidSeqRequest);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidSeqRequest.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
@@ -134,14 +140,13 @@ public class SafeServicePostGeneralTest {
 
     @Test
     public void invalidkeyPost() {
-        var request = Contract.PostRequest.newBuilder(_request).setPublicKey(ByteString.copyFrom(_invalidPubKey.getEncoded())).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User with that public key does not exist");
         try {
-            _stub.postGeneral(request);
+            _stub.postGeneral(_invalidPubKeyRequest);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidPubKeyRequest.getMac().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;

@@ -17,6 +17,7 @@ public class GeneralBoardTest {
 
     private Announcement _announcement;
     private GeneralBoard _generalBoard;
+    private long _seq;
 
     @Before
     public void setup() throws CommonDomainException, NoSuchAlgorithmException {
@@ -28,15 +29,17 @@ public class GeneralBoardTest {
         PublicKey publicKey = keyPair.getPublic();
         User userA = new User(publicKey);
 
+        _seq = 1;
+
         UUID.randomUUID().toString();
 
         // Generate Board
         _generalBoard = new GeneralBoard();
 
-        byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard);
+        byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard, _seq);
 
         // Generate Announcement
-        _announcement = new Announcement(signature, userA, "MESSAGE", null, 0, _generalBoard);
+        _announcement = new Announcement(signature, userA, "MESSAGE", null, _generalBoard, _seq);
 
     }
 

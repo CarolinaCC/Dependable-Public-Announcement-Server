@@ -34,6 +34,8 @@ public class ReadTest {
     private static PublicKey _publicKey;
     private static PrivateKey _privateKey;
 
+    private static long _seq;
+
     private static byte[] _signature;
     private static byte[] _signature2;
 
@@ -54,10 +56,11 @@ public class ReadTest {
         _publicKey = keyPair.getPublic();
         _privateKey = keyPair.getPrivate();
 
+        _seq = 1;
 
         //Signatures
-        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
-        _signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()));
+        _signature = Announcement.generateSignature(_privateKey, MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()), _seq);
+        _signature2 = Announcement.generateSignature(_privateKey, SECOND_MESSAGE, null, Base64.getEncoder().encodeToString(_publicKey.getEncoded()), _seq + 1);
 
     }
 
@@ -84,11 +87,13 @@ public class ReadTest {
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_signature))
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .setSeq(_seq)
                 .build());
         _stub.post(Contract.PostRequest.newBuilder()
                 .setMessage(SECOND_MESSAGE)
                 .setSignature(ByteString.copyFrom(_signature2))
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
+                .setSeq(_seq + 1)
                 .build());
     }
 

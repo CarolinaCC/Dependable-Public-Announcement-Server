@@ -23,6 +23,8 @@ public class AnnouncementTest {
     private Set<Announcement> _references = new HashSet<>();
     private byte[] _signature;
 
+    private long _seq;
+
     private User _user;
 
     private PrivateKey _privKey;
@@ -40,11 +42,13 @@ public class AnnouncementTest {
         _privKey = keyPair.getPrivate();
         PublicKey _pubKey = keyPair.getPublic();
 
+        _seq = 1;
+
         //Generate user
         this._user = new User(_pubKey);
         this._board = new UserBoard(_user);
 
-        this._signature = Announcement.generateSignature(_privKey, MESSAGE, new HashSet<>(), _board);
+        this._signature = Announcement.generateSignature(_privKey, MESSAGE, new HashSet<>(), _board, _seq);
 
 
         //Create another announcement
@@ -54,10 +58,10 @@ public class AnnouncementTest {
         PublicKey otherPublicKey = otherKeyPair.getPublic();
         PrivateKey otherPrivateKey = otherKeyPair.getPrivate();
 
-        byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, new HashSet<>(), _board);
+        byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, new HashSet<>(), _board, _seq);
 
         User otherUser = new User(otherPublicKey);
-        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, 0, _board);
+        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null , _user.getUserBoard(), _seq);
 
         //Add it to references
         _references.add(ref);
@@ -71,9 +75,9 @@ public class AnnouncementTest {
     @Test
     public void validAnnouncement() throws CommonDomainException {
         var refs = _references.stream().map(Announcement::getHash).collect(Collectors.toSet());
-        byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, refs, _board);
+        byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, refs, _board, _seq);
 
-        Announcement announcement = new Announcement(signature, _user, MESSAGE, _references, 0, _board);
+        Announcement announcement = new Announcement(signature, _user, MESSAGE, _references,  _board, _seq);
         assertEquals(announcement.getSignature(), signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
@@ -82,7 +86,7 @@ public class AnnouncementTest {
 
     @Test
     public void validAnnouncementNullReference() throws CommonDomainException {
-        Announcement announcement = new Announcement(_signature, _user, MESSAGE, null, 0, _board);
+        Announcement announcement = new Announcement(_signature, _user, MESSAGE, null, _board, _seq);
         assertEquals(announcement.getSignature(), _signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
@@ -91,18 +95,24 @@ public class AnnouncementTest {
 
     @Test(expected = NullSignatureException.class)
     public void nullSignature() throws CommonDomainException {
-        new Announcement((byte[]) null, _user, MESSAGE, _references, 0, _board);
+        new Announcement((byte[])null, _user, MESSAGE, _references, _board, _seq);
+    }
+
+    @Test(expected = InvalidSeqException.class)
+    public void invalidSeq() throws CommonDomainException {
+        _signature = Announcement.generateSignature(_privKey, MESSAGE, new HashSet<>(), _board, _seq + 7);
+        new Announcement(_signature, _user, MESSAGE, _references, _board, _seq + 7);
     }
 
 
     @Test(expected = NullUserException.class)
     public void nullUser() throws CommonDomainException {
-        new Announcement(_signature, null, MESSAGE, _references, 0, _board);
+        new Announcement(_signature, null, MESSAGE, _references, _board, _seq);
     }
 
     @Test(expected = NullMessageException.class)
     public void nullMessage() throws CommonDomainException {
-        new Announcement(_signature, _user, null, _references, 0, _board);
+        new Announcement(_signature, _user, null, _references, _board, _seq);
     }
 
     @Test(expected = NullAnnouncementException.class)
@@ -110,23 +120,23 @@ public class AnnouncementTest {
         var refs = new HashSet<Announcement>();
         refs.add(null);
 
-        new Announcement(_signature, _user, MESSAGE, refs, 0, _board);
+        new Announcement(_signature, _user, MESSAGE, refs, _board, _seq);
     }
 
     @Test(expected = InvalidSignatureException.class)
     public void invalidSignature() throws CommonDomainException {
         byte[] invalidSig = "InvalidSignature".getBytes();
-        new Announcement(invalidSig, _user, MESSAGE, _references, 0, _board);
+        new Announcement(invalidSig, _user, MESSAGE, _references, _board, _seq);
     }
 
     @Test(expected = InvalidSignatureException.class)
     public void wrongSignature() throws CommonDomainException {
-        new Announcement(_signature, _user, OTHER_MESSAGE, _references, 0, _board);
+        new Announcement(_signature, _user, OTHER_MESSAGE, _references, _board, _seq);
     }
 
     @Test(expected = InvalidMessageSizeException.class)
     public void invalidMessage() throws CommonDomainException {
-        new Announcement(_signature, _user, INVALID_MESSAGE, _references, 0, _board);
+        new Announcement(_signature, _user, INVALID_MESSAGE, _references, _board, _seq);
     }
 
 

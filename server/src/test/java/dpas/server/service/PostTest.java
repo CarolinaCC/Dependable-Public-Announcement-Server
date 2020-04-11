@@ -35,6 +35,8 @@ public class PostTest {
 
     private static PrivateKey _secondPrivateKey;
 
+    private static long _seq;
+
     private static byte[] _firstSignature;
     private static byte[] _secondSignature;
     private static byte[] _bigMessageSignature;
@@ -67,17 +69,18 @@ public class PostTest {
         // References
         _invalidReference = "";
 
+        _seq = 1;
 
         // Signatures
         _firstSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
-                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()), _seq);
 
         _secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                new HashSet<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq);
 
 
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
-                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()));
+                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()), _seq + 1);
 
     }
 
@@ -112,6 +115,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSeq(_seq)
                 .build());
     }
 
@@ -121,12 +125,14 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSeq(_seq)
                 .build());
 
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setMessage(SECOND_MESSAGE)
                 .setSignature(ByteString.copyFrom(_secondSignature))
+                .setSeq(_seq)
                 .build());
     }
 
@@ -136,6 +142,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSeq(1)
                 .build());
 
         var firstIdentifier = _stub.read(Contract.ReadRequest
@@ -147,13 +154,14 @@ public class PostTest {
                 .getHash();
 
         byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
+                Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq);
 
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(firstIdentifier)
                 .setSignature(ByteString.copyFrom(secondSignatureWithRef))
+                .setSeq(_seq)
                 .build());
     }
 
@@ -163,6 +171,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSeq(_seq)
                 .build());
 
         var firstIdentifier = _stub.read(Contract.ReadRequest
@@ -174,7 +183,7 @@ public class PostTest {
                 .getHash();
 
         byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
-                Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()));
+                Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq + 1);
 
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("INVALID_ARGUMENT: Invalid Reference: Reference is repeated");
@@ -184,6 +193,7 @@ public class PostTest {
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(firstIdentifier)
                 .addReferences(firstIdentifier)
+                .setSeq(_seq + 1)
                 .setSignature(ByteString.copyFrom(secondSignatureWithRef))
                 .build());
     }
@@ -193,6 +203,7 @@ public class PostTest {
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
+                .setSeq(_seq)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
 
@@ -203,6 +214,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(_invalidReference)
+                .setSeq(_seq)
                 .setSignature(ByteString.copyFrom(_secondSignature))
                 .build());
     }
@@ -214,6 +226,7 @@ public class PostTest {
 
         _stub.post(Contract.PostRequest.newBuilder()
                 .setMessage(MESSAGE)
+                .setSeq(_seq)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
     }
@@ -226,6 +239,7 @@ public class PostTest {
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(INVALID_MESSAGE)
+                .setSeq(_seq)
                 .setSignature(ByteString.copyFrom(_bigMessageSignature))
                 .build());
     }
@@ -238,6 +252,7 @@ public class PostTest {
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
+                .setSeq(_seq)
                 .build());
     }
 
@@ -249,7 +264,22 @@ public class PostTest {
         _stub.post(Contract.PostRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
-                .setSignature(ByteString.copyFrom(_secondSignature))
+                .setSeq(_seq)
+                .setSignature(ByteString.copyFrom(_bigMessageSignature))
+                .build());
+    }
+
+
+    @Test
+    public void postInvalidSeq() {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid Seq provided");
+
+        _stub.post(Contract.PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
+                .setMessage(MESSAGE)
+                .setSeq(_seq + 10)
+                .setSignature(ByteString.copyFrom(_firstSignature))
                 .build());
     }
 }

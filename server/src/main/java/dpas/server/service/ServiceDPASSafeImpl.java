@@ -5,6 +5,7 @@ import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
+import dpas.common.domain.exception.InvalidSeqException;
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.MacReply;
@@ -115,6 +116,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     @Override
     public void post(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
+            _sessionManager.validateSessionRequest(request);
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             var user = _users.get(key);
             if (user == null) {
@@ -122,30 +124,28 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                 return;
             }
             synchronized (user) {
-                _sessionManager.validateSessionRequest(request, user.getSeq());
-
                 var announcement = generateAnnouncement(request, _privateKey);
 
                 var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
                 if (curr != null) {
                     //Announcement with that identifier already exists
                     responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                    user.incrSeq(-1);
                 } else {
                     save(announcement.toJson("Post"));
                     announcement.getUser().getUserBoard().post(announcement);
-                    user.incrSeq(1);
                     responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
                     responseObserver.onCompleted();
                 }
             }
+        } catch (SessionException | InvalidSeqException e) {
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (IOException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
-        } catch (SessionException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         }
 
     }
@@ -153,6 +153,8 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
+            _sessionManager.validateSessionRequest(request);
+
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             var user = _users.get(key);
             if (user == null) {
@@ -160,30 +162,28 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                 return;
             }
             synchronized (user) {
-                _sessionManager.validateSessionRequest(request, user.getSeq());
-
                 var announcement = generateAnnouncement(request, _generalBoard, _privateKey);
 
                 var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
                 if (curr != null) {
                     //Announcement with that identifier already exists
                     responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
+                    user.incrSeq(-1);
                 } else {
                     save(announcement.toJson("PostGeneral"));
                     _generalBoard.post(announcement);
-                    user.incrSeq(1);
                     responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
                     responseObserver.onCompleted();
                 }
             }
+        } catch (SessionException | InvalidSeqException e) {
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (IOException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException | IllegalMacException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
-        } catch (SessionException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         }
     }
 
@@ -212,7 +212,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey), StandardCharsets.UTF_8);
-        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), board);
+        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
     protected Announcement generateAnnouncement(Contract.PostRequest request, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
@@ -224,7 +224,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         if (user == null) {
             throw new InvalidUserException("User does not exist");
         }
-        return new Announcement(signature, user, message, getReferences(request.getReferencesList()), _counter.getAndIncrement(), user.getUserBoard());
+        return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());
     }
 
     //Don't want to save when testing
