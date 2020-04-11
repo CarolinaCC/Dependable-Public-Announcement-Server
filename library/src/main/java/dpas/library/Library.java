@@ -24,10 +24,10 @@ import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
 public class Library {
 
-    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-    private Map<PublicKey, Session> _sessions;
-    private PublicKey _serverKey;
-    private ManagedChannel _channel;
+    private final ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
+    private final Map<PublicKey, Session> _sessions;
+    private final PublicKey _serverKey;
+    private final ManagedChannel _channel;
 
     public Library(String host, int port, PublicKey serverKey) {
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
