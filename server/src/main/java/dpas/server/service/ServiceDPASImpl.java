@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.grpc.Status.INVALID_ARGUMENT;
@@ -31,8 +30,6 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     protected ConcurrentHashMap<String, Announcement> _announcements;
     protected ConcurrentHashMap<PublicKey, User> _users;
     protected GeneralBoard _generalBoard;
-    protected AtomicInteger _counter = new AtomicInteger(0);
-
 
     public ServiceDPASImpl() {
         super();
@@ -156,7 +153,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
-        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()),  board, request.getSeq());
+        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
     protected Announcement generateAnnouncement(PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {

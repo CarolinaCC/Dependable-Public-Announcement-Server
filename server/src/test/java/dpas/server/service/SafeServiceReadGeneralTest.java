@@ -6,7 +6,7 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.SessionManager;
+import dpas.server.security.SecurityManager;
 import dpas.utils.ByteUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
@@ -20,7 +20,6 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -90,9 +89,9 @@ public class SafeServiceReadGeneralTest {
     @Before
     public void setup() throws IOException, GeneralSecurityException, CommonDomainException {
 
-        SessionManager _sessionManager = new SessionManager();
+        SecurityManager _securityManager = new SecurityManager();
 
-        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

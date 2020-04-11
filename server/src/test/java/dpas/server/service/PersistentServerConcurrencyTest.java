@@ -1,14 +1,11 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Empty;
-import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
-import dpas.server.session.SessionManager;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
 import io.grpc.BindableService;
@@ -16,7 +13,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -30,9 +26,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.security.*;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;

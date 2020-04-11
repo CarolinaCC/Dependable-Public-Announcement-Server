@@ -4,7 +4,7 @@ import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.SessionManager;
+import dpas.server.security.SecurityManager;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacGenerator;
@@ -111,9 +111,9 @@ public class SafeServicePostTest {
     public void setup() throws GeneralSecurityException,
             IOException, CommonDomainException {
 
-        SessionManager _sessionManager = new SessionManager();
+        SecurityManager _securityManager = new SecurityManager();
 
-        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

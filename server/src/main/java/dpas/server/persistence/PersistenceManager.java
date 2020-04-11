@@ -3,7 +3,7 @@ package dpas.server.persistence;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.server.service.ServiceDPASPersistentImpl;
 import dpas.server.service.ServiceDPASSafeImpl;
-import dpas.server.session.SessionManager;
+import dpas.server.security.SecurityManager;
 import org.apache.commons.io.FileUtils;
 
 import javax.json.*;
@@ -68,7 +68,7 @@ public class PersistenceManager {
         return service;
     }
 
-    public synchronized ServiceDPASSafeImpl load(SessionManager manager, PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
+    public synchronized ServiceDPASSafeImpl load(SecurityManager manager, PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
         ServiceDPASSafeImpl service = new ServiceDPASSafeImpl(this, privateKey, manager);
         parseJsonArray(jsonArray, service);

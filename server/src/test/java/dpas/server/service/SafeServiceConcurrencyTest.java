@@ -5,7 +5,7 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.SessionManager;
+import dpas.server.security.SecurityManager;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
 import io.grpc.BindableService;
@@ -22,7 +22,6 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.HashSet;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
@@ -75,7 +74,7 @@ public class SafeServiceConcurrencyTest {
     @Before
     public void setup() throws GeneralSecurityException, IOException {
 
-        SessionManager manager = new SessionManager();
+        SecurityManager manager = new SecurityManager();
         final BindableService impl = new ServiceDPASSafeImpl(_serverPrivKey, manager);
         _server = NettyServerBuilder.forPort(port).addService(impl).build();
         _server.start();

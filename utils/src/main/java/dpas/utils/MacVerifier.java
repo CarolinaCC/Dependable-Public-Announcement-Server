@@ -16,7 +16,7 @@ import java.util.Arrays;
 
 public class MacVerifier {
 
-    public static boolean verifyMac(Contract.RegisterRequest request, Contract.MacReply reply, PublicKey serverKey) throws GeneralSecurityException, IOException {
+    public static boolean verifyMac(Contract.RegisterRequest request, Contract.MacReply reply, PublicKey serverKey) throws GeneralSecurityException {
         byte[] mac = reply.getMac().toByteArray();
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, serverKey);

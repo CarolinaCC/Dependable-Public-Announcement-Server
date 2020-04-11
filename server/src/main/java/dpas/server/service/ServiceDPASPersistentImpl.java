@@ -133,10 +133,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         _announcements.put(announcement.getHash(), announcement);
     }
 
-    public void setCounter(int counter) {
-        _counter.set(counter);
-    }
-
     public ConcurrentHashMap<PublicKey, User> getUsers() {
         return _users;
     }

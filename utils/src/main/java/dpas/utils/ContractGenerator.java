@@ -19,8 +19,7 @@ import java.util.stream.Stream;
 
 public class ContractGenerator {
 
-    public static PostRequest generatePostRequest(PublicKey pubKey, PrivateKey privKey,
-                                                  String message, long seq,
+    public static PostRequest generatePostRequest(PublicKey pubKey, PrivateKey privKey, String message, long seq,
                                                   String boardIdentifier, Announcement[] a)
             throws GeneralSecurityException, IOException, CommonDomainException {
 

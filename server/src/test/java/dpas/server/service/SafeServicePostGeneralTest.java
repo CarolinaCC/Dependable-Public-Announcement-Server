@@ -5,7 +5,7 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.SessionManager;
+import dpas.server.security.SecurityManager;
 import dpas.utils.*;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -45,7 +45,7 @@ public class SafeServicePostGeneralTest {
     private ManagedChannel _channel;
     private static PublicKey _serverPKey;
     private static PrivateKey _serverPrivKey;
-    private SessionManager _sessionManager;
+    private SecurityManager _securityManager;
 
     @BeforeClass
     public static void onTimeSetup() throws GeneralSecurityException, IOException, CommonDomainException {
@@ -79,9 +79,9 @@ public class SafeServicePostGeneralTest {
     @Before
     public void setup() throws GeneralSecurityException,
             IOException {
-        _sessionManager = new SessionManager();
+        _securityManager = new SecurityManager();
 
-        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
         //Connect to Server

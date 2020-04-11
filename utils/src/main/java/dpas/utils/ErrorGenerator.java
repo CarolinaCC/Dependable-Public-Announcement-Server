@@ -1,7 +1,6 @@
 package dpas.utils;
 
 import dpas.grpc.contract.Contract;
-import dpas.utils.MacGenerator;
 import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -10,9 +9,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 
-/**
- * For the server to prove that the error is fresh just needs to create a MAC of the client request
- */
 public class ErrorGenerator {
     public static final Metadata.Key<byte[]> contentKey = Metadata.Key.of("REQ-bin", Metadata.BINARY_BYTE_MARSHALLER);
     public static final Metadata.Key<byte[]> macKey = Metadata.Key.of("MAC-bin", Metadata.BINARY_BYTE_MARSHALLER);

@@ -32,8 +32,8 @@ public class Announcement {
         _references = references;
         _board = board;
         _seq = seq;
-        generateHash();
         _user.incrSeq(1);
+        generateHash();
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,

@@ -1,7 +1,7 @@
 package dpas.server;
 
 import dpas.server.persistence.PersistenceManager;
-import dpas.server.session.SessionManager;
+import dpas.server.security.SecurityManager;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -73,7 +73,7 @@ public class ServerDPAS {
 
     public static Server startServer(int port, String saveFile, PrivateKey privateKey) {
         try {
-            final BindableService impl = new PersistenceManager(saveFile).load(new SessionManager(), privateKey);
+            final BindableService impl = new PersistenceManager(saveFile).load(new SecurityManager(), privateKey);
             final Server server = NettyServerBuilder.forPort(port).addService(impl).build();
             server.start();
             return server;

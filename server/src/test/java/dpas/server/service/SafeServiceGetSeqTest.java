@@ -1,12 +1,11 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.session.SessionManager;
+import dpas.server.security.SecurityManager;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.MacVerifier;
@@ -14,14 +13,11 @@ import dpas.utils.ErrorGenerator;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.Base64;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -81,8 +77,8 @@ public class SafeServiceGetSeqTest {
     @Before
     public void setup() throws IOException, GeneralSecurityException, CommonDomainException {
 
-        SessionManager _sessionManager = new SessionManager();
-        ServiceDPASSafeImpl _impl = new ServiceDPASSafeImpl(_serverPrivKey, _sessionManager);
+        SecurityManager _securityManager = new SecurityManager();
+        ServiceDPASSafeImpl _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

@@ -10,9 +10,8 @@ import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.MacReply;
 import dpas.server.persistence.PersistenceManager;
-import dpas.server.session.SessionManager;
-import dpas.server.session.exception.IllegalMacException;
-import dpas.server.session.exception.SessionException;
+import dpas.server.security.SecurityManager;
+import dpas.server.security.exception.IllegalMacException;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.ErrorGenerator;
@@ -33,19 +32,19 @@ import static io.grpc.Status.*;
 
 public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     private final PrivateKey _privateKey;
-    private final SessionManager _sessionManager;
+    private final SecurityManager _securityManager;
 
-    public ServiceDPASSafeImpl(PersistenceManager manager, PrivateKey privKey, SessionManager sessionManager) {
+    public ServiceDPASSafeImpl(PersistenceManager manager, PrivateKey privKey, SecurityManager securityManager) {
         super(manager);
         _privateKey = privKey;
-        _sessionManager = sessionManager;
+        _securityManager = securityManager;
     }
 
     //Use with tests only
-    public ServiceDPASSafeImpl(PrivateKey privKey, SessionManager sessionManager) {
+    public ServiceDPASSafeImpl(PrivateKey privKey, SecurityManager securityManager) {
         super(null);
         _privateKey = privKey;
-        _sessionManager = sessionManager;
+        _securityManager = securityManager;
     }
 
     @Override
@@ -93,7 +92,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     public void register(Contract.RegisterRequest request, StreamObserver<MacReply> responseObserver) {
         try {
             PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            _sessionManager.validateSessionRequest(request);
+            _securityManager.validateRequest(request);
             var user = new User(pubKey);
             var curr = _users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
@@ -116,7 +115,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     @Override
     public void post(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
-            _sessionManager.validateSessionRequest(request);
+            _securityManager.validateRequest(request);
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             var user = _users.get(key);
             if (user == null) {
@@ -138,7 +137,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                     responseObserver.onCompleted();
                 }
             }
-        } catch (SessionException | InvalidSeqException e) {
+        } catch (InvalidSeqException e) {
             responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
@@ -153,7 +152,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     @Override
     public void postGeneral(Contract.PostRequest request, StreamObserver<MacReply> responseObserver) {
         try {
-            _sessionManager.validateSessionRequest(request);
+            _securityManager.validateRequest(request);
 
             PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             var user = _users.get(key);
@@ -177,7 +176,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                     responseObserver.onCompleted();
                 }
             }
-        } catch (SessionException | InvalidSeqException e) {
+        } catch (InvalidSeqException e) {
             responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
