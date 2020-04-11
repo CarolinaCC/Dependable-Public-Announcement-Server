@@ -97,7 +97,7 @@ public class SafeServiceReadTest {
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
 
 
-        _stub.register(ContractGenerator.generateRegisterRequest( _pubKey, _privKey));
+        _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
 
         // Posts to Read
         _stub.post(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _seq, CipherUtils.keyToString(_pubKey),

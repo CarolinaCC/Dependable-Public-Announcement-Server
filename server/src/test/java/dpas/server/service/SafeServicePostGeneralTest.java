@@ -6,7 +6,10 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
-import dpas.utils.*;
+import dpas.utils.ContractGenerator;
+import dpas.utils.ErrorGenerator;
+import dpas.utils.MacGenerator;
+import dpas.utils.MacVerifier;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -106,7 +109,7 @@ public class SafeServicePostGeneralTest {
     @Test
     public void stealSeqPost() throws GeneralSecurityException, IOException {
 
-        try{
+        try {
             var reply = _stub.postGeneral(_request);
             assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
             assertEquals(_impl._announcements.size(), 1);

@@ -5,9 +5,9 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
+import dpas.utils.ErrorGenerator;
 import dpas.utils.MacGenerator;
 import dpas.utils.MacVerifier;
-import dpas.utils.ErrorGenerator;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -58,7 +58,7 @@ public class SafeServiceRegisterTest {
         Cipher cipherServer = Cipher.getInstance("RSA");
         cipherServer.init(Cipher.ENCRYPT_MODE, _privKey);
 
-        _request = ContractGenerator.generateRegisterRequest( _pubKey, _privKey);
+        _request = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
 
     }
 
@@ -86,7 +86,7 @@ public class SafeServiceRegisterTest {
     @Test
     public void validRegister() throws IOException, GeneralSecurityException {
         var reply = _stub.register(_request);
-         assertTrue(MacVerifier.verifyMac(_request, reply, _serverPubKey));
+        assertTrue(MacVerifier.verifyMac(_request, reply, _serverPubKey));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class SafeServiceRegisterTest {
         var reply = _stub.register(request);
 
         assertTrue(MacVerifier.verifyMac(_request, reply, _serverPubKey));
-        request = ContractGenerator.generateRegisterRequest( _pubKey, _privKey);
+        request = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("User Already Exists");
         try {

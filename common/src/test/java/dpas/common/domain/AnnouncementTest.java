@@ -61,7 +61,7 @@ public class AnnouncementTest {
         byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, new HashSet<>(), _board, _seq);
 
         User otherUser = new User(otherPublicKey);
-        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null , _user.getUserBoard(), _seq);
+        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, _user.getUserBoard(), _seq);
 
         //Add it to references
         _references.add(ref);
@@ -77,7 +77,7 @@ public class AnnouncementTest {
         var refs = _references.stream().map(Announcement::getHash).collect(Collectors.toSet());
         byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, refs, _board, _seq);
 
-        Announcement announcement = new Announcement(signature, _user, MESSAGE, _references,  _board, _seq);
+        Announcement announcement = new Announcement(signature, _user, MESSAGE, _references, _board, _seq);
         assertEquals(announcement.getSignature(), signature);
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
@@ -95,7 +95,7 @@ public class AnnouncementTest {
 
     @Test(expected = NullSignatureException.class)
     public void nullSignature() throws CommonDomainException {
-        new Announcement((byte[])null, _user, MESSAGE, _references, _board, _seq);
+        new Announcement((byte[]) null, _user, MESSAGE, _references, _board, _seq);
     }
 
     @Test(expected = InvalidSeqException.class)

@@ -8,8 +8,8 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
 import dpas.utils.CipherUtils;
 import dpas.utils.ContractGenerator;
-import dpas.utils.MacVerifier;
 import dpas.utils.ErrorGenerator;
+import dpas.utils.MacVerifier;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -152,7 +152,7 @@ public class SafeServiceGetSeqTest {
         exception.expectMessage("Invalid security values provided");
 
         var request = Contract.GetSeqRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(new byte[] {1, 2, 2, 3, 4}))
+                .setPublicKey(ByteString.copyFrom(new byte[]{1, 2, 2, 3, 4}))
                 .setNonce(UUID.randomUUID().toString())
                 .build();
         try {

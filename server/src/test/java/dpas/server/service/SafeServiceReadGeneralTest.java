@@ -9,8 +9,8 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
 import dpas.utils.ByteUtils;
 import dpas.utils.ContractGenerator;
-import dpas.utils.MacVerifier;
 import dpas.utils.ErrorGenerator;
+import dpas.utils.MacVerifier;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -103,7 +103,7 @@ public class SafeServiceReadGeneralTest {
         _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
 
         // Posts to Read
-        _stub.postGeneral(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _seq , GeneralBoard.GENERAL_BOARD_IDENTIFIER,
+        _stub.postGeneral(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER,
                 null));
     }
 

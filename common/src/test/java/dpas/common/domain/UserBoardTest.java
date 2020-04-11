@@ -68,10 +68,10 @@ public class UserBoardTest {
         publicKey = keyPair.getPublic();
         user = new User(publicKey);
 
-        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard, _seq );
+        byte[] signatureInvalid = Announcement.generateSignature(keyPair.getPrivate(), FIRST_MESSAGE, null, _userBoard, _seq);
 
         // Generate Announcement B
-        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null,  _userBoard, _seq);
+        _announcementInvalid = new Announcement(signatureInvalid, user, FIRST_MESSAGE, null, _userBoard, _seq);
     }
 
     @After
