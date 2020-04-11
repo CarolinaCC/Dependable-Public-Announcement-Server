@@ -11,6 +11,7 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Announcement {
     private final byte[] _signature;
@@ -193,16 +194,16 @@ public class Announcement {
     }
 
     public static Set<String> getReferenceStrings(Set<Announcement> references) {
-        return references == null ? new HashSet<>()
-                : references.stream().map(Announcement::getHash).collect(Collectors.toSet());
+        return Stream.ofNullable(references)
+                .flatMap(Set::stream)
+                .map(Announcement::getHash)
+                .collect(Collectors.toSet());
     }
 
     private static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier, long seq) {
         var builder = new StringBuilder();
         builder.append(message);
-        if (references != null) {
-            references.forEach(builder::append);
-        }
+        Stream.ofNullable(references).flatMap(Set::stream).forEach(builder::append);
         builder.append(boardIdentifier);
         builder.append(seq);
         return builder.toString().getBytes();

@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,8 +23,10 @@ public class ContractGenerator {
                                                   String boardIdentifier, Announcement[] a)
             throws GeneralSecurityException, IOException, CommonDomainException {
 
-        Set<String> references = a == null ? new HashSet<>()
-                : Stream.of(a).map(Announcement::getHash).collect(Collectors.toSet());
+        Set<String> references = Stream.ofNullable(a)
+                .flatMap(Arrays::stream)
+                .map(Announcement::getHash)
+                .collect(Collectors.toSet());
 
         byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier, seq);
 
