@@ -80,14 +80,13 @@ public class Library {
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         Session session = null;
-        SafeRegisterRequest request = null;
+        RegisterRequest request = null;
         try {
             session = getSession(publicKey);
-            request = ContractGenerator.generateRegisterRequest(session.getSessionNonce(),
-                    session.getSeq(), publicKey, privkey);
-            var reply = _stub.safeRegister(request);
+            request = ContractGenerator.generateRegisterRequest(publicKey, privkey);
+            var reply = _stub.register(request);
 
-            if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
+            if (!MacVerifier.verifyMac(request, reply, _serverKey)) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
@@ -97,12 +96,7 @@ public class Library {
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
-                System.out.println("Creating new session and retrying...");
-                newSession(publicKey, privkey);
-                register(publicKey, privkey);
-            }
-        } catch (GeneralSecurityException | IOException e) {
+        } catch (GeneralSecurityException e) {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
