@@ -153,7 +153,7 @@ public class App {
         System.out.println();
         for (var announcement : announcements) {
             System.out.println("Identifier:\t" + announcement.getHash());
-            System.out.println("Sequencer:\t" + announcement.getSequencer());
+            System.out.println("Sequencer:\t" + announcement.getSeq());
             System.out.println("Message:\t" + announcement.getMessage());
             System.out.print("References:");
             for (var ref : announcement.getReferencesList()) {
