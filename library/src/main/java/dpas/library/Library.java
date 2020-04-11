@@ -5,9 +5,10 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.*;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.utils.ByteUtils;
 import dpas.utils.ContractGenerator;
-import dpas.utils.MacVerifier;
 import dpas.utils.ErrorGenerator;
+import dpas.utils.MacVerifier;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -176,8 +177,13 @@ public class Library {
     }
 
     public Announcement[] validateReadResponse(ReadRequest request, ReadReply reply) throws GeneralSecurityException {
-        if (!MacVerifier.verifyMac(_serverKey, request.getNonce().getBytes(), reply.getMac().toByteArray())) {
-            System.out.println("An error occurred: Unable to validate server response");
+        try {
+            if (!MacVerifier.verifyMac(_serverKey, ByteUtils.toByteArray(request, reply.getAnnouncementsList()), reply.getMac().toByteArray())) {
+                System.out.println("An error occurred: Unable to validate server response");
+                System.exit(1);
+            }
+        } catch (IOException e) {
+            System.out.println("An io error occurred");
             return new Announcement[0];
         }
         var a = new Announcement[reply.getAnnouncementsCount()];
