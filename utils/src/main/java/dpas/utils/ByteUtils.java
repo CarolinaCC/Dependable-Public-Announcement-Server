@@ -7,15 +7,30 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ByteUtils {
 
-    public static byte[] toByteArray(Contract.PostRequest request) {
-        return request.toByteArray();
+    public static byte[] toByteArray(Contract.PostRequest request) throws IOException {
+        byte[] seq = NumberUtils.longToBytes(request.getSeq());
+        byte[] pubKey = request.getPublicKey().toByteArray();
+        byte[] message = request.getMessage().getBytes();
+        byte[] signature = request.getSignature().toByteArray();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(seq);
+            stream.writeBytes(pubKey);
+            stream.writeBytes(message);
+            stream.writeBytes(signature);
+            request.getReferencesList().stream()
+                    .map(String::getBytes)
+                    .forEach(stream::writeBytes);
+
+            return stream.toByteArray();
+        }
     }
 
     public static byte[] toByteArray(Contract.RegisterRequest request) {
-        return request.toByteArray();
+        return request.getPublicKey().toByteArray();
     }
 
     public static byte[] toByteArray(Contract.ReadRequest request, List<Contract.Announcement> reply) throws IOException {

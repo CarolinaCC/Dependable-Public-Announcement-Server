@@ -47,7 +47,24 @@ public class ContractGenerator {
             throws GeneralSecurityException, IOException, CommonDomainException {
 
         String encodedMessage = CipherUtils.cipherAndEncode(message.getBytes(), serverKey);
-        return generatePostRequest(pubKey, privKey, encodedMessage, seq, boardIdentifier, a);
+
+        Set<String> references = Stream.ofNullable(a)
+                .flatMap(Arrays::stream)
+                .map(Announcement::getHash)
+                .collect(Collectors.toSet());
+
+        byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier, seq);
+
+        byte[] mac = MacGenerator.generateMac(seq, pubKey, encodedMessage, signature, references, privKey);
+
+        return PostRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
+                .setMessage(encodedMessage)
+                .setSignature(ByteString.copyFrom(signature))
+                .addAllReferences(references)
+                .setMac(ByteString.copyFrom(mac))
+                .setSeq(seq)
+                .build();
 
     }
 

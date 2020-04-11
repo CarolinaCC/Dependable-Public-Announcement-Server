@@ -79,10 +79,8 @@ public class Library {
     }
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
-        Session session = null;
         RegisterRequest request = null;
         try {
-            session = getSession(publicKey);
             request = ContractGenerator.generateRegisterRequest(publicKey, privkey);
             var reply = _stub.register(request);
 
@@ -100,10 +98,6 @@ public class Library {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
-        } finally {
-            if (session != null) {
-                session.updateSeq();
-            }
         }
     }
 

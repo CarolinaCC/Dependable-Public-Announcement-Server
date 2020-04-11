@@ -25,7 +25,7 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(request, reply), privKey);
     }
 
-    public static byte[] generateMac(Contract.PostRequest request, PrivateKey privKey) throws GeneralSecurityException {
+    public static byte[] generateMac(Contract.PostRequest request, PrivateKey privKey) throws GeneralSecurityException, IOException {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 

@@ -189,7 +189,6 @@ public class Announcement {
 
     public static byte[] generateSignature(PrivateKey privKey, String message,
                                            Set<String> references, AnnouncementBoard board, long seq) throws CommonDomainException {
-
         return generateSignature(privKey, message, references, board.getIdentifier(), seq);
     }
 
