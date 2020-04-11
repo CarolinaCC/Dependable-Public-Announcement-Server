@@ -37,19 +37,12 @@ public class PersistenceManagerTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private static final String encodedServerKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCjjcgcWE6gIo11rgDwn5Al1P/U68HV6aTvabmmDzhb0xngRKbqxplMtH58QRiq8VerruCuFccmFXtsl505SvgimC9s1QmEpyuXoACYiirlPJPhSlrrNBk2dgSo9lDAW3iAmm2jrnyuOjEnkjkSybok4lNsV9UjPwCtixs9wj3dvwIDAQAB";
-    private static final String encodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCFtJcLhRw+6TkWS1VKAHjiOvtxF9giZrKqS+wc9J4aqrzIduyhljuGByAWMQ3uG3lvsTF/ibmIvuHtsPmjT2lk+kW9h63W+iREng98boLij5LUttG7jAN7gEfkpqSBJlHrUmJNk0tpbo9bDCZW7UlpyF9Z1dbghFF+1if+6+1viwIDAQAB";
-    private static final String secondEncodedKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCF9x8XZWs8SDgtCk0NQR3wiROsstV6iB+PPQTslRoZPOo/2hPjGw/8s0lBbCglJu+QEh6A6PhxNJcCIf5jsu2f4RkqmB2/giqfJj05AN/ToUsyiBPHAk/rBDJPQjmLryyfCO47UKai3YC5Cdwc0rZ9M2F97hFYvIS3OGIL6DteMwIDAQAB";
+    private static final String encodedKey = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAn1g2uU4qXntakU5yEj61PDq0SnYH9S4LMvuKbF5w0fsRuliWyGBrKgFvnYxBPbs4PwgAbqBSQTUG9C5ZzgCIFlV+tWy5x4KxUF+ajLpQ+3SNUi9MyHiB05/usHYbMRfs4SawMLu4a7lVDACz2Ue4qpkaEUkd1gGcxz2a3COIgRhf8pIvzC0rpJzRE1YZks/gqFud5hFceOIhoZdpzgd4R24Ni7xIoPSWs3p1iprPLFK7V+9Aag5Wx81dP0I5PDlSw3bwFktotgExxj2xejV5APtFADtBl5W0zQxtoyUNH2Fa4HL+XYc3Unne5MyuveGDYGyNMgujjsW9OQaIaMJ2CCXZggqcX9cu+9JX4dh6uAEYsG80t6IQ8vEF/Q6JZCRE7FQS4OU4x8F/zaSrEBoL0BbWefwcNVemQSFr/hDoh3xEtL01DqblimXLqb24E0enqKNqOotpdUVm+/SWyBa9Nk9G3DWvNk+Y6jpeep6tbj2LLafIDJeNvDldtkaXwNSxzC4FFK4vIh0mEZ0gbscUtNHj9rQLCzoH8g3ZwoZy0B27pLMP8An7f0CNUmmaFuBiWtCjIThd3Gzov8NMX/ofrLMGtNzd7azAe1rQgYOUQIaiMJgIBzXfDpYWmu79gByR84eGmFSKMpfNyUzCuKSx3ih/PjF6UClIuUSiwcg5IbUCAwEAAQ==";
+    private static final String secondEncodedKey = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAnGFp8My6pu4RCvcj+zd9z22n97ZdUuBznwqxnGp6sVZrlxG62jV5yrR02b44ebwOuen3Ch5Jw+8XWAG7ZAKKyZfU7UP+VESQbMGxAv4Jp/j2uwwnIHAT2U9sRaP+BpobCAjkOXu2lsGNXXnoos3iE9+TnEM0JTTwpLy2yEqmScfP4c5A/6UpDJwHO8MaCqiscwVktB36lUY6rk5NaoK/XbJMOSHtocrjOGnrqFiUlIKt7tMb5PrP54owTanUenVI3BopXtAUTfl10YtiKnCwDOJt3uze47yHnS6pDk6+c+3DiJF1A7TxDr4WPCYqozN9QEfm3kxy6nT7VhngSjlUL4sDLi5X+PXtsyBBjKQ1xej+fYnbDJSRouhYqRiXgppxXaGRkctFJ3ZihXMzrzTQCj8jdrw0h++rFxbJgEsmVW4kpLT0TpZ9MvekXZTYkyuMIYF7u/ZSLoW8w18jbUd2FdEwzM85p2D1H/h1yQcLBQ8tMI7QnTlAu4zWPaqRzanIv5FGHyeqtWeTp1D1uMUIz6f5ugpJ+mEWprjEtHRuhk+R8wXmksTzm+tVIjGKHWsGjmiEizooZxMRm+PP4to7KZhY3YeTPIMXUjMutAKnfLSCSYbaCj5S5GJ6NQLYITeMEjByQS2Dg6/jWvQVSdGQ3WPS+HfsIKijQo4ZwGqfpsMCAwEAAQ==";
 
 
-    private static final String firstIdentifier = "f8cHn6BTMtPv3JpsdYsiOxUP3o3Tk8ydPSGEKDAX3E0=";
-    private static final String secondIdentifier = "x9rTI230HpUf8JCDp9s8MEdtFBGOkfKN3mBuk5LVe7Y=";
-
-    @Before
-    public void setup() throws InvalidKeySpecException, NoSuchAlgorithmException {
-        byte[] encoded = Base64.getDecoder().decode(encodedServerKey);
-        KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encoded));
-    }
+    private static final String firstIdentifier = "G6xX+YiQ/jiZrTM01r1LUbWCcFJhD5wTjeaJAovbvFA=";
+    private static final String secondIdentifier = "/syDIMIqrhAvKY6KBssPvQN8g428b4aDLKX4dRR329A=";
 
     @After
     public void teardown() {
@@ -67,8 +60,6 @@ public class PersistenceManagerTest {
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
 
-
-        impl = manager.load();
 
         assertEquals(impl.getAnnouncements().get(firstIdentifier).getMessage(), "Message");
         assertEquals(impl.getAnnouncements().get(secondIdentifier).getMessage(),
