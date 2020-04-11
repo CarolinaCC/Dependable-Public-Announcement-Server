@@ -109,15 +109,15 @@ public class Library {
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         Session session = null;
-        SafePostRequest request = SafePostRequest.newBuilder().build();
+        PostRequest request = PostRequest.newBuilder().build();
         try {
             session = getSession(key);
-            request = ContractGenerator.generateSafePostRequest(_serverKey, key, privateKey,
-                    String.valueOf(message), session.getSessionNonce(),
+            request = ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
+                    String.valueOf(message),
                     session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
-            var reply = _stub.safePost(request);
+            var reply = _stub.post(request);
 
-            if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
+            if (!MacVerifier.verifyMac(_serverKey, reply, request)) {
                 System.out.println("An error occurred: Unable to validate server response.");
             }
         } catch (StatusRuntimeException e) {
@@ -129,7 +129,7 @@ public class Library {
             System.out.println("An error occurred: " + status.getDescription());
             if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
                 System.out.println("Creating a new session and retrying...");
-                newSession(key, privateKey);
+                newSession(key);
                 post(key, message, a, privateKey);
             }
         } catch (GeneralSecurityException | CommonDomainException | IOException e) {
@@ -145,15 +145,15 @@ public class Library {
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         Session session = null;
-        SafePostRequest request = SafePostRequest.newBuilder().build();
+        PostRequest request = PostRequest.newBuilder().build();
         try {
             session = getSession(pubKey);
-            request = ContractGenerator.generateSafePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message),
-                    session.getSessionNonce(), session.getSeq(), GENERAL_BOARD_IDENTIFIER, a);
+            request = ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message),
+                    session.getSeq(), GENERAL_BOARD_IDENTIFIER, a);
 
-            var reply = _stub.safePostGeneral(request);
+            var reply = _stub.postGeneral(request);
 
-            if (!MacVerifier.verifyMac(_serverKey, reply) || session.getSeq() + 1 != reply.getSeq()) {
+            if (!MacVerifier.verifyMac(_serverKey, reply, request)) {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
@@ -166,7 +166,7 @@ public class Library {
             // if user doesnt have a vlid session
             if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
                 System.out.println("Creating new session and retrying...");
-                newSession(pubKey, privateKey);
+                newSession(pubKey);
                 postGeneral(pubKey, message, a, privateKey);
             }
         } catch (GeneralSecurityException | CommonDomainException | IOException e) {
