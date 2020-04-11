@@ -167,6 +167,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
                 var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
                 if (curr != null) {
                     //Announcement with that identifier already exists
+                    //Should never happen
                     responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
                     user.incrSeq(-1);
                 } else {
