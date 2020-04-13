@@ -3,8 +3,8 @@ package dpas.grpc.contract;
 
 service ServiceDPAS {
     rpc register (RegisterRequest) returns (MacReply);
-    rpc post (PostRequest) returns (MacReply);
-    rpc postGeneral (PostRequest) returns (MacReply);
+    rpc post (Announcement) returns (MacReply);
+    rpc postGeneral (Announcement) returns (MacReply);
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
     rpc getSeq(GetSeqRequest) returns (GetSeqReply);
@@ -18,16 +18,6 @@ message RegisterRequest {
 //
 message MacReply {
     bytes mac = 1; //Mac of the request mac
-}
-
-//
-message PostRequest {
-    bytes publicKey = 1;
-    string message = 2;
-    bytes signature = 3;
-    repeated string references = 4;
-    int64 seq = 5;
-    bytes mac = 6;
 }
 
 //
@@ -58,10 +48,9 @@ message ReadReply {
 //
 message Announcement {
     string message = 1;
-    repeated string references = 3;
-    bytes publicKey = 4;
-    bytes signature = 5;
-    int64 seq = 6;
-    string hash = 7;
+    repeated string references = 2;
+    bytes publicKey = 3;
+    bytes signature = 4;
+    int64 seq = 5;
 }
 
