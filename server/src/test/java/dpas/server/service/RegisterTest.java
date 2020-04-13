@@ -122,18 +122,4 @@ public class RegisterTest {
                 .setPublicKey(ByteString.copyFrom(_publicDSAKey.getEncoded()))
                 .build());
     }
-
-    @Test
-    public void registerRepeatedUser() {
-        _stub.register(Contract.RegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .build());
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("INVALID_ARGUMENT: User Already Exists");
-
-        _stub.register(Contract.RegisterRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
-                .build());
-    }
-
 }

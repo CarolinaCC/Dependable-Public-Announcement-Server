@@ -21,13 +21,6 @@ public class SecurityManager {
         validateRequest(mac, content, publicKey);
     }
 
-    public void validateRequest(Contract.PostRequest request) throws GeneralSecurityException, IOException, IllegalMacException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] content = ByteUtils.toByteArray(request);
-        byte[] mac = request.getMac().toByteArray();
-        validateRequest(mac, content, key);
-    }
-
     private void validateRequest(byte[] mac, byte[] content, PublicKey key) throws GeneralSecurityException, IllegalMacException {
         if (!MacVerifier.verifyMac(key, content, mac))
             throw new IllegalMacException("Invalid mac");

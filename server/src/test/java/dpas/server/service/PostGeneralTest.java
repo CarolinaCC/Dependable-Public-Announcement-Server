@@ -17,6 +17,7 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 
@@ -110,7 +111,7 @@ public class PostGeneralTest {
 
     @Test
     public void postSuccess() {
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSeq(_seq)
@@ -120,14 +121,14 @@ public class PostGeneralTest {
 
     @Test
     public void twoPostsSuccess() {
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .setSeq(_seq)
                 .build());
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setSeq(_seq)
                 .setMessage(SECOND_MESSAGE)
@@ -137,24 +138,25 @@ public class PostGeneralTest {
 
     @Test
     public void twoPostsWithReference() throws CommonDomainException {
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE).setSignature(ByteString.copyFrom(_firstSignature))
                 .setSeq(_seq)
                 .build());
 
-        var firstIdentifier = _stub.readGeneral(Contract.ReadRequest
+
+        var firstIdentifier = Base64.getEncoder().encodeToString(_stub.readGeneral(Contract.ReadRequest
                 .newBuilder()
                 .setNumber(1)
                 .build())
                 .getAnnouncements(0)
-                .getHash();
+                .getSignature().toByteArray());
 
         _secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 Collections.singleton(firstIdentifier), GENERAL_BOARD_IDENTIFIER, _seq);
 
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_secondPublicKey.getEncoded()))
                 .setMessage(SECOND_MESSAGE)
                 .addReferences(firstIdentifier)
@@ -169,7 +171,7 @@ public class PostGeneralTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Missing key encoding");
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_firstSignature))
                 .setSeq(_seq)
@@ -181,7 +183,7 @@ public class PostGeneralTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Message Length provided: over 255 characters");
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(INVALID_MESSAGE)
                 .setSignature(ByteString.copyFrom(_bigMessageSignature))
@@ -194,7 +196,7 @@ public class PostGeneralTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("INVALID_ARGUMENT: Invalid Signature");
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSeq(_seq)
@@ -206,7 +208,7 @@ public class PostGeneralTest {
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid Signature: Signature Could not be verified");
 
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_secondSignature))

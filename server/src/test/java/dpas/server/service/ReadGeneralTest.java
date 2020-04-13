@@ -77,7 +77,7 @@ public class ReadGeneralTest {
                 .build());
 
         // Create Post To Read
-        _stub.postGeneral(Contract.PostRequest.newBuilder()
+        _stub.postGeneral(Contract.Announcement.newBuilder()
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_signature))
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))

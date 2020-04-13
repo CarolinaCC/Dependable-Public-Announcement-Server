@@ -5,8 +5,8 @@ import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.MacReply;
-import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.server.persistence.PersistenceManager;
 import io.grpc.Status;
@@ -56,11 +56,11 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void post(PostRequest request, StreamObserver<MacReply> responseObserver) {
+    public void post(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
             var announcement = generateAnnouncement(request);
 
-            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
@@ -81,11 +81,11 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     }
 
     @Override
-    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) {
+    public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
             Announcement announcement = generateAnnouncement(request, _generalBoard);
 
-            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
@@ -118,7 +118,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
         var announcement = new Announcement(signature, user, message, refs, board, seq);
         board.post(announcement);
-        _announcements.put(announcement.getHash(), announcement);
+        _announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
@@ -130,7 +130,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
         var announcement = new Announcement(signature, user, message, refs, board, seq);
         _generalBoard.post(announcement);
-        _announcements.put(announcement.getHash(), announcement);
+        _announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public ConcurrentHashMap<PublicKey, User> getUsers() {

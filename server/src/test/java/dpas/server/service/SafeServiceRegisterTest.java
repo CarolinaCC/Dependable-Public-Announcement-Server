@@ -95,18 +95,10 @@ public class SafeServiceRegisterTest {
         var reply = _stub.register(request);
 
         assertTrue(MacVerifier.verifyMac(_request, reply, _serverPubKey));
-        request = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("User Already Exists");
-        try {
-            _stub.register(request);
-        } catch (StatusRuntimeException e) {
-            Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
-            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
-            throw e;
-        }
+
+        reply = _stub.register(request);
+        assertTrue(MacVerifier.verifyMac(_request, reply, _serverPubKey));
+        assertEquals(_impl.getUsers().size(), 1);
     }
 
 

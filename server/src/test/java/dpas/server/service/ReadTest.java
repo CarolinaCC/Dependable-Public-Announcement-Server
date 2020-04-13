@@ -83,13 +83,13 @@ public class ReadTest {
                 .build());
 
         // Posts to Read
-        _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.Announcement.newBuilder()
                 .setMessage(MESSAGE)
                 .setSignature(ByteString.copyFrom(_signature))
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))
                 .setSeq(_seq)
                 .build());
-        _stub.post(Contract.PostRequest.newBuilder()
+        _stub.post(Contract.Announcement.newBuilder()
                 .setMessage(SECOND_MESSAGE)
                 .setSignature(ByteString.copyFrom(_signature2))
                 .setPublicKey(ByteString.copyFrom(_publicKey.getEncoded()))

@@ -22,6 +22,7 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.security.*;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
@@ -100,7 +101,7 @@ public class SafeServiceConcurrencyTest {
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generatePostRequest(_serverPubKey, pub, priv,
+            var request = ContractGenerator.generateAnnouncement(_serverPubKey, pub, priv,
                     MESSAGE, seq, CipherUtils.keyToString(pub), null);
 
             _stub.post(request);
@@ -113,7 +114,7 @@ public class SafeServiceConcurrencyTest {
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generatePostRequest(_serverPubKey, pub, priv,
+            var request = ContractGenerator.generateAnnouncement(_serverPubKey, pub, priv,
                     MESSAGE, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
             _stub.postGeneral(request);
             seq += 1;
@@ -144,7 +145,7 @@ public class SafeServiceConcurrencyTest {
             Contract.ReadReply reply = _stub.read(
                     Contract.ReadRequest.newBuilder()
                             .setPublicKey(ByteString.copyFrom(_users[i].getPublic().getEncoded()))
-                            .setNumber(NUMBER_POSTS * 2)
+                            .setNumber(0)
                             .build());
             //Check that each announcement was posted correctly
             assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS / NUMBER_THREADS);
@@ -183,7 +184,7 @@ public class SafeServiceConcurrencyTest {
 
         Contract.ReadReply reply = _stub.readGeneral(
                 Contract.ReadRequest.newBuilder()
-                        .setNumber(NUMBER_POSTS * 2)
+                        .setNumber(0)
                         .build());
         //Check that each announcement was posted correctly
         assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS);
@@ -194,5 +195,7 @@ public class SafeServiceConcurrencyTest {
             assertTrue(announcement.getSeq() >= 0);
             assertTrue(announcement.getSeq() <= NUMBER_POSTS / NUMBER_THREADS);
         }
+        var rep =_stub.getSeqGeneral(Contract.GetSeqRequest.newBuilder().setNonce(UUID.randomUUID().toString()).build());
+        assertEquals(rep.getSeq(), NUMBER_POSTS / NUMBER_THREADS);
     }
 }

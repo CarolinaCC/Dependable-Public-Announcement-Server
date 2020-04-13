@@ -90,11 +90,11 @@ public class SafeServiceGetSeqTest {
         _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
         _stub.register(ContractGenerator.generateRegisterRequest(_pubKey2, _privKey2));
 
-        _stub.post(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _seq, CipherUtils.keyToString(_pubKey),
+        _stub.post(ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey, MESSAGE, _seq, CipherUtils.keyToString(_pubKey),
                 null));
-        _stub.post(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _seq + 1, CipherUtils.keyToString(_pubKey),
+        _stub.post(ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey, MESSAGE, _seq + 1, CipherUtils.keyToString(_pubKey),
                 null));
-        _stub.postGeneral(ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey, MESSAGE, _seq + 2, GeneralBoard.GENERAL_BOARD_IDENTIFIER,
+        _stub.postGeneral(ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey, MESSAGE, _seq + 2, GeneralBoard.GENERAL_BOARD_IDENTIFIER,
                 null));
     }
 
@@ -111,7 +111,7 @@ public class SafeServiceGetSeqTest {
                 .setNonce(UUID.randomUUID().toString())
                 .build();
         var reply = _stub.getSeq(request);
-        assertEquals(reply.getSeq(), 3);
+        assertEquals(reply.getSeq(), 2);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, request));
     }
 

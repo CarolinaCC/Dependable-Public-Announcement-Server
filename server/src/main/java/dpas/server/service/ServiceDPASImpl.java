@@ -7,6 +7,7 @@ import dpas.common.domain.User;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidReferenceException;
 import dpas.common.domain.exception.InvalidUserException;
+import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.*;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.stub.StreamObserver;
@@ -57,12 +58,12 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void post(PostRequest request, StreamObserver<MacReply> responseObserver) {
+    public void post(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
 
             var announcement = generateAnnouncement(request);
 
-            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 //Announcement with that identifier already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
@@ -77,11 +78,11 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     @Override
-    public void postGeneral(PostRequest request, StreamObserver<MacReply> responseObserver) {
+    public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
             var announcement = generateAnnouncement(request, _generalBoard);
 
-            var curr = _announcements.putIfAbsent(announcement.getHash(), announcement);
+            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 //Announcement with that identifier already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
@@ -148,7 +149,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         return references;
     }
 
-    protected Announcement generateAnnouncement(PostRequest request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+    protected Announcement generateAnnouncement(Contract.Announcement request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
@@ -156,7 +157,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
-    protected Announcement generateAnnouncement(PostRequest request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
+    protected Announcement generateAnnouncement(Contract.Announcement request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();

@@ -34,9 +34,9 @@ public class SafeServicePostGeneralTest {
     private static final String MESSAGE = "Message";
     private static final String SESSION_NONCE = "Nonce";
 
-    private static Contract.PostRequest _request;
-    private static Contract.PostRequest _invalidSeqRequest;
-    private static Contract.PostRequest _invalidPubKeyRequest;
+    private static Contract.Announcement _request;
+    private static Contract.Announcement _invalidSeqRequest;
+    private static Contract.Announcement _invalidPubKeyRequest;
 
     private static final int port = 9001;
     private static final String host = "localhost";
@@ -68,13 +68,13 @@ public class SafeServicePostGeneralTest {
         _invalidPubKey = keyPair.getPublic();
         _invalidPrivKey = keyPair.getPrivate();
 
-        _request = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+        _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
-        _invalidSeqRequest = ContractGenerator.generatePostRequest(_serverPKey, _pubKey, _privKey,
+        _invalidSeqRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, 1 + 10, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
-        _invalidPubKeyRequest = ContractGenerator.generatePostRequest(_serverPKey, _invalidPubKey, _invalidPrivKey,
+        _invalidPubKeyRequest = ContractGenerator.generateAnnouncement(_serverPKey, _invalidPubKey, _invalidPrivKey,
                 MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
     }
@@ -108,48 +108,27 @@ public class SafeServicePostGeneralTest {
 
     @Test
     public void stealSeqPost() throws GeneralSecurityException, IOException {
+        var reply = _stub.postGeneral(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
+        assertEquals(_impl._announcements.size(), 1);
+        _stub.postGeneral(_request);
 
-        try {
-            var reply = _stub.postGeneral(_request);
-            assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-            assertEquals(_impl._announcements.size(), 1);
-            exception.expect(StatusRuntimeException.class);
-            exception.expectMessage("Invalid Seq provided");
-            _stub.postGeneral(_request);
-        } catch (StatusRuntimeException e) {
-            Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), _request.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
-            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
-            throw e;
-        }
+        reply = _stub.postGeneral(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
+        assertEquals(_impl._announcements.size(), 1);
+        _stub.postGeneral(_request);
     }
 
-
-    @Test
-    public void invalidSeqPost() throws GeneralSecurityException {
-        exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid Seq provided");
-        try {
-            _stub.postGeneral(_invalidSeqRequest);
-        } catch (StatusRuntimeException e) {
-            Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidSeqRequest.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
-            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
-            throw e;
-        }
-    }
 
     @Test
     public void invalidkeyPost() {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("User with that public key does not exist");
+        exception.expectMessage("Invalid User provided: Does Not Exist");
         try {
             _stub.postGeneral(_invalidPubKeyRequest);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidPubKeyRequest.getMac().toByteArray());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidPubKeyRequest.getSignature().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
@@ -158,16 +137,16 @@ public class SafeServicePostGeneralTest {
 
     @Test
     public void nonCipheredPost() throws IOException, GeneralSecurityException {
-        var request = Contract.PostRequest.newBuilder(_request).setMessage(MESSAGE).build();
+        var request = Contract.Announcement.newBuilder(_request).setMessage(MESSAGE).build();
         byte[] mac = MacGenerator.generateMac(request, _privKey);
-        request = Contract.PostRequest.newBuilder(request).setMac(ByteString.copyFrom(mac)).build();
+        request = Contract.Announcement.newBuilder(request).setSignature(ByteString.copyFrom(mac)).build();
         exception.expect(StatusRuntimeException.class);
         exception.expectMessage("Invalid security values provided");
         try {
             _stub.postGeneral(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getSignature().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
@@ -176,15 +155,14 @@ public class SafeServicePostGeneralTest {
 
     @Test
     public void invalidMacPost() {
-        var request = Contract.PostRequest.newBuilder(_request).setMessage(MESSAGE).build();
-        request = Contract.PostRequest.newBuilder(request).setMac(_request.getMac()).build();
+        var request = Contract.Announcement.newBuilder(_request).setSignature(_invalidPubKeyRequest.getSignature()).build();
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid mac");
+        exception.expectMessage("Signature Could not be verified");
         try {
             _stub.postGeneral(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getSignature().toByteArray());
             assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
@@ -193,15 +171,15 @@ public class SafeServicePostGeneralTest {
 
     @Test
     public void notAMacPost() throws GeneralSecurityException {
-        var request = Contract.PostRequest.newBuilder(_request).setMac(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
+        var request = Contract.Announcement.newBuilder(_request).setSignature(ByteString.copyFrom(new byte[]{12, 4, 56, 21})).build();
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("security values provided");
+        exception.expectMessage("Invalid Security Values Provided");
         try {
             _stub.postGeneral(request);
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
-            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getSignature().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }

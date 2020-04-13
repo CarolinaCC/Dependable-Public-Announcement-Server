@@ -111,7 +111,7 @@ public class PersistentServerConcurrencyTest {
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generatePostRequest(pub, priv,
+            var request = ContractGenerator.generateAnnouncement(pub, priv,
                     MESSAGE, seq, CipherUtils.keyToString(pub), null);
 
             _stub.post(request);
@@ -124,7 +124,7 @@ public class PersistentServerConcurrencyTest {
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
-            var request = ContractGenerator.generatePostRequest(pub, priv,
+            var request = ContractGenerator.generateAnnouncement(pub, priv,
                     MESSAGE, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
             _stub.postGeneral(request);
             seq += 1;
@@ -179,7 +179,7 @@ public class PersistentServerConcurrencyTest {
             }
 
             for (var user : impl.getUsers().values()) {
-                assertEquals(user.getSeq(), NUMBER_POSTS / NUMBER_THREADS);
+                assertEquals(user.getUserBoard().getSeq(), NUMBER_POSTS / NUMBER_THREADS);
             }
         }
     }
@@ -232,7 +232,7 @@ public class PersistentServerConcurrencyTest {
         }
 
         for (var user : impl.getUsers().values()) {
-            assertEquals(user.getSeq(), NUMBER_POSTS / NUMBER_THREADS);
+            assertEquals(user.getUserBoard().getSeq(), NUMBER_POSTS / NUMBER_THREADS);
         }
 
     }

@@ -221,7 +221,7 @@ public class PersistenceManagerTest {
         exception.expectMessage("INVALID_ARGUMENT: Invalid Key Provided");
 
         try {
-            stub.post(Contract.PostRequest.newBuilder().setMessage(message)
+            stub.post(Contract.Announcement.newBuilder().setMessage(message)
                     .setSignature(ByteString.copyFrom(signature))
                     .build());
         } finally {
@@ -359,7 +359,7 @@ public class PersistenceManagerTest {
 
         try {
 
-            stub.postGeneral(Contract.PostRequest.newBuilder()
+            stub.postGeneral(Contract.Announcement.newBuilder()
                     .setMessage(message)
                     .setSignature(ByteString.copyFrom(signature))
                     .build());
