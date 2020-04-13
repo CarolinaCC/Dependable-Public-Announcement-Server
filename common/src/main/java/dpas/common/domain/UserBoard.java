@@ -12,7 +12,7 @@ public class UserBoard implements AnnouncementBoard {
     private final User _owner;
     protected PublicKey _publicKey;
 
-    private final SortedSet<Announcement> _posts = new TreeSet<>((a, b) -> (int)(a.getSeq() - b.getSeq()));
+    private final SortedSet<Announcement> _posts = Collections.synchronizedSortedSet(new TreeSet<>((a, b) -> (int)(a.getSeq() - b.getSeq())));
 
     public UserBoard(User user) throws NullUserException {
         if (user == null)
@@ -39,7 +39,10 @@ public class UserBoard implements AnnouncementBoard {
     public List<Announcement> read(int number) throws InvalidNumberOfPostsException {
         if (number < 0)
             throw new InvalidNumberOfPostsException("Invalid number of posts to read: number cannot be negative");
-        List<Announcement> posts = new ArrayList<>(_posts);
+        List<Announcement> posts;
+        synchronized (_posts) {
+            posts = new ArrayList<>(_posts);
+        }
         if (number == 0 || number >= posts.size())
             return posts;
         return posts.subList(posts.size() - number, posts.size());
