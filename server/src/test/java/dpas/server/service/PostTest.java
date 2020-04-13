@@ -79,7 +79,8 @@ public class PostTest {
         _secondSignature = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 new HashSet<>(), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq);
 
-
+        _thirdSignature = Announcement.generateSignature(_firstPrivateKey, MESSAGE,
+                new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()), _seq + 10);
 
         _bigMessageSignature = Announcement.generateSignature(_firstPrivateKey, INVALID_MESSAGE,
                 new HashSet<>(), Base64.getEncoder().encodeToString(_firstPublicKey.getEncoded()), _seq + 1);
@@ -147,13 +148,13 @@ public class PostTest {
                 .setSeq(1)
                 .build());
 
-        var firstIdentifier = _stub.read(Contract.ReadRequest
+        var firstIdentifier = Base64.getEncoder().encodeToString(_stub.read(Contract.ReadRequest
                 .newBuilder()
                 .setNumber(1)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build())
                 .getAnnouncements(0)
-                .getSignature().toStringUtf8();
+                .getSignature().toByteArray());
 
         byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq);
@@ -176,13 +177,13 @@ public class PostTest {
                 .setSeq(_seq)
                 .build());
 
-        var firstIdentifier = _stub.read(Contract.ReadRequest
+        var firstIdentifier = Base64.getEncoder().encodeToString(_stub.read(Contract.ReadRequest
                 .newBuilder()
                 .setNumber(1)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build())
                 .getAnnouncements(0)
-                .getSignature().toStringUtf8();
+                .getSignature().toByteArray());
 
         byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq + 1);
@@ -278,7 +279,7 @@ public class PostTest {
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .setMessage(MESSAGE)
                 .setSeq(_seq + 10)
-                .setSignature(ByteString.copyFrom(_firstSignature))
+                .setSignature(ByteString.copyFrom(_thirdSignature))
                 .build());
     }
 }
