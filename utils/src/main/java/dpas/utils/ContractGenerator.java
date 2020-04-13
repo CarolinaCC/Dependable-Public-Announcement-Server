@@ -5,7 +5,6 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.Contract.MacReply;
-import dpas.grpc.contract.Contract.PostRequest;
 import dpas.grpc.contract.Contract.RegisterRequest;
 
 import java.io.IOException;
@@ -13,59 +12,57 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ContractGenerator {
 
-    public static PostRequest generatePostRequest(PublicKey pubKey, PrivateKey privKey, String message, long seq,
-                                                  String boardIdentifier, Announcement[] a)
-            throws GeneralSecurityException, IOException, CommonDomainException {
+    public static Contract.Announcement generateAnnouncement(PublicKey pubKey, PrivateKey privKey, String message, long seq,
+                                                             String boardIdentifier, Announcement[] a)
+            throws CommonDomainException {
 
         Set<String> references = Stream.ofNullable(a)
                 .flatMap(Arrays::stream)
-                .map(Announcement::getHash)
+                .map(Announcement::getSignature)
+                .map(ByteString::toByteArray)
+                .map(ref -> Base64.getEncoder().encodeToString(ref))
                 .collect(Collectors.toSet());
 
         byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier, seq);
 
-        byte[] mac = MacGenerator.generateMac(seq, pubKey, message, signature, references, privKey);
-
-        return PostRequest.newBuilder()
+        return Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
                 .setMessage(message)
                 .setSignature(ByteString.copyFrom(signature))
                 .addAllReferences(references)
-                .setMac(ByteString.copyFrom(mac))
                 .setSeq(seq)
                 .build();
     }
 
-    public static PostRequest generatePostRequest(PublicKey serverKey, PublicKey pubKey, PrivateKey privKey,
-                                                  String message, long seq, String boardIdentifier, Announcement[] a)
-            throws GeneralSecurityException, IOException, CommonDomainException {
+    public static Announcement generateAnnouncement(PublicKey serverKey, PublicKey pubKey, PrivateKey privKey,
+                                                    String message, long seq, String boardIdentifier, Announcement[] a)
+            throws GeneralSecurityException, CommonDomainException {
 
         String encodedMessage = CipherUtils.cipherAndEncode(message.getBytes(), serverKey);
 
         Set<String> references = Stream.ofNullable(a)
                 .flatMap(Arrays::stream)
-                .map(Announcement::getHash)
+                .map(Announcement::getSignature)
+                .map(ByteString::toByteArray)
+                .map(ref -> Base64.getEncoder().encodeToString(ref))
                 .collect(Collectors.toSet());
 
         byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier, seq);
 
-        byte[] mac = MacGenerator.generateMac(seq, pubKey, encodedMessage, signature, references, privKey);
-
-        return PostRequest.newBuilder()
+        return Announcement.newBuilder()
                 .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
                 .setMessage(encodedMessage)
                 .setSignature(ByteString.copyFrom(signature))
                 .addAllReferences(references)
-                .setMac(ByteString.copyFrom(mac))
                 .setSeq(seq)
                 .build();
-
     }
 
     public static Contract.GetSeqReply generateSeqReply(long seq, String nonce, PrivateKey serverKey, PublicKey pubKey)
@@ -73,6 +70,14 @@ public class ContractGenerator {
         return Contract.GetSeqReply.newBuilder()
                 .setSeq(seq)
                 .setMac(ByteString.copyFrom(MacGenerator.generateMac(nonce, seq, pubKey, serverKey)))
+                .build();
+    }
+
+    public static Contract.GetSeqReply generateSeqReply(long seq, String nonce, PrivateKey serverKey)
+            throws IOException, GeneralSecurityException {
+        return Contract.GetSeqReply.newBuilder()
+                .setSeq(seq)
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(nonce, seq, serverKey)))
                 .build();
     }
 

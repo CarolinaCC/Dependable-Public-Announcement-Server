@@ -7,11 +7,10 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ByteUtils {
 
-    public static byte[] toByteArray(Contract.PostRequest request) throws IOException {
+    public static byte[] toByteArray(Contract.Announcement request) {
         byte[] seq = NumberUtils.longToBytes(request.getSeq());
         byte[] pubKey = request.getPublicKey().toByteArray();
         byte[] message = request.getMessage().getBytes();
@@ -26,6 +25,8 @@ public class ByteUtils {
                     .forEach(stream::writeBytes);
 
             return stream.toByteArray();
+        } catch (IOException e) {
+            return new byte[0];
         }
     }
 
@@ -41,15 +42,19 @@ public class ByteUtils {
         }
     }
 
-    private static byte[] toByteArray(Contract.Announcement announcement) {
-        return announcement.toByteArray();
-    }
-
     public static byte[] toByteArray(String nonce, long seq, PublicKey pubKey) throws IOException {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(NumberUtils.longToBytes(seq));
             stream.writeBytes(nonce.getBytes());
             stream.writeBytes(pubKey.getEncoded());
+            return stream.toByteArray();
+        }
+    }
+
+    public static byte[] toByteArray(String nonce, long seq) throws IOException {
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.writeBytes(NumberUtils.longToBytes(seq));
+            stream.writeBytes(nonce.getBytes());
             return stream.toByteArray();
         }
     }

@@ -48,8 +48,8 @@ public class MacVerifier {
         }
     }
 
-    public static boolean verifyMac(PublicKey pubKey, Contract.MacReply reply, Contract.PostRequest request) throws GeneralSecurityException {
-        byte[] content = request.getMac().toByteArray();
+    public static boolean verifyMac(PublicKey pubKey, Contract.MacReply reply, Contract.Announcement request) throws GeneralSecurityException {
+        byte[] content = request.getSignature().toByteArray();
         byte[] mac = reply.getMac().toByteArray();
         return verifyMac(pubKey, content, mac);
     }

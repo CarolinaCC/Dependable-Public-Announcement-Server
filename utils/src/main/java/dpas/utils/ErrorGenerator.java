@@ -23,9 +23,9 @@ public class ErrorGenerator {
         return fillMetadata(request.getNonce().getBytes(), privKey, statusException);
     }
 
-    public static StatusRuntimeException generate(Status status, String message, Contract.PostRequest request, PrivateKey privKey) {
+    public static StatusRuntimeException generate(Status status, String message, Contract.Announcement request, PrivateKey privKey) {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());
-        return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
+        return fillMetadata(request.getSignature().toByteArray(), privKey, statusException);
     }
 
     public static StatusRuntimeException generate(Status status, String message, Contract.GetSeqRequest request, PrivateKey privKey) {
