@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class GeneralBoardTest {
 
@@ -33,7 +34,6 @@ public class GeneralBoardTest {
 
         _seq = 1;
 
-
         // Generate Board
         _generalBoard = new GeneralBoard();
 
@@ -51,8 +51,9 @@ public class GeneralBoardTest {
         publicKey = keyPair.getPublic();
         User userB = new User(publicKey);
 
-        byte[] signature3 = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard, _seq);
-        _announcement3 = new Announcement(signature3, userB, "MESSAGE", null, _generalBoard, _seq);
+        byte[] signature3 = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard, _seq + 1);
+
+        _announcement3 = new Announcement(signature3, userB, "MESSAGE", null, _generalBoard, _seq + 1);
     }
 
     @After
@@ -70,12 +71,13 @@ public class GeneralBoardTest {
         _generalBoard.post(_announcement2);
         _generalBoard.post(_announcement);
         _generalBoard.post(_announcement3);
-        assertEquals(_generalBoard.read(3).get(0), _announcement);
-        assertEquals(_generalBoard.read(3).get(1), _announcement3);
-        assertEquals(_generalBoard.read(3).get(2), _announcement2);
-        assertEquals(_generalBoard.read(3).size(), 3);
-        assertEquals(_generalBoard.getMaxSeq(), _seq + 1);
+        assertTrue(_generalBoard.read(0).contains(_announcement));
+        assertTrue(_generalBoard.read(0).contains(_announcement3));
+        assertTrue(_generalBoard.read(0).contains(_announcement2));
+        assertEquals(_generalBoard.read(0).size(), 3);
+        assertEquals(_generalBoard.getSeq(), _seq + 1);
     }
+
 
     @Test
     public void repeatedPost() throws NullAnnouncementException, InvalidNumberOfPostsException {
@@ -83,12 +85,12 @@ public class GeneralBoardTest {
         _generalBoard.post(_announcement);
         assertEquals(_generalBoard.read(2).get(0), _announcement);
         assertEquals(_generalBoard.read(2).size(), 1);
-        assertEquals(_generalBoard.getMaxSeq(), _seq);
+        assertEquals(_generalBoard.getSeq(), _seq);
     }
 
     @Test
-    public void emptyMaxSeq() throws NullAnnouncementException, InvalidNumberOfPostsException {
-        assertEquals(_generalBoard.getMaxSeq(), 0);
+    public void emptyMaxSeq() {
+        assertEquals(_generalBoard.getSeq(), 0);
     }
 
     @Test(expected = NullAnnouncementException.class)

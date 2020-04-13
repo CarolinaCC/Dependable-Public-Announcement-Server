@@ -46,7 +46,7 @@ public class UserBoard implements AnnouncementBoard {
     }
 
     @Override
-    public long getMaxSeq() {
+    public long getSeq() {
         if (_posts.size() == 0) {
             return 0;
         }

@@ -16,6 +16,6 @@ public interface AnnouncementBoard {
 
     List<Announcement> read(int number) throws InvalidNumberOfPostsException;
 
-    long getMaxSeq();
+    long getSeq();
 
 }

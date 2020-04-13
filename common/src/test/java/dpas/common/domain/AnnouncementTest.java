@@ -74,7 +74,7 @@ public class AnnouncementTest {
 
     @Test
     public void validAnnouncement() throws CommonDomainException {
-        var refs = _references.stream().map(Announcement::getHash).collect(Collectors.toSet());
+        var refs = _references.stream().map(Announcement::getIdentifier).collect(Collectors.toSet());
         byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, refs, _board, _seq);
 
         Announcement announcement = new Announcement(signature, _user, MESSAGE, _references, _board, _seq);

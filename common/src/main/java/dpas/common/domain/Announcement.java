@@ -8,7 +8,6 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import java.security.*;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,7 +48,7 @@ public class Announcement {
             throw new NullSignatureException("Invalid Signature provided: null");
         }
         if (user == null) {
-            throw new NullUserException("Invalid User provided: null");
+            throw new NullUserException("Invalid User provided: Does Not Exist");
         }
         if (message == null) {
             throw new NullMessageException("Invalid Message Provided: null");
@@ -82,7 +81,7 @@ public class Announcement {
                 throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
 
         } catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-            throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
+            throw new InvalidSignatureException("Invalid Signature: Invalid Security Values Provided");
         }
     }
 
@@ -102,7 +101,7 @@ public class Announcement {
         return _user;
     }
 
-    public String getHash() {
+    public String getIdentifier() {
         return Base64.getEncoder().encodeToString(_signature);
     }
 
@@ -167,7 +166,7 @@ public class Announcement {
     public static Set<String> getReferenceStrings(Set<Announcement> references) {
         return Stream.ofNullable(references)
                 .flatMap(Set::stream)
-                .map(Announcement::getHash)
+                .map(Announcement::getIdentifier)
                 .collect(Collectors.toSet());
     }
 
