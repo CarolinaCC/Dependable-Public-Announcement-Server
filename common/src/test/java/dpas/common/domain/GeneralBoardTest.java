@@ -67,10 +67,14 @@ public class GeneralBoardTest {
 
     @Test
     public void sameSeqDifferentKeyPost() throws NullAnnouncementException, InvalidNumberOfPostsException {
+        _generalBoard.post(_announcement2);
         _generalBoard.post(_announcement);
         _generalBoard.post(_announcement3);
-        assertEquals(_generalBoard.read(2).get(0), _announcement);
-        assertEquals(_generalBoard.read(2).get(1), _announcement3);
+        assertEquals(_generalBoard.read(3).get(0), _announcement);
+        assertEquals(_generalBoard.read(3).get(1), _announcement3);
+        assertEquals(_generalBoard.read(3).get(2), _announcement2);
+        assertEquals(_generalBoard.read(3).size(), 3);
+        assertEquals(_generalBoard.getMaxSeq(), _seq + 1);
     }
 
     @Test
@@ -79,6 +83,12 @@ public class GeneralBoardTest {
         _generalBoard.post(_announcement);
         assertEquals(_generalBoard.read(2).get(0), _announcement);
         assertEquals(_generalBoard.read(2).size(), 1);
+        assertEquals(_generalBoard.getMaxSeq(), _seq);
+    }
+
+    @Test
+    public void emptyMaxSeq() throws NullAnnouncementException, InvalidNumberOfPostsException {
+        assertEquals(_generalBoard.getMaxSeq(), 0);
     }
 
     @Test(expected = NullAnnouncementException.class)

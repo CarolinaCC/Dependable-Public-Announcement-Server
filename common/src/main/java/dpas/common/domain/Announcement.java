@@ -124,7 +124,6 @@ public class Announcement {
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setSignature(ByteString.copyFrom(_signature))
                 .setSeq(_seq)
-                .setHash(getHash())
                 .build();
     }
 

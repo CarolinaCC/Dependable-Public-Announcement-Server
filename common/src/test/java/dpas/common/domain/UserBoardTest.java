@@ -95,6 +95,12 @@ public class UserBoardTest {
         _userBoard.post(_announcementValid);
         announcements = _userBoard.read(1);
         assertEquals(announcements.get(0), _announcementValid);
+        assertEquals(_userBoard.getMaxSeq(), _seq);
+    }
+
+    @Test
+    public void emptyMaxSeq() {
+        assertEquals(_userBoard.getMaxSeq(), 0);
     }
 
 
