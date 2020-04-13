@@ -65,7 +65,6 @@ public class SafeServiceRegisterTest {
     @Before
     public void setup() throws IOException {
         SecurityManager _securityManager = new SecurityManager();
-        //_sessionManager.getSessions().put(SESSION_NONCE, new Session(0, _pubKey, SESSION_NONCE, LocalDateTime.now().plusHours(1)));
 
         _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
