@@ -98,10 +98,10 @@ public class AnnouncementTest {
         new Announcement((byte[]) null, _user, MESSAGE, _references, _board, _seq);
     }
 
-    @Test(expected = InvalidSeqException.class)
-    public void invalidSeq() throws CommonDomainException {
+    @Test
+    public void arbirtrarySeq() throws CommonDomainException {
         _signature = Announcement.generateSignature(_privKey, MESSAGE, new HashSet<>(), _board, _seq + 7);
-        new Announcement(_signature, _user, MESSAGE, _references, _board, _seq + 7);
+        new Announcement(_signature, _user, MESSAGE, null, _board, _seq + 7);
     }
 
 

@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -81,7 +82,7 @@ public class UserBoardTest {
     @Test
     public void validPost() throws InvalidNumberOfPostsException, InvalidUserException, NullAnnouncementException {
         _userBoard.post(_announcementValid);
-        ArrayList<Announcement> announcements = _userBoard.read(1);
+        List<Announcement> announcements = _userBoard.read(1);
         assertEquals(announcements.get(0), _announcementValid);
     }
 

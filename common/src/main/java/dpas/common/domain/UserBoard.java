@@ -1,15 +1,18 @@
 package dpas.common.domain;
 
+import dpas.common.domain.exception.InvalidNumberOfPostsException;
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
 import java.security.PublicKey;
-import java.util.Base64;
+import java.util.*;
 
-public class UserBoard extends AnnouncementBoard {
-    private User _owner;
+public class UserBoard implements AnnouncementBoard {
+    private final User _owner;
     protected PublicKey _publicKey;
+
+    private final SortedSet<Announcement> _posts = new TreeSet<>((a, b) -> (int)(a.getSeq() - b.getSeq()));
 
     public UserBoard(User user) throws NullUserException {
         if (user == null)
@@ -31,6 +34,23 @@ public class UserBoard extends AnnouncementBoard {
         if (post.getUser() != _owner) {
             throw new InvalidUserException("Invalid User: User is not owner of this board");
         }
+    }
+
+    public List<Announcement> read(int number) throws InvalidNumberOfPostsException {
+        if (number < 0)
+            throw new InvalidNumberOfPostsException("Invalid number of posts to read: number cannot be negative");
+        List<Announcement> posts = new ArrayList<>(_posts);
+        if (number == 0 || number >= posts.size())
+            return posts;
+        return posts.subList(posts.size() - number, posts.size());
+    }
+
+    @Override
+    public long getMaxSeq() {
+        if (_posts.size() == 0) {
+            return 0;
+        }
+        return _posts.last().getSeq();
     }
 
     @Override

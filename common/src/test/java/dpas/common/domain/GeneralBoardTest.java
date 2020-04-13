@@ -16,6 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class GeneralBoardTest {
 
     private Announcement _announcement;
+    private Announcement _announcement2;
     private GeneralBoard _generalBoard;
     private long _seq;
 
@@ -38,8 +39,12 @@ public class GeneralBoardTest {
 
         byte[] signature = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard, _seq);
 
+        byte[] signature2 = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard, _seq + 1);
+
         // Generate Announcement
         _announcement = new Announcement(signature, userA, "MESSAGE", null, _generalBoard, _seq);
+
+        _announcement2 = new Announcement(signature2, userA, "MESSAGE", null, _generalBoard, _seq + 1);
 
     }
 
@@ -61,10 +66,10 @@ public class GeneralBoardTest {
     @Test
     public void validRead() throws NullAnnouncementException, InvalidNumberOfPostsException {
         _generalBoard.post(_announcement);
-        _generalBoard.post(_announcement);
+        _generalBoard.post(_announcement2);
         ArrayList<Announcement> expectedAnnouncements = new ArrayList<Announcement>();
         expectedAnnouncements.add(_announcement);
-        expectedAnnouncements.add(_announcement);
+        expectedAnnouncements.add(_announcement2);
         assertEquals(_generalBoard.read(2), expectedAnnouncements);
     }
 

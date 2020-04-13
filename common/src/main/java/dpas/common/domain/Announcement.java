@@ -18,7 +18,6 @@ public class Announcement {
     private final User _user;
     private final String _message;
     private final Set<Announcement> _references; // Can be null
-    private String _hash;
     private final AnnouncementBoard _board;
     private final long _seq;
 
@@ -33,8 +32,6 @@ public class Announcement {
         _references = references;
         _board = board;
         _seq = seq;
-        _user.incrSeq(1);
-        generateHash();
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
@@ -53,9 +50,6 @@ public class Announcement {
         }
         if (user == null) {
             throw new NullUserException("Invalid User provided: null");
-        }
-        if (seq != user.getSeq() + 1) {
-            throw new InvalidSeqException("Invalid Seq provided: " + seq);
         }
         if (message == null) {
             throw new NullMessageException("Invalid Message Provided: null");
@@ -109,7 +103,7 @@ public class Announcement {
     }
 
     public String getHash() {
-        return _hash;
+        return Base64.getEncoder().encodeToString(_signature);
     }
 
     public AnnouncementBoard getBoard() {
@@ -118,27 +112,6 @@ public class Announcement {
 
     public long getSeq() {
         return _seq;
-    }
-
-
-    private void generateHash() throws CommonDomainException {
-        try {
-            var builder = new StringBuilder();
-            builder.append(_message)
-                    .append(_seq)
-                    .append(Base64.getEncoder().encodeToString(_signature))
-                    .append(_board.getIdentifier())
-                    .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
-            getReferenceStrings(_references).forEach(builder::append);
-
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(builder.toString().getBytes());
-            _hash = Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            //Should never happen
-            throw new InvalidHashException("Error: Could not get SHA-256 Hash");
-        }
-
     }
 
     public Contract.Announcement toContract() {
@@ -151,7 +124,7 @@ public class Announcement {
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setSignature(ByteString.copyFrom(_signature))
                 .setSeq(_seq)
-                .setHash(_hash)
+                .setHash(getHash())
                 .build();
     }
 

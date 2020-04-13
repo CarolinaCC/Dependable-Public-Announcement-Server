@@ -18,15 +18,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class User {
 
-    private PublicKey _publicKey;
-    private UserBoard _userBoard;
-    private AtomicLong _seq;
+    private final PublicKey _publicKey;
+    private final UserBoard _userBoard;
+
 
     public User(PublicKey publicKey) throws NullPublicKeyException, NullUserException {
         checkArguments(publicKey);
         this._publicKey = publicKey;
         this._userBoard = new UserBoard(this);
-        this._seq = new AtomicLong(0);
     }
 
     public void checkArguments(PublicKey publicKey) throws NullPublicKeyException {
@@ -59,13 +58,5 @@ public class User {
         PublicKey key = KeyFactory.getInstance("RSA")
                 .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         return new User(key);
-    }
-
-    public long getSeq() {
-        return _seq.get();
-    }
-
-    public void incrSeq(long seq) {
-        this._seq.getAndAdd(seq);
     }
 }
