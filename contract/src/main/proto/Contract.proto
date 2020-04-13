@@ -8,6 +8,7 @@ service ServiceDPAS {
     rpc read (ReadRequest) returns (ReadReply);
     rpc readGeneral (ReadRequest) returns (ReadReply);
     rpc getSeq(GetSeqRequest) returns (GetSeqReply);
+    rpc getSeqGeneral(GetSeqRequest) returns (GetSeqReply);
 }
 //
 message RegisterRequest {
