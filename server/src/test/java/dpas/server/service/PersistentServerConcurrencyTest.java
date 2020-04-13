@@ -230,11 +230,6 @@ public class PersistentServerConcurrencyTest {
             assertTrue(announcement.getSeq() <= NUMBER_POSTS / NUMBER_THREADS);
             assertEquals(announcement.getBoard().getIdentifier(), "DPAS-GENERAL-BOARD");
         }
-
-        for (var user : impl.getUsers().values()) {
-            assertEquals(user.getUserBoard().getSeq(), NUMBER_POSTS / NUMBER_THREADS);
-        }
-
     }
 
 }

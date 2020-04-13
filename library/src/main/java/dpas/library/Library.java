@@ -104,10 +104,10 @@ public class Library {
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         Session session = null;
-        PostRequest request = PostRequest.newBuilder().build();
+        Announcement request = Announcement.newBuilder().build();
         try {
             session = getSession(key);
-            request = ContractGenerator.generatePostRequest(_serverKey, key, privateKey,
+            request = ContractGenerator.generateAnnouncement(_serverKey, key, privateKey,
                     String.valueOf(message),
                     session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
             var reply = _stub.post(request);
@@ -116,7 +116,7 @@ public class Library {
                 System.out.println("An error occurred: Unable to validate server response.");
             }
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+            if (!verifyError(e, request.getSignature().toByteArray(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return;
             }
@@ -127,7 +127,7 @@ public class Library {
                 newSession(key);
                 post(key, message, a, privateKey);
             }
-        } catch (GeneralSecurityException | CommonDomainException | IOException e) {
+        } catch (GeneralSecurityException | CommonDomainException e) {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
@@ -140,10 +140,10 @@ public class Library {
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         Session session = null;
-        PostRequest request = PostRequest.newBuilder().build();
+        Announcement request = Announcement.newBuilder().build();
         try {
             session = getSession(pubKey);
-            request = ContractGenerator.generatePostRequest(_serverKey, pubKey, privateKey, String.valueOf(message),
+            request = ContractGenerator.generateAnnouncement(_serverKey, pubKey, privateKey, String.valueOf(message),
                     session.getSeq(), GENERAL_BOARD_IDENTIFIER, a);
 
             var reply = _stub.postGeneral(request);
@@ -152,7 +152,7 @@ public class Library {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+            if (!verifyError(e, request.getSignature().toByteArray(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return;
             }
@@ -164,7 +164,7 @@ public class Library {
                 newSession(pubKey);
                 postGeneral(pubKey, message, a, privateKey);
             }
-        } catch (GeneralSecurityException | CommonDomainException | IOException e) {
+        } catch (GeneralSecurityException | CommonDomainException e) {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
