@@ -1,5 +1,6 @@
 package dpas.client.app;
 
+import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.library.Library;
@@ -152,12 +153,11 @@ public class App {
     public static void printAnnouncements(Announcement[] announcements) {
         System.out.println();
         for (var announcement : announcements) {
-            System.out.println("Identifier:\t" + announcement.getHash());
             System.out.println("Sequencer:\t" + announcement.getSeq()   );
             System.out.println("Message:\t" + announcement.getMessage());
-            System.out.print("References:");
+            System.out.println("References:");
             for (var ref : announcement.getReferencesList()) {
-                System.out.print("\t" + ref);
+                System.out.print("\t\t" + ref);
             }
             System.out.println();
             System.out.println("Signature:\t" + Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
@@ -202,7 +202,7 @@ public class App {
             Contract.Announcement[] refs = new Contract.Announcement[numberOfReferences];
             for (int i = 3, j = 0; i < 3 + numberOfReferences; i++, j++) {
                 refs[j] = Contract.Announcement.newBuilder()
-                        .setHash(split[i])
+                        .setSignature(ByteString.copyFrom(Base64.getDecoder().decode(split[i])))
                         .build();
             }
 
