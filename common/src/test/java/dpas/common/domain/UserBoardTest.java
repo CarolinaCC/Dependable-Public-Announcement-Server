@@ -87,6 +87,17 @@ public class UserBoardTest {
     }
 
 
+    @Test
+    public void validRepeatedPost() throws InvalidNumberOfPostsException, InvalidUserException, NullAnnouncementException {
+        _userBoard.post(_announcementValid);
+        List<Announcement> announcements = _userBoard.read(1);
+        assertEquals(announcements.get(0), _announcementValid);
+        _userBoard.post(_announcementValid);
+        announcements = _userBoard.read(1);
+        assertEquals(announcements.get(0), _announcementValid);
+    }
+
+
     @Test(expected = NullAnnouncementException.class)
     public void nullAnnouncementPost() throws InvalidUserException, NullAnnouncementException {
         _userBoard.post(null);

@@ -17,6 +17,7 @@ public class GeneralBoardTest {
 
     private Announcement _announcement;
     private Announcement _announcement2;
+    private Announcement _announcement3;
     private GeneralBoard _generalBoard;
     private long _seq;
 
@@ -32,7 +33,6 @@ public class GeneralBoardTest {
 
         _seq = 1;
 
-        UUID.randomUUID().toString();
 
         // Generate Board
         _generalBoard = new GeneralBoard();
@@ -46,6 +46,13 @@ public class GeneralBoardTest {
 
         _announcement2 = new Announcement(signature2, userA, "MESSAGE", null, _generalBoard, _seq + 1);
 
+        keyPair = keygen.generateKeyPair();
+        privateKey = keyPair.getPrivate();
+        publicKey = keyPair.getPublic();
+        User userB = new User(publicKey);
+
+        byte[] signature3 = Announcement.generateSignature(privateKey, "MESSAGE", null, _generalBoard, _seq);
+        _announcement3 = new Announcement(signature3, userB, "MESSAGE", null, _generalBoard, _seq);
     }
 
     @After
@@ -56,6 +63,22 @@ public class GeneralBoardTest {
     public void validPost() throws NullAnnouncementException, InvalidNumberOfPostsException {
         _generalBoard.post(_announcement);
         assertEquals(_generalBoard.read(1).get(0), _announcement);
+    }
+
+    @Test
+    public void sameSeqDifferentKeyPost() throws NullAnnouncementException, InvalidNumberOfPostsException {
+        _generalBoard.post(_announcement);
+        _generalBoard.post(_announcement3);
+        assertEquals(_generalBoard.read(2).get(0), _announcement);
+        assertEquals(_generalBoard.read(2).get(1), _announcement3);
+    }
+
+    @Test
+    public void repeatedPost() throws NullAnnouncementException, InvalidNumberOfPostsException {
+        _generalBoard.post(_announcement);
+        _generalBoard.post(_announcement);
+        assertEquals(_generalBoard.read(2).get(0), _announcement);
+        assertEquals(_generalBoard.read(2).size(), 1);
     }
 
     @Test(expected = NullAnnouncementException.class)
