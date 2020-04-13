@@ -26,14 +26,12 @@ import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 public class Library {
 
     private final ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-    private final Map<PublicKey, Session> _sessions;
     private final PublicKey _serverKey;
     private final ManagedChannel _channel;
 
     public Library(String host, int port, PublicKey serverKey) {
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
-        _sessions = new HashMap<>();
         _serverKey = serverKey;
     }
 
@@ -41,7 +39,7 @@ public class Library {
         _channel.shutdown();
     }
 
-    private void newSession(PublicKey pubKey) {
+    private long getSeq(PublicKey pubKey) {
         GetSeqRequest request = GetSeqRequest.newBuilder().build();
         try {
             String nonce = UUID.randomUUID().toString();
@@ -56,28 +54,53 @@ public class Library {
                 System.out.println("Library will now shutdown");
                 System.exit(1);
             }
-            long seq = reply.getSeq() + 1;
-            Session session = new Session(seq);
-            _sessions.put(pubKey, session);
+            return reply.getSeq() + 1;
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
+                return -1;
             }
-            System.out.println("Library will now shutdown");
-            System.exit(1);
+            Status status = e.getStatus();
+            System.out.println("An error occurred: " + status.getDescription());
         } catch (GeneralSecurityException | IOException e) {
             System.out.println("An unrecoverable error has ocurred: " + e.getMessage());
             System.out.println("Library will now shutdown");
             System.exit(1);
         }
+        return -1;
     }
 
-    private Session getSession(PublicKey pubKey) {
-        if (!_sessions.containsKey(pubKey)) {
-            newSession(pubKey);
+    private long getSeqGeneral() {
+        GetSeqRequest request = GetSeqRequest.newBuilder().build();
+        try {
+            String nonce = UUID.randomUUID().toString();
+            request = Contract.GetSeqRequest.newBuilder()
+                    .setNonce(nonce)
+                    .build();
+            var reply = _stub.getSeqGeneral(request);
+
+            if (!(MacVerifier.verifyMac(_serverKey, reply, nonce))) {
+                System.out.println("Unable to authenticate server response");
+                System.out.println("Library will now shutdown");
+                System.exit(1);
+            }
+            return reply.getSeq() + 1;
+        } catch (StatusRuntimeException e) {
+            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
+                System.out.println("Unable to authenticate server response");
+                System.out.println("Library will now shutdown");
+                return -1;
+            }
+            Status status = e.getStatus();
+            System.out.println("An error occurred: " + status.getDescription());
+        } catch (GeneralSecurityException | IOException e) {
+            System.out.println("An unrecoverable error has ocurred: " + e.getMessage());
+            System.out.println("Library will now shutdown");
+            System.exit(1);
         }
-        return _sessions.get(pubKey);
+        return -1;
     }
+
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         RegisterRequest request = null;
@@ -103,13 +126,15 @@ public class Library {
     }
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
-        Session session = null;
         Announcement request = Announcement.newBuilder().build();
         try {
-            session = getSession(key);
+            var seq = getSeq(key);
+            if (seq == -1) {
+                return;
+            }
             request = ContractGenerator.generateAnnouncement(_serverKey, key, privateKey,
                     String.valueOf(message),
-                    session.getSeq(), Base64.getEncoder().encodeToString(key.getEncoded()), a);
+                    seq, Base64.getEncoder().encodeToString(key.getEncoded()), a);
             var reply = _stub.post(request);
 
             if (!MacVerifier.verifyMac(_serverKey, reply, request)) {
@@ -117,34 +142,29 @@ public class Library {
             }
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getSignature().toByteArray(), _serverKey)) {
-                System.out.println("Unable to authenticate server response");
+                System.out.println("Unable to validate server response");
                 return;
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
-                System.out.println("Creating a new session and retrying...");
-                newSession(key);
-                post(key, message, a, privateKey);
-            }
+
         } catch (GeneralSecurityException | CommonDomainException e) {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
-        } finally {
-            if (session != null) {
-                session.updateSeq();
-            }
         }
+
     }
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
-        Session session = null;
         Announcement request = Announcement.newBuilder().build();
         try {
-            session = getSession(pubKey);
+            var seq = getSeqGeneral();
+            if (seq == -1) {
+                return;
+            }
             request = ContractGenerator.generateAnnouncement(_serverKey, pubKey, privateKey, String.valueOf(message),
-                    session.getSeq(), GENERAL_BOARD_IDENTIFIER, a);
+                    seq, GENERAL_BOARD_IDENTIFIER, a);
 
             var reply = _stub.postGeneral(request);
 
@@ -158,22 +178,11 @@ public class Library {
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-            // if user doesnt have a vlid session
-            if (status.getCode().equals(Status.Code.UNAUTHENTICATED)) {
-                System.out.println("Creating new session and retrying...");
-                newSession(pubKey);
-                postGeneral(pubKey, message, a, privateKey);
-            }
         } catch (GeneralSecurityException | CommonDomainException e) {
             //Should never happen
             System.out.println("An error has occurred that has forced the application to shutdown");
             System.exit(1);
-        } finally {
-            if (session != null) {
-                session.updateSeq();
-            }
         }
-
     }
 
     public Announcement[] validateReadResponse(ReadRequest request, ReadReply reply) throws GeneralSecurityException {

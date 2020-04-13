@@ -61,4 +61,10 @@ public class MacVerifier {
         return verifyMac(pubKey, content, mac);
     }
 
+    public static boolean verifyMac(PublicKey pubKey, Contract.GetSeqReply reply, String nonce) throws GeneralSecurityException, IOException {
+        byte[] content = ByteUtils.toByteArray(nonce, reply.getSeq());
+        byte[] mac = reply.getMac().toByteArray();
+        return verifyMac(pubKey, content, mac);
+    }
+
 }
