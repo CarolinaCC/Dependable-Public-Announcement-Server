@@ -206,7 +206,7 @@ public class App {
             Contract.Announcement[] refs = new Contract.Announcement[numberOfReferences];
             for (int i = 3, j = 0; i < 3 + numberOfReferences; i++, j++) {
                 refs[j] = Contract.Announcement.newBuilder()
-                        .setSignature(ByteString.copyFrom(Base64.getDecoder().decode(split[i])))
+                        .setIdentifier(split[i])
                         .build();
             }
 

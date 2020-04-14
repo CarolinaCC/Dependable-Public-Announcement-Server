@@ -78,7 +78,7 @@ public class ServerDPAS {
             server.start();
             return server;
         } catch (Exception e) {
-            System.out.println("Error Initializing server: Invalid State Load");
+            System.out.println("Error Initializing server: Invalid State Load " + e.getMessage());
             System.exit(1);
         }
         // Code never reaches here
