@@ -6,7 +6,7 @@ cliente faz Post M e recebe quorum de {p1, p2, p3, p4, p5}
 p6, p7 rejeitam M pois ainda não receberam o register
 p1, p2 apagam M (são bizantinos).
 p6, p7 recebem o register.
-cliente faz Post M e recebe quorum de {p3, p4, p5} e de {p1, p2, p6, p7} a dizer not Ok pois não receberam P1.
+cliente faz Post M2 (depende de M) e recebe quorum de {p3, p4, p5} e de {p1, p2, p6, p7} a dizer not Ok pois não receberam M.
 Este deadlock nunca e quebrado a não ser que um cliente leia p1.
 
 solução: servidor manda excepção mas guarda post, quando ocorrer o register, ele faz o post tambem.
