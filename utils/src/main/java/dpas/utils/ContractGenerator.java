@@ -12,7 +12,6 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,9 +24,7 @@ public class ContractGenerator {
 
         Set<String> references = Stream.ofNullable(a)
                 .flatMap(Arrays::stream)
-                .map(Announcement::getSignature)
-                .map(ByteString::toByteArray)
-                .map(ref -> Base64.getEncoder().encodeToString(ref))
+                .map(Announcement::getIdentifier)
                 .collect(Collectors.toSet());
 
         byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier, seq);
@@ -49,9 +46,7 @@ public class ContractGenerator {
 
         Set<String> references = Stream.ofNullable(a)
                 .flatMap(Arrays::stream)
-                .map(Announcement::getSignature)
-                .map(ByteString::toByteArray)
-                .map(ref -> Base64.getEncoder().encodeToString(ref))
+                .map(Announcement::getIdentifier)
                 .collect(Collectors.toSet());
 
         byte[] signature = dpas.common.domain.Announcement.generateSignature(privKey, message, references, boardIdentifier, seq);

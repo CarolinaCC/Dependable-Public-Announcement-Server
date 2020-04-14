@@ -19,6 +19,7 @@ public class Announcement {
     private final Set<Announcement> _references; // Can be null
     private final AnnouncementBoard _board;
     private final long _seq;
+    private final String _hash;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq) throws CommonDomainException {
@@ -31,6 +32,7 @@ public class Announcement {
         _references = references;
         _board = board;
         _seq = seq;
+        _hash = generateHash();
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
@@ -102,7 +104,7 @@ public class Announcement {
     }
 
     public String getIdentifier() {
-        return Base64.getEncoder().encodeToString(_signature);
+        return _hash;
     }
 
     public AnnouncementBoard getBoard() {
@@ -123,6 +125,7 @@ public class Announcement {
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setSignature(ByteString.copyFrom(_signature))
                 .setSeq(_seq)
+                .setIdentifier(_hash)
                 .build();
     }
 
@@ -144,6 +147,27 @@ public class Announcement {
 
         return jsonBuilder.build();
     }
+
+    private String generateHash() throws CommonDomainException {
+        try {
+            var builder = new StringBuilder();
+            builder.append(_message)
+                    .append(_seq)
+                    .append(Base64.getEncoder().encodeToString(_signature))
+                    .append(_board.getIdentifier())
+                    .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
+            getReferenceStrings(_references).forEach(builder::append);
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(builder.toString().getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            //Should never happen
+            throw new InvalidHashException("Error: Could not get SHA-256 Hash");
+        }
+
+    }
+
 
     public static byte[] generateSignature(PrivateKey privKey, String message,
                                            Set<String> references, String boadIdentifier, long seq) throws CommonDomainException {

@@ -148,13 +148,13 @@ public class PostTest {
                 .setSeq(1)
                 .build());
 
-        var firstIdentifier = Base64.getEncoder().encodeToString(_stub.read(Contract.ReadRequest
+        var firstIdentifier = _stub.read(Contract.ReadRequest
                 .newBuilder()
                 .setNumber(1)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build())
                 .getAnnouncements(0)
-                .getSignature().toByteArray());
+                .getIdentifier();
 
         byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq);
@@ -177,13 +177,14 @@ public class PostTest {
                 .setSeq(_seq)
                 .build());
 
-        var firstIdentifier = Base64.getEncoder().encodeToString(_stub.read(Contract.ReadRequest
+
+        var firstIdentifier = _stub.read(Contract.ReadRequest
                 .newBuilder()
                 .setNumber(1)
                 .setPublicKey(ByteString.copyFrom(_firstPublicKey.getEncoded()))
                 .build())
                 .getAnnouncements(0)
-                .getSignature().toByteArray());
+                .getIdentifier();
 
         byte[] secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 Collections.singleton(firstIdentifier), Base64.getEncoder().encodeToString(_secondPublicKey.getEncoded()), _seq + 1);

@@ -131,7 +131,7 @@ public class SafeServiceReadGeneralTest {
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _pubKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
-        assertTrue(MacVerifier.verifyMac(_serverPKey, ByteUtils.toByteArray(request, reply.getAnnouncementsList()), reply.getMac().toByteArray()));
+        assertTrue(MacVerifier.verifyMac(_serverPKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray()));
     }
 
 

@@ -187,7 +187,7 @@ public class Library {
 
     public Announcement[] validateReadResponse(ReadRequest request, ReadReply reply) throws GeneralSecurityException {
         try {
-            if (!MacVerifier.verifyMac(_serverKey, ByteUtils.toByteArray(request, reply.getAnnouncementsList()), reply.getMac().toByteArray())) {
+            if (!MacVerifier.verifyMac(_serverKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray())) {
                 System.out.println("An error occurred: Unable to validate server response");
                 System.exit(1);
             }

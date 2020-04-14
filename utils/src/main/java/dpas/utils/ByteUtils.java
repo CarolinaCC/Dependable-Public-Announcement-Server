@@ -34,10 +34,9 @@ public class ByteUtils {
         return request.getPublicKey().toByteArray();
     }
 
-    public static byte[] toByteArray(Contract.ReadRequest request, List<Contract.Announcement> reply) throws IOException {
+    public static byte[] toByteArray(Contract.ReadRequest request) throws IOException {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(request.toByteArray());
-            reply.stream().map(ByteUtils::toByteArray).forEach(stream::writeBytes);
             return stream.toByteArray();
         }
     }

@@ -53,5 +53,6 @@ message Announcement {
     bytes publicKey = 3;
     bytes signature = 4;
     int64 seq = 5;
+    string identifier = 6;
 }
 

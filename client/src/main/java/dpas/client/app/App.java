@@ -10,7 +10,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.stream.Stream;
 
 public class App {
 
@@ -152,18 +154,20 @@ public class App {
 
     public static void printAnnouncements(Announcement[] announcements) {
         System.out.println();
-        for (var announcement : announcements) {
-            System.out.println("Sequencer:\t" + announcement.getSeq()   );
-            System.out.println("Message:\t" + announcement.getMessage());
-            System.out.println("References:");
-            for (var ref : announcement.getReferencesList()) {
-                System.out.print("\t\t" + ref);
-            }
-            System.out.println();
-            System.out.println("Signature:\t" + Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
-            System.out.println("Author:\t" + Base64.getEncoder().encodeToString(announcement.getPublicKey().toByteArray()));
-            System.out.println();
-        }
+        Stream.ofNullable(announcements).flatMap(Arrays::stream).forEach(App::printAnnouncement);
+    }
+
+    public static void printAnnouncement(Announcement announcement) {
+        System.out.println("Identifier:\t" + announcement.getIdentifier());
+        System.out.println("Seq:\t" + announcement.getSeq());
+        System.out.println("Message:\t" + announcement.getMessage());
+        System.out.print("References:");
+        announcement.getReferencesList().stream().map(ref -> "\t" + ref).forEach(System.out::print);
+        System.out.println();
+        System.out.println("Signature:\t" + Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
+        System.out.println("Author:\t" + Base64.getEncoder().encodeToString(announcement.getPublicKey().toByteArray()));
+        System.out.println();
+
     }
 
     public static void printHelp() {

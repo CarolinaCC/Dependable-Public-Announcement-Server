@@ -145,12 +145,12 @@ public class PostGeneralTest {
                 .build());
 
 
-        var firstIdentifier = Base64.getEncoder().encodeToString(_stub.readGeneral(Contract.ReadRequest
+        var firstIdentifier = _stub.readGeneral(Contract.ReadRequest
                 .newBuilder()
                 .setNumber(1)
                 .build())
                 .getAnnouncements(0)
-                .getSignature().toByteArray());
+                .getIdentifier();
 
         _secondSignatureWithRef = Announcement.generateSignature(_secondPrivateKey, SECOND_MESSAGE,
                 Collections.singleton(firstIdentifier), GENERAL_BOARD_IDENTIFIER, _seq);
