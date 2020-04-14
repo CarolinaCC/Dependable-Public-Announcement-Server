@@ -1,0 +1,16 @@
+mas para este exemplo: 
+
+f = 1
+n = 4 (p1, p2, p3, p4)
+
+p4 bizantino
+
+Cliente faz post de M e obtem quorum p1, p2, p4 a dizer NOT Ok porque nao está registado
+
+Cliente manda register (RB) do register e obtem quorum p2, p3, p4
+
+Como p4 ele faz post do M anterior 
+
+Cliente tenta fazer post de M' em vez de M agora, mas como o bizantino tem M, os quoruns que o incluirem nao conseguem fazer Read do board dele 
+
+Solução: Cliente tem de obter um quorum bizantino para cada Post do READ
