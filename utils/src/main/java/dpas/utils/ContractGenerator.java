@@ -60,23 +60,6 @@ public class ContractGenerator {
                 .build();
     }
 
-    public static Contract.GetSeqReply generateSeqReply(long seq, String nonce, PrivateKey serverKey, PublicKey pubKey)
-            throws IOException, GeneralSecurityException {
-        return Contract.GetSeqReply.newBuilder()
-                .setSeq(seq)
-                .setMac(ByteString.copyFrom(MacGenerator.generateMac(nonce, seq, pubKey, serverKey)))
-                .build();
-    }
-
-    public static Contract.GetSeqReply generateSeqReply(long seq, String nonce, PrivateKey serverKey)
-            throws IOException, GeneralSecurityException {
-        return Contract.GetSeqReply.newBuilder()
-                .setSeq(seq)
-                .setMac(ByteString.copyFrom(MacGenerator.generateMac(nonce, seq, serverKey)))
-                .build();
-    }
-
-
     public static RegisterRequest generateRegisterRequest(PublicKey pubKey, PrivateKey privKey) throws GeneralSecurityException {
         return RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))

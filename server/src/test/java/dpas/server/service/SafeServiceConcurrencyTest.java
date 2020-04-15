@@ -195,7 +195,5 @@ public class SafeServiceConcurrencyTest {
             assertTrue(announcement.getSeq() >= 0);
             assertTrue(announcement.getSeq() <= NUMBER_POSTS / NUMBER_THREADS);
         }
-        var rep =_stub.getSeqGeneral(Contract.GetSeqRequest.newBuilder().setNonce(UUID.randomUUID().toString()).build());
-        assertEquals(rep.getSeq(), NUMBER_POSTS / NUMBER_THREADS);
     }
 }

@@ -53,18 +53,4 @@ public class MacVerifier {
         byte[] mac = reply.getMac().toByteArray();
         return verifyMac(pubKey, content, mac);
     }
-
-    public static boolean verifyMac(PublicKey pubKey, Contract.GetSeqReply reply, Contract.GetSeqRequest request) throws GeneralSecurityException, IOException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] content = ByteUtils.toByteArray(request.getNonce(), reply.getSeq(), key);
-        byte[] mac = reply.getMac().toByteArray();
-        return verifyMac(pubKey, content, mac);
-    }
-
-    public static boolean verifyMac(PublicKey pubKey, Contract.GetSeqReply reply, String nonce) throws GeneralSecurityException, IOException {
-        byte[] content = ByteUtils.toByteArray(nonce, reply.getSeq());
-        byte[] mac = reply.getMac().toByteArray();
-        return verifyMac(pubKey, content, mac);
-    }
-
 }

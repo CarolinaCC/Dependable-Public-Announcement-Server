@@ -163,38 +163,6 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         }
     }
 
-    @Override
-    public void getSeq(Contract.GetSeqRequest request, StreamObserver<Contract.GetSeqReply> responseObserver) {
-        try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            var user = _users.get(key);
-            if (user == null) {
-                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with that public key does not exist", request, _privateKey));
-                return;
-            }
-            long seq = user.getUserBoard().getSeq();
-            responseObserver.onNext(ContractGenerator.generateSeqReply(seq, request.getNonce(), _privateKey, key));
-            responseObserver.onCompleted();
-        } catch (GeneralSecurityException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
-        } catch (IOException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
-        }
-    }
-
-    @Override
-    public void getSeqGeneral(Contract.GetSeqRequest request, StreamObserver<Contract.GetSeqReply> responseObserver) {
-        try {
-            long seq = _generalBoard.getSeq();
-            responseObserver.onNext(ContractGenerator.generateSeqReply(seq, request.getNonce(), _privateKey));
-            responseObserver.onCompleted();
-        } catch (GeneralSecurityException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
-        } catch (IOException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
-        }
-    }
-
     protected Announcement generateAnnouncement(Contract.Announcement request, AnnouncementBoard board, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
