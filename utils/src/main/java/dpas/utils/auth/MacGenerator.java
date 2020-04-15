@@ -21,20 +21,12 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(nonce, seq, pubKey), privKey);
     }
 
-    public static byte[] generateMac(String nonce, long seq, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(nonce, seq), privKey);
-    }
-
-    public static byte[] generateMac(Contract.ReadRequest request, PrivateKey privKey) throws GeneralSecurityException, IOException {
-        return generateMac(ByteUtils.toByteArray(request), privKey);
+    public static byte[] generateMac(Contract.ReadRequest request, int announcementCount, PrivateKey privKey) throws GeneralSecurityException, IOException {
+        return generateMac(ByteUtils.toByteArray(request, announcementCount), privKey);
     }
 
     public static byte[] generateMac(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(request), privKey);
-    }
-
-    public static byte[] generateMac(long seq, PublicKey pubKey, String message, byte[] signature, Set<String> references, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(seq, pubKey, message, signature, references), privKey);
     }
 
     public static byte[] generateMac(byte[] content, PrivateKey privKey) throws GeneralSecurityException {

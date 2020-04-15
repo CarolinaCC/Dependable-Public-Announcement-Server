@@ -8,4 +8,10 @@ public class NumberUtils {
         buffer.putLong(0, x);
         return buffer.array();
     }
+
+    public static byte[] intToBytes(int x) {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+        buffer.putInt(0, x);
+        return buffer.array();
+    }
 }

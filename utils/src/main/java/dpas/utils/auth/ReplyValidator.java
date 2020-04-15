@@ -1,58 +1,23 @@
 package dpas.utils.auth;
 
-import dpas.common.domain.Announcement;
-import dpas.common.domain.GeneralBoard;
 import dpas.grpc.contract.Contract;
 import io.grpc.StatusRuntimeException;
 
 import java.io.IOException;
 import java.security.*;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ReplyValidator {
 
-    public static boolean verifySignature(Contract.Announcement announcement, PublicKey authorKey, String boardIdentifier) {
-        try {
-            var references = Stream.ofNullable(announcement.getReferencesList())
-                    .flatMap(List::stream)
-                    .collect(Collectors.toSet());
-            byte[] messageBytes = Announcement.generateMessageBytes(announcement.getMessage(), references, boardIdentifier, announcement.getSeq());
-
-            Signature sign = Signature.getInstance("SHA256withRSA");
-            sign.initVerify(authorKey);
-            sign.update(messageBytes);
-
-            if (!sign.verify(announcement.getSignature().toByteArray())) {
-                return false;
-            }
-        } catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean verifySignature(Contract.Announcement announcement) {
-        try {
-            PublicKey authorKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(announcement.getPublicKey().toByteArray()));
-            return verifySignature(announcement, authorKey, GeneralBoard.GENERAL_BOARD_IDENTIFIER);
-        } catch (GeneralSecurityException e) {
-            return false;
-        }
-    }
-
     public static boolean validateReadReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey, PublicKey authorKey) {
         try {
-            if (!MacVerifier.verifyMac(serverKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray())) {
+            if (!MacVerifier.verifyMac(serverKey, ByteUtils.toByteArray(request, reply.getAnnouncementsCount()), reply.getMac().toByteArray())) {
                 return false;
             }
 
             for (Contract.Announcement announcement : reply.getAnnouncementsList()) {
-                if (!ReplyValidator.verifySignature(announcement, authorKey, Base64.getEncoder().encodeToString(authorKey.getEncoded()))) {
+                if (!MacVerifier.verifySignature(announcement, authorKey, Base64.getEncoder().encodeToString(authorKey.getEncoded()))) {
                     return false;
                 }
             }
@@ -64,12 +29,12 @@ public class ReplyValidator {
 
     public static boolean validateReadGeneralReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey) {
         try {
-            if (!MacVerifier.verifyMac(serverKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray())) {
+            if (!MacVerifier.verifyMac(request, reply, serverKey)) {
                 return false;
             }
 
             for (Contract.Announcement announcement : reply.getAnnouncementsList()) {
-                if (!ReplyValidator.verifySignature(announcement)) {
+                if (!MacVerifier.verifySignature(announcement)) {
                     return false;
                 }
             }

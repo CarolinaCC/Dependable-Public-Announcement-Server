@@ -5,7 +5,7 @@ import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.utils.auth.ReplyValidator;
+import dpas.utils.auth.MacVerifier;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -105,7 +105,7 @@ public class ReadGeneralTest {
         assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
-        announcementsGRPC.forEach(a -> assertTrue(ReplyValidator.verifySignature(a)));
+        announcementsGRPC.forEach(a -> assertTrue(MacVerifier.verifySignature(a)));
     }
 
     @Test
@@ -120,7 +120,7 @@ public class ReadGeneralTest {
         assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
-        announcementsGRPC.forEach(a -> assertTrue(ReplyValidator.verifySignature(a)));
+        announcementsGRPC.forEach(a -> assertTrue(MacVerifier.verifySignature(a)));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class ReadGeneralTest {
         assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
-        announcementsGRPC.forEach(a -> assertTrue(ReplyValidator.verifySignature(a)));
+        announcementsGRPC.forEach(a -> assertTrue(MacVerifier.verifySignature(a)));
     }
 
     @Test

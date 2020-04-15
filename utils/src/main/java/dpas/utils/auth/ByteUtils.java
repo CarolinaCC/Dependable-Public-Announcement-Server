@@ -6,7 +6,6 @@ import dpas.utils.NumberUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.List;
 import java.util.Set;
 
 public class ByteUtils {
@@ -35,9 +34,10 @@ public class ByteUtils {
         return request.getPublicKey().toByteArray();
     }
 
-    public static byte[] toByteArray(Contract.ReadRequest request) throws IOException {
+    public static byte[] toByteArray(Contract.ReadRequest request, int announcementCount) throws IOException {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             stream.writeBytes(request.toByteArray());
+            stream.writeBytes(NumberUtils.intToBytes(announcementCount));
             return stream.toByteArray();
         }
     }
