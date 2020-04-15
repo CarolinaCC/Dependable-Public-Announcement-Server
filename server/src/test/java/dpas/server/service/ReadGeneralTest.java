@@ -5,6 +5,7 @@ import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.utils.auth.ReplyValidator;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -19,8 +20,7 @@ import java.security.*;
 import java.util.List;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ReadGeneralTest {
 
@@ -105,6 +105,7 @@ public class ReadGeneralTest {
         assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+        announcementsGRPC.forEach(a -> assertTrue(ReplyValidator.verifySignature(a)));
     }
 
     @Test
@@ -119,6 +120,7 @@ public class ReadGeneralTest {
         assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+        announcementsGRPC.forEach(a -> assertTrue(ReplyValidator.verifySignature(a)));
     }
 
     @Test
@@ -134,6 +136,7 @@ public class ReadGeneralTest {
         assertEquals(announcementsGRPC.get(0).getReferencesList().size(), 0);
         assertArrayEquals(announcementsGRPC.get(0).getPublicKey().toByteArray(), _publicKey.getEncoded());
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
+        announcementsGRPC.forEach(a -> assertTrue(ReplyValidator.verifySignature(a)));
     }
 
     @Test

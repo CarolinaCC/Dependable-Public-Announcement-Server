@@ -7,10 +7,7 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
 import dpas.utils.*;
-import dpas.utils.auth.ByteUtils;
-import dpas.utils.auth.CipherUtils;
-import dpas.utils.auth.ErrorGenerator;
-import dpas.utils.auth.MacVerifier;
+import dpas.utils.auth.*;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -133,6 +130,7 @@ public class SafeServiceReadTest {
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
         assertTrue(MacVerifier.verifyMac(_serverPKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray()));
+        assertTrue(ReplyValidator.validateReadReply(request, reply, _serverPKey, _pubKey));
     }
 
     @Test

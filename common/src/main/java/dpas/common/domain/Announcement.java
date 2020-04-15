@@ -194,7 +194,7 @@ public class Announcement {
                 .collect(Collectors.toSet());
     }
 
-    private static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier, long seq) {
+    public static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier, long seq) {
         var builder = new StringBuilder();
         builder.append(message);
         Stream.ofNullable(references).flatMap(Set::stream).forEach(builder::append);

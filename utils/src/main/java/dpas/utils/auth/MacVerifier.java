@@ -1,15 +1,19 @@
 package dpas.utils.auth;
 
+import dpas.common.domain.Announcement;
+import dpas.common.domain.GeneralBoard;
 import dpas.grpc.contract.Contract;
 import io.grpc.Metadata;
 import io.grpc.StatusRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.crypto.Cipher;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MacVerifier {
 
@@ -28,6 +32,7 @@ public class MacVerifier {
             return false;
         }
     }
+
 
     public static boolean verifyMac(PublicKey pubKey, byte[] content, byte[] mac) {
         try {

@@ -11,6 +11,7 @@ import dpas.utils.auth.ByteUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacVerifier;
+import dpas.utils.auth.ReplyValidator;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -132,6 +133,7 @@ public class SafeServiceReadGeneralTest {
         assertArrayEquals(announcementsGRPC.get(0).getSignature().toByteArray(), _signature);
 
         assertTrue(MacVerifier.verifyMac(_serverPKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray()));
+        assertTrue(ReplyValidator.validateReadGeneralReply(request, reply, _serverPKey));
     }
 
 

@@ -2,9 +2,8 @@ package dpas.utils.link;
 
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.utils.auth.ErrorVerifier;
 import dpas.utils.auth.MacVerifier;
-import io.grpc.StatusRuntimeException;
+import dpas.utils.auth.ReplyValidator;
 import io.grpc.stub.StreamObserver;
 
 import java.security.PublicKey;
@@ -66,8 +65,8 @@ public class PerfectStub {
 
             @Override
             public void onError(Throwable t) {
-                if (!ErrorVerifier.verifyError(t, announcement.getSignature().toByteArray(), _serverKey)) {
-                    //Response was not sent from the server, so It must be the attacker or a byzantine server
+                if (!ReplyValidator.verifyError(t, announcement, _serverKey)) {
+                    //Response was not authenticated, so It must be the attacker or a byzantine server
                     //Either way retry until obtaining a valid answer
                     postWithException(announcement, replyObserver);
                 } else {

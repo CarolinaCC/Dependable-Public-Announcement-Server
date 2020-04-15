@@ -3,27 +3,29 @@ package dpas.library;
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
-import dpas.grpc.contract.Contract.*;
+import dpas.grpc.contract.Contract.Announcement;
+import dpas.grpc.contract.Contract.ReadReply;
+import dpas.grpc.contract.Contract.ReadRequest;
+import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.utils.auth.ByteUtils;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacVerifier;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.UUID;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
+import static dpas.utils.auth.ReplyValidator.validateReadGeneralReply;
+import static dpas.utils.auth.ReplyValidator.validateReadReply;
+import static dpas.utils.auth.ReplyValidator.verifyError;
 
 public class Library {
 
@@ -52,28 +54,23 @@ public class Library {
                     .build();
             var reply = _stub.read(request);
 
-            var a = validateReadResponse(request, reply);
-            if (a == null) {
+            if (!validateReadReply(request, reply, _serverKey, pubKey)) {
                 return -1;
             }
-            else if (a.length == 0) {
+            var a = reply.getAnnouncementsList();
+            if (a.size() == 0) {
                 return 0;
-            }
-            else {
-                return a[a.length - 1].getSeq() + 1;
+            } else {
+                return a.get(a.size() - 1).getSeq() + 1;
             }
 
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
+            if (!verifyError(e, request, _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return -1;
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException e) {
-            System.out.println("An unrecoverable error has ocurred: " + e.getMessage());
-            System.out.println("Library will now shutdown");
-            System.exit(1);
         }
         return -1;
     }
@@ -88,34 +85,29 @@ public class Library {
                     .build();
             var reply = _stub.readGeneral(request);
 
-            var a = validateReadResponse(request, reply);
-            if (a == null) {
+            if (!validateReadGeneralReply(request, reply, _serverKey)) {
                 return -1;
             }
-            else if (a.length == 0) {
+            var a = reply.getAnnouncementsList();
+            if (a.size() == 0) {
                 return 0;
-            }
-            else {
-                return a[a.length - 1].getSeq() + 1;
+            } else {
+                return a.get(a.size() - 1).getSeq() + 1;
             }
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
+            if (!verifyError(e, request, _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return -1;
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException e) {
-            System.out.println("An unrecoverable error has ocurred: " + e.getMessage());
-            System.out.println("Library will now shutdown");
-            System.exit(1);
         }
         return -1;
     }
 
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
-        RegisterRequest request = null;
+        RegisterRequest request = RegisterRequest.newBuilder().build();
         try {
             request = ContractGenerator.generateRegisterRequest(publicKey, privkey);
             var reply = _stub.register(request);
@@ -124,7 +116,7 @@ public class Library {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getMac().toByteArray(), _serverKey)) {
+            if (!verifyError(e, request, _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return;
             }
@@ -153,7 +145,7 @@ public class Library {
                 System.out.println("An error occurred: Unable to validate server response.");
             }
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getSignature().toByteArray(), _serverKey)) {
+            if (!verifyError(e, request, _serverKey)) {
                 System.out.println("Unable to validate server response");
                 return;
             }
@@ -184,7 +176,7 @@ public class Library {
                 System.out.println("An error occurred: Unable to validate server response");
             }
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getSignature().toByteArray(), _serverKey)) {
+            if (!verifyError(e, request, _serverKey)) {
                 System.out.println("Unable to authenticate server response");
                 return;
             }
@@ -197,21 +189,6 @@ public class Library {
         }
     }
 
-    public Announcement[] validateReadResponse(ReadRequest request, ReadReply reply) throws GeneralSecurityException {
-        try {
-            if (!MacVerifier.verifyMac(_serverKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray())) {
-                System.out.println("An error occurred: Unable to validate server response");
-                return null;
-            }
-        } catch (IOException e) {
-            System.out.println("An io error occurred");
-            return null;
-        }
-        var a = new Announcement[reply.getAnnouncementsCount()];
-        reply.getAnnouncementsList().toArray(a);
-        return a;
-    }
-
     public Announcement[] read(PublicKey publicKey, int number) {
         var request = ReadRequest.newBuilder().build();
         try {
@@ -220,21 +197,10 @@ public class Library {
                     .setNonce(UUID.randomUUID().toString())
                     .setNumber(number)
                     .build();
-            var reply = _stub.read(request);
-            var a = validateReadResponse(request, reply);
-            return a == null ? new Announcement[0] : a;
+            return readReply(request, _stub.read(request), publicKey);
+
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
-                System.out.println("Unable to authenticate server response");
-                return new Announcement[0];
-            }
-            Status status = e.getStatus();
-            System.out.println("An error occurred: " + status.getDescription());
-            return new Announcement[0];
-        } catch (GeneralSecurityException e) {
-            System.out.println("An error has occurred that has forced the application to shutdown");
-            System.exit(1);
-            return new Announcement[0];
+            return readError(e, request);
         }
     }
 
@@ -245,42 +211,39 @@ public class Library {
                     .setNonce(UUID.randomUUID().toString())
                     .setNumber(number)
                     .build();
-            ReadReply reply = _stub.readGeneral(request);
-            var a = validateReadResponse(request, reply);
-            return a == null ? new Announcement[0] : a;
+
+            return readGeneralReply(request, _stub.readGeneral(request));
         } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
-                System.out.println("Unable to authenticate server response");
-                return new Announcement[0];
-            }
-            Status status = e.getStatus();
-            System.out.println("An error occurred: " + status.getDescription());
-            return new Announcement[0];
-        } catch (GeneralSecurityException e) {
-            System.out.println("An error has occurred that has forced the application to shutdown");
-            System.exit(1);
-            return new Announcement[0];
+            return readError(e, request);
         }
     }
 
-    private boolean verifyError(StatusRuntimeException e, byte[] request, PublicKey key) {
-        if (e.getTrailers() == null) {
-            return false;
+    private Announcement[] readError(StatusRuntimeException e, ReadRequest request) {
+        if (!verifyError(e, request, _serverKey)) {
+            System.out.println("Unable to authenticate server response");
+            return new Announcement[0];
         }
-        var trailers = e.getTrailers();
-
-        if (trailers.get(ErrorGenerator.contentKey) == null) {
-            return false;
-        }
-
-        if (trailers.get(ErrorGenerator.macKey) == null) {
-            return false;
-        }
-
-        if (!Arrays.equals(request, trailers.get(ErrorGenerator.contentKey))) {
-            return false;
-        }
-
-        return MacVerifier.verifyMac(key, e);
+        Status status = e.getStatus();
+        System.out.println("An error occurred: " + status.getDescription());
+        return new Announcement[0];
     }
+
+    private Announcement[] readReply(ReadRequest request, ReadReply reply, PublicKey authorKey) {
+        if (!validateReadReply(request, reply, _serverKey, authorKey)) {
+            System.out.println("Unable to authenticate server response");
+            return new Announcement[0];
+        }
+        var a = new Announcement[reply.getAnnouncementsCount()];
+        return reply.getAnnouncementsList().toArray(a);
+    }
+
+    private Announcement[] readGeneralReply(ReadRequest request, ReadReply reply) {
+        if (!validateReadGeneralReply(request, reply, _serverKey)) {
+            System.out.println("Unable to authenticate server response");
+            return new Announcement[0];
+        }
+        var a = new Announcement[reply.getAnnouncementsCount()];
+        return reply.getAnnouncementsList().toArray(a);
+    }
+
 }
