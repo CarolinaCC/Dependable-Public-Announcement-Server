@@ -6,8 +6,9 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.grpc.contract.Contract.MacReply;
 import dpas.grpc.contract.Contract.RegisterRequest;
+import dpas.utils.auth.CipherUtils;
+import dpas.utils.auth.MacGenerator;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;

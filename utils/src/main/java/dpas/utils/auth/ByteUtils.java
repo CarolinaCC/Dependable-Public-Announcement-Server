@@ -1,6 +1,7 @@
-package dpas.utils;
+package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
+import dpas.utils.NumberUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

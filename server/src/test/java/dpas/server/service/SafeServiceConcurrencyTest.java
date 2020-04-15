@@ -6,7 +6,7 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
-import dpas.utils.CipherUtils;
+import dpas.utils.auth.CipherUtils;
 import dpas.utils.ContractGenerator;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
@@ -22,7 +22,6 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;

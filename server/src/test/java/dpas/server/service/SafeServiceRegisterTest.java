@@ -5,9 +5,9 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
-import dpas.utils.ErrorGenerator;
-import dpas.utils.MacGenerator;
-import dpas.utils.MacVerifier;
+import dpas.utils.auth.ErrorGenerator;
+import dpas.utils.auth.MacGenerator;
+import dpas.utils.auth.MacVerifier;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
@@ -104,7 +104,7 @@ public class SafeServiceRegisterTest {
     @Test
     public void invalidMacRegister() throws GeneralSecurityException, IOException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid mac");
+        exception.expectMessage("Could not validate request");
         byte[] requestMAC = MacGenerator.generateMac("ola", 1, _pubKey, _privKey);
         var request = Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
@@ -124,7 +124,7 @@ public class SafeServiceRegisterTest {
     @Test
     public void noMacRegister() throws GeneralSecurityException {
         exception.expect(StatusRuntimeException.class);
-        exception.expectMessage("Invalid security values provided");
+        exception.expectMessage("Could not validate request");
         var request = Contract.RegisterRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .build();
@@ -133,7 +133,7 @@ public class SafeServiceRegisterTest {
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
             assertArrayEquals(data.get(ErrorGenerator.contentKey), request.getMac().toByteArray());
-            assertEquals(e.getStatus().getCode(), Status.CANCELLED.getCode());
+            assertEquals(e.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
             assertTrue(MacVerifier.verifyMac(_serverPKey, e));
             throw e;
         }

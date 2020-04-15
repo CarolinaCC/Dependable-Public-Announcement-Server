@@ -1,6 +1,7 @@
-package dpas.utils;
+package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
+import dpas.utils.auth.ByteUtils;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class MacGenerator {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 
-    public static byte[] generateMac(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException, IOException {
+    public static byte[] generateMac(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException {
         return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 

@@ -1,4 +1,4 @@
-package dpas.utils;
+package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
 import io.grpc.Metadata;

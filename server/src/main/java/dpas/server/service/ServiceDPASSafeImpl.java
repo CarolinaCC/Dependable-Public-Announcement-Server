@@ -12,10 +12,10 @@ import dpas.grpc.contract.Contract.MacReply;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.security.SecurityManager;
 import dpas.server.security.exception.IllegalMacException;
-import dpas.utils.CipherUtils;
+import dpas.utils.auth.CipherUtils;
 import dpas.utils.ContractGenerator;
-import dpas.utils.ErrorGenerator;
-import dpas.utils.MacGenerator;
+import dpas.utils.auth.ErrorGenerator;
+import dpas.utils.auth.MacGenerator;
 import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
