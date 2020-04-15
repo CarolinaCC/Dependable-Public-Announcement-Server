@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.UUID;
 
 import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
 
@@ -40,21 +42,27 @@ public class Library {
     }
 
     private long getSeq(PublicKey pubKey) {
-        GetSeqRequest request = GetSeqRequest.newBuilder().build();
+        var request = ReadRequest.newBuilder().build();
         try {
             String nonce = UUID.randomUUID().toString();
-            request = Contract.GetSeqRequest.newBuilder()
+            request = Contract.ReadRequest.newBuilder()
                     .setNonce(nonce)
                     .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
+                    .setNumber(1)
                     .build();
-            var reply = _stub.getSeq(request);
+            var reply = _stub.read(request);
 
-            if (!(MacVerifier.verifyMac(_serverKey, reply, request))) {
-                System.out.println("Unable to authenticate server response");
-                System.out.println("Library will now shutdown");
-                System.exit(1);
+            var a = validateReadResponse(request, reply);
+            if (a == null) {
+                return -1;
             }
-            return reply.getSeq() + 1;
+            else if (a.length == 0) {
+                return 0;
+            }
+            else {
+                return a[a.length - 1].getSeq() + 1;
+            }
+
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
@@ -62,7 +70,7 @@ public class Library {
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException | IOException e) {
+        } catch (GeneralSecurityException e) {
             System.out.println("An unrecoverable error has ocurred: " + e.getMessage());
             System.out.println("Library will now shutdown");
             System.exit(1);
@@ -71,29 +79,33 @@ public class Library {
     }
 
     private long getSeqGeneral() {
-        GetSeqRequest request = GetSeqRequest.newBuilder().build();
+        var request = ReadRequest.newBuilder().build();
         try {
             String nonce = UUID.randomUUID().toString();
-            request = Contract.GetSeqRequest.newBuilder()
+            request = Contract.ReadRequest.newBuilder()
                     .setNonce(nonce)
+                    .setNumber(1)
                     .build();
-            var reply = _stub.getSeqGeneral(request);
+            var reply = _stub.readGeneral(request);
 
-            if (!(MacVerifier.verifyMac(_serverKey, reply, nonce))) {
-                System.out.println("Unable to authenticate server response");
-                System.out.println("Library will now shutdown");
-                System.exit(1);
+            var a = validateReadResponse(request, reply);
+            if (a == null) {
+                return -1;
             }
-            return reply.getSeq() + 1;
+            else if (a.length == 0) {
+                return 0;
+            }
+            else {
+                return a[a.length - 1].getSeq() + 1;
+            }
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
-                System.out.println("Library will now shutdown");
                 return -1;
             }
             Status status = e.getStatus();
             System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException | IOException e) {
+        } catch (GeneralSecurityException e) {
             System.out.println("An unrecoverable error has ocurred: " + e.getMessage());
             System.out.println("Library will now shutdown");
             System.exit(1);
@@ -189,11 +201,11 @@ public class Library {
         try {
             if (!MacVerifier.verifyMac(_serverKey, ByteUtils.toByteArray(request), reply.getMac().toByteArray())) {
                 System.out.println("An error occurred: Unable to validate server response");
-                System.exit(1);
+                return null;
             }
         } catch (IOException e) {
             System.out.println("An io error occurred");
-            return new Announcement[0];
+            return null;
         }
         var a = new Announcement[reply.getAnnouncementsCount()];
         reply.getAnnouncementsList().toArray(a);
@@ -209,7 +221,8 @@ public class Library {
                     .setNumber(number)
                     .build();
             var reply = _stub.read(request);
-            return validateReadResponse(request, reply);
+            var a = validateReadResponse(request, reply);
+            return a == null ? new Announcement[0] : a;
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");
@@ -233,7 +246,8 @@ public class Library {
                     .setNumber(number)
                     .build();
             ReadReply reply = _stub.readGeneral(request);
-            return validateReadResponse(request, reply);
+            var a = validateReadResponse(request, reply);
+            return a == null ? new Announcement[0] : a;
         } catch (StatusRuntimeException e) {
             if (!verifyError(e, request.getNonce().getBytes(), _serverKey)) {
                 System.out.println("Unable to authenticate server response");

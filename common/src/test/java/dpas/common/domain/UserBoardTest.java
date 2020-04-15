@@ -23,6 +23,7 @@ public class UserBoardTest {
 
     private Announcement _announcementValid;
     private Announcement _announcementValid2;
+    private Announcement _announcementValid3;
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
 
@@ -58,6 +59,11 @@ public class UserBoardTest {
         byte[] signature2 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, referenceIds, _userBoard, _seq + 1);
 
         _announcementValid2 = new Announcement(signature2, user, SECOND_MESSAGE, references, _userBoard, _seq + 1);
+
+
+        byte[] signature3 = Announcement.generateSignature(keyPair.getPrivate(), SECOND_MESSAGE, referenceIds, _userBoard, _seq + 2);
+
+        _announcementValid3 = new Announcement(signature3, user, SECOND_MESSAGE, references, _userBoard, _seq + 2);
 
         // Get UserBoard
         _userBoard = user.getUserBoard();
@@ -123,6 +129,14 @@ public class UserBoardTest {
         expectedAnnouncements.add(_announcementValid);
         expectedAnnouncements.add(_announcementValid2);
         assertEquals(_userBoard.read(2), expectedAnnouncements);
+    }
+
+    @Test
+    public void validReadSubset() throws NullAnnouncementException, InvalidNumberOfPostsException, InvalidUserException {
+        _userBoard.post(_announcementValid);
+        _userBoard.post(_announcementValid2);
+        _userBoard.post(_announcementValid3);
+        assertEquals(_userBoard.read(1).get(0), _announcementValid3);
     }
 
     @Test
