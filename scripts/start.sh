@@ -15,6 +15,7 @@ do
 		-Dserver.PrivateKeyPassword=server-$j-password \
 		-Dserver.Id=$j \
 	       -Dserver.port=$k	\
+	       -Ddpas.f=$i \
 	       &
 	cd ../scripts
 done

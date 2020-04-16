@@ -21,7 +21,7 @@ public class ServerDPAS {
         // check arguments
         if (args.length < 7) {
             System.err.println("Argument(s) missing!");
-            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword serverId %s %n",
+            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword serverId maxFaults %s %n",
                     ServerDPAS.class.getName());
             return;
         }
