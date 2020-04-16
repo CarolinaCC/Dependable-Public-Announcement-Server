@@ -13,11 +13,12 @@
     <properties>
         <mainclass>dpas.server.ServerDPAS</mainclass>
         <server.port>9000</server.port>
-        <server.saveFile>src/main/resources/save/save.json</server.saveFile>
+        <server.persistenceFile>src/main/resources/save/save.json</server.persistenceFile>
         <server.keyStoreFile>src/main/resources/server.jks</server.keyStoreFile>
         <server.publicKeyAlias>server</server.publicKeyAlias>
         <server.KeyStorePassword>server-password</server.KeyStorePassword>
         <server.PrivateKeyPassword>server-password</server.PrivateKeyPassword>
+        <server.Id>1</server.Id>
     </properties>
     <dependencies>
         <dependency>
@@ -75,11 +76,12 @@
                     <mainClass>${mainclass}</mainClass>
                     <arguments>
                         <argument>${server.port}</argument>
-                        <argument>${server.saveFile}</argument>
+                        <argument>${server.persistenceFile}</argument>
                         <argument>${server.keyStoreFile}</argument>
                         <argument>${server.KeyStorePassword}</argument>
                         <argument>${server.publicKeyAlias}</argument>
                         <argumennt>${server.PrivateKeyPassword}</argumennt>
+                        <argument>${server.Id}</argument>
                     </arguments>
                 </configuration>
             </plugin>

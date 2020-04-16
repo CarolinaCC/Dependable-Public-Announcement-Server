@@ -21,6 +21,8 @@ public class PerfectStub {
     }
 
     public void post(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
+        //TODO CIPHER MESSAGE WITH SERVER KEY FOR THE SERVER CALLS
+
         _stub.post(announcement, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
