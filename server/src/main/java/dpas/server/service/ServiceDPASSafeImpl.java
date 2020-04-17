@@ -167,6 +167,10 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey), StandardCharsets.UTF_8);
+        if (request.getSeq() > board.getSeq() + 1) {
+            //Invalid Seq (General Board is a (N,N) register so it can't be higher than curr + 1
+            throw new InvalidSeqException("Invalid seq");
+        }
         return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
@@ -178,6 +182,10 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         User user = _users.get(key);
         if (user == null) {
             throw new InvalidUserException("User does not exist");
+        }
+        if (request.getSeq() > user.getUserBoard().getSeq() + 1) {
+            //Invalid Seq (User Board is a (1,N) register so it must be curr + 1 (or a past one that is repeated)
+            throw new InvalidSeqException("Invalid seq");
         }
         return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());
     }

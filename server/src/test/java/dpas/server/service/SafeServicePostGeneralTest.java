@@ -29,12 +29,17 @@ public class SafeServicePostGeneralTest {
 
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
+
+    private static PublicKey _pubKey2;
+    private static PrivateKey _privKey2;
     private static PublicKey _invalidPubKey;
     private static PrivateKey _invalidPrivKey;
     private static final String MESSAGE = "Message";
     private static final String SESSION_NONCE = "Nonce";
 
     private static Contract.Announcement _request;
+    private static Contract.Announcement _request2;
+    private static Contract.Announcement _secondUserRequest;
     private static Contract.Announcement _invalidSeqRequest;
     private static Contract.Announcement _invalidPubKeyRequest;
 
@@ -65,10 +70,20 @@ public class SafeServicePostGeneralTest {
         _privKey = keyPair.getPrivate();
 
         keyPair = keygen.generateKeyPair();
+        _pubKey2 = keyPair.getPublic();
+        _privKey2 = keyPair.getPrivate();
+
+        keyPair = keygen.generateKeyPair();
         _invalidPubKey = keyPair.getPublic();
         _invalidPrivKey = keyPair.getPrivate();
 
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
+                MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+
+        _request2 = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
+                MESSAGE, 2, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+
+        _secondUserRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey2, _privKey2,
                 MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _invalidSeqRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
@@ -91,6 +106,7 @@ public class SafeServicePostGeneralTest {
         _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
         _stub = ServiceDPASGrpc.newBlockingStub(_channel);
         _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
+        _stub.register(ContractGenerator.generateRegisterRequest(_pubKey2, _privKey2));
     }
 
     @After
@@ -107,6 +123,31 @@ public class SafeServicePostGeneralTest {
     }
 
     @Test
+    public void validVariousPost() throws GeneralSecurityException {
+        var reply = _stub.postGeneral(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
+        assertEquals(_impl._announcements.size(), 1);
+        reply = _stub.postGeneral(_request2);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request2));
+        assertEquals(_impl._announcements.size(), 2);
+        reply = _stub.postGeneral(_secondUserRequest);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _secondUserRequest));
+        assertEquals(_impl._announcements.size(), 3);
+    }
+
+
+    @Test
+    public void repeatedPost() throws GeneralSecurityException {
+        var reply = _stub.postGeneral(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
+        assertEquals(_impl._announcements.size(), 1);
+        reply = _stub.postGeneral(_request);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
+        assertEquals(_impl._announcements.size(), 1);
+    }
+
+
+    @Test
     public void stealSeqPost() throws GeneralSecurityException, IOException {
         var reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
@@ -117,6 +158,21 @@ public class SafeServicePostGeneralTest {
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
         _stub.postGeneral(_request);
+    }
+
+    @Test
+    public void postFutureRequest() throws GeneralSecurityException, IOException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid seq");
+        try {
+            _stub.post(_invalidSeqRequest);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidSeqRequest.getSignature().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
 

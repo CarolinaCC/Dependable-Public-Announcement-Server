@@ -49,6 +49,7 @@ public class SafeServicePostTest {
 
     private static Contract.Announcement _nonUserequest;
     private static Contract.Announcement _request;
+    private static Contract.Announcement _futureRequest;
     private static Contract.Announcement _longRequest;
     private static Contract.Announcement _invalidPubKeyRequest;
 
@@ -101,6 +102,9 @@ public class SafeServicePostTest {
         _invalidPubKeyRequest = ContractGenerator.generateAnnouncement(_serverPKey, _invalidPubKey, _invalidPrivKey,
                 MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
 
+        _futureRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
+                MESSAGE, _seq + 2, CipherUtils.keyToString(_pubKey), null);
+
     }
 
     @Before
@@ -152,6 +156,21 @@ public class SafeServicePostTest {
     }
 
     @Test
+    public void postFutureRequest() throws GeneralSecurityException, IOException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid seq");
+        try {
+            _stub.post(_futureRequest);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _futureRequest.getSignature().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
+    }
+
+    @Test
     public void validLongPost() throws GeneralSecurityException, IOException {
         var reply = _stub.post(_longRequest);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _longRequest));
@@ -166,8 +185,6 @@ public class SafeServicePostTest {
         reply = _stub.post(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
-
-
     }
 
     @Test
