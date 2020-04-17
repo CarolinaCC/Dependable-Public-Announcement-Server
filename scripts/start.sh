@@ -6,6 +6,8 @@ let i=3*$1+1
 mv client.jks ../client/src/main/resources
 mv server.jks ../server/src/main/resources
 
+rm ../server/src/main/resources/save/*
+
 for j in $(seq 1 1 $i) 
 do
        let k=9000+$j	
