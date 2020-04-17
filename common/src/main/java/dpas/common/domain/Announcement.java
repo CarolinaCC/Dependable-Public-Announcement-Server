@@ -151,12 +151,9 @@ public class Announcement {
     private String generateHash() throws CommonDomainException {
         try {
             var builder = new StringBuilder();
-            builder.append(_message)
-                    .append(_seq)
-                    .append(Base64.getEncoder().encodeToString(_signature))
+            builder.append(_seq)
                     .append(_board.getIdentifier())
                     .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
-            getReferenceStrings(_references).forEach(builder::append);
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(builder.toString().getBytes());
