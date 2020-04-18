@@ -302,7 +302,7 @@ public class PerfectStub {
                 //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                replyObserver.onError(t);
+                register(request, replyObserver);
             }
 
             @Override
