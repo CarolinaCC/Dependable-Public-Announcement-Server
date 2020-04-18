@@ -1,7 +1,6 @@
 package dpas.utils.link;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -49,7 +48,6 @@ public class PerfectStubReadWithExceptionTest {
         private static final String MESSAGE = "Message";
 
         private static Contract.Announcement _request;
-
 
         private ServiceDPASGrpc.ServiceDPASStub client;
 
