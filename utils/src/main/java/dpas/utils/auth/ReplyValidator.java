@@ -16,6 +16,12 @@ public class ReplyValidator {
                 return false;
             }
 
+            if (request.getNumber() != 0) {
+                if (reply.getAnnouncementsCount() > request.getNumber()) {
+                    return false;
+                }
+            }
+
             for (Contract.Announcement announcement : reply.getAnnouncementsList()) {
                 if (!MacVerifier.verifySignature(announcement, authorKey, Base64.getEncoder().encodeToString(authorKey.getEncoded()))) {
                     return false;
@@ -31,6 +37,12 @@ public class ReplyValidator {
         try {
             if (!MacVerifier.verifyMac(request, reply, serverKey)) {
                 return false;
+            }
+
+            if (request.getNumber() != 0) {
+                if (reply.getAnnouncementsCount() > request.getNumber()) {
+                    return false;
+                }
             }
 
             for (Contract.Announcement announcement : reply.getAnnouncementsList()) {
