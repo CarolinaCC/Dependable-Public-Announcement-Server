@@ -23,7 +23,6 @@ public class PerfectStub {
     }
 
     public void post(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
-
         _stub.post(announcement, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
@@ -348,4 +347,7 @@ public class PerfectStub {
         });
     }
 
+    public PublicKey getServerKey() {
+        return _serverKey;
+    }
 }

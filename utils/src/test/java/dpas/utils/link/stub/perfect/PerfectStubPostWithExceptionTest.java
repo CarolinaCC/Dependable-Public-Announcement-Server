@@ -1,10 +1,12 @@
-package dpas.utils.link;
+package dpas.utils.link.stub.perfect;
 
-import com.google.protobuf.ByteString;
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.utils.ContractGenerator;
+import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
-import dpas.utils.auth.MacGenerator;
+import dpas.utils.link.PerfectStub;
 import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
@@ -14,92 +16,99 @@ import io.grpc.util.MutableHandlerRegistry;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.grpc.Status.CANCELLED;
-import static io.grpc.Status.INVALID_ARGUMENT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class PerfectStubReadGeneralTest {
+public class PerfectStubPostWithExceptionTest {
+
+
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
     private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
 
-    private static PublicKey _pubKey;
-    private static PrivateKey _privKey;
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPKey;
+
+
+    private static final String MESSAGE = "Message";
+
+    private static Contract.Announcement _request;
 
 
     private ServiceDPASGrpc.ServiceDPASStub client;
 
 
     @BeforeClass
-    public static void oneTimeSetup() throws GeneralSecurityException {
+    public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
+
 
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
 
         KeyPair keyPair = keygen.generateKeyPair();
-        _pubKey = keyPair.getPublic();
-        _privKey = keyPair.getPrivate();
+        PublicKey _pubKey = keyPair.getPublic();
+        PrivateKey _privKey = keyPair.getPrivate();
+
+        _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
+                MESSAGE, 0, CipherUtils.keyToString(_pubKey), null);
 
     }
 
     @Test
-    public void readInvalidExceptions() throws IOException {
+    public void postInvalidExceptionThenValidReply() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
+
         grpcCleanup.register(InProcessServerBuilder.forName(serverName)
                 .fallbackHandlerRegistry(serviceRegistry).directExecutor().build().start());
+
         client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                 InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-        PerfectStub pstub = new PerfectStub(client, _serverPKey);
-        final AtomicInteger countCompleted = new AtomicInteger(0);
-        final AtomicInteger countSuccess = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
-            AtomicInteger i = new AtomicInteger(3);
+        PerfectStub pstub = new PerfectStub(client, _serverPKey);
+
+        final AtomicInteger countSuccess = new AtomicInteger(0);
+        final AtomicInteger countCompleted = new AtomicInteger(0);
+
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
+            final AtomicInteger i = new AtomicInteger(3);
 
             @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+            public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
                     int j = i.getAndDecrement();
                     if (j == 0) {
-                        List<Contract.Announcement> announcements = new ArrayList<>();
-                        responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                .addAllAnnouncements(announcements)
-                                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                .build());
+                        responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                         responseObserver.onCompleted();
                         return;
                     }
                     responseObserver.onError(Status.UNKNOWN.asRuntimeException());
 
-                } catch (GeneralSecurityException | IOException e) {
+                } catch (GeneralSecurityException e) {
                     fail();
                 }
             }
         };
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
-        pstub.readGeneral(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+        pstub.postWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
+            public void onNext(Contract.MacReply value) {
                 countSuccess.getAndIncrement();
             }
 
@@ -126,48 +135,151 @@ public class PerfectStubReadGeneralTest {
         }
     }
 
-
     @Test
-    public void readValidExceptions() throws IOException {
+    public void postInvalidExceptionThenValidException() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
+
         grpcCleanup.register(InProcessServerBuilder.forName(serverName)
                 .fallbackHandlerRegistry(serviceRegistry).directExecutor().build().start());
+
         client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                 InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-        PerfectStub pstub = new PerfectStub(client, _serverPKey);
-        final AtomicInteger countCompleted = new AtomicInteger(0);
-        final AtomicInteger countSuccess = new AtomicInteger(0);
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
-            AtomicInteger i = new AtomicInteger(3);
-            @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                try {
-                    int j = i.getAndDecrement();
-                    if (j == 0) {
-                        List<Contract.Announcement> announcements = new ArrayList<Contract.Announcement>();
-                        responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                .addAllAnnouncements(announcements)
-                                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                .build());
-                        responseObserver.onCompleted();
-                        return;
-                    }
-                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
 
-                } catch (GeneralSecurityException | IOException e) {
+        PerfectStub pstub = new PerfectStub(client, _serverPKey);
+
+        final AtomicInteger countError = new AtomicInteger(0);
+
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
+            final AtomicInteger i = new AtomicInteger(3);
+
+            @Override
+            public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+
+                int j = i.getAndDecrement();
+                if (j == 0) {
+                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
+                    return;
+                }
+                responseObserver.onError(Status.UNKNOWN.asRuntimeException());
+            }
+        };
+        serviceRegistry.addService(impl);
+        CountDownLatch latch = new CountDownLatch(1);
+        pstub.postWithException(_request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                fail();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                countError.getAndIncrement();
+                latch.countDown();
+
+            }
+
+            @Override
+            public void onCompleted() {
+                fail();
+            }
+        });
+
+        try {
+            if (!latch.await(4000, TimeUnit.SECONDS)) {
+                fail();
+            }
+            assertEquals(countError.get(), 1);
+        } catch (InterruptedException e) {
+            fail();
+        }
+    }
+
+
+    @Test
+    public void postImediateValidExceptionTest() throws IOException {
+        String serverName = InProcessServerBuilder.generateName();
+
+        grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                .fallbackHandlerRegistry(serviceRegistry).directExecutor().build().start());
+
+        client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+
+        PerfectStub pstub = new PerfectStub(client, _serverPKey);
+
+        final AtomicInteger countError = new AtomicInteger(0);
+
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
+            @Override
+            public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
+            }
+        };
+        serviceRegistry.addService(impl);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        pstub.postWithException(_request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                fail();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                countError.getAndIncrement();
+                latch.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+                fail();
+            }
+        });
+
+        try {
+            if (!latch.await(4000, TimeUnit.SECONDS)) {
+                fail();
+            }
+            assertEquals(countError.get(), 1);
+        } catch (InterruptedException e) {
+            fail();
+        }
+    }
+
+    @Test
+    public void postValidImediateReply() throws IOException {
+
+        String serverName = InProcessServerBuilder.generateName();
+
+        grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                .fallbackHandlerRegistry(serviceRegistry).directExecutor().build().start());
+
+        client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+
+        PerfectStub pstub = new PerfectStub(client, _serverPKey);
+
+        final AtomicInteger countSuccess = new AtomicInteger(0);
+        final AtomicInteger countCompleted = new AtomicInteger(0);
+
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
+            @Override
+            public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                try {
+                    responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
+                    responseObserver.onCompleted();
+                } catch (GeneralSecurityException e) {
                     fail();
                 }
             }
         };
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
-        pstub.readGeneral(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+
+        pstub.postWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
-                countSuccess.getAndIncrement();
+            public void onNext(Contract.MacReply value) {
+                countSuccess.incrementAndGet();
             }
 
             @Override
@@ -186,64 +298,15 @@ public class PerfectStubReadGeneralTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertEquals(countSuccess.get(), 1);
+            assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
             fail();
         }
     }
 
-
     @Test
-    public void readNoExceptionsImmediateReply() throws IOException {
-        String serverName = InProcessServerBuilder.generateName();
-        grpcCleanup.register(InProcessServerBuilder.forName(serverName)
-                .fallbackHandlerRegistry(serviceRegistry).directExecutor().build().start());
-        client = ServiceDPASGrpc.newStub(grpcCleanup.register(
-                InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-        PerfectStub pstub = new PerfectStub(client, _serverPKey);
-        final AtomicInteger countCompleted = new AtomicInteger(0);
-        final AtomicInteger countSuccess = new AtomicInteger(0);
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
-            @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                try {
-                    List<Contract.Announcement> announcements = new ArrayList<>();
-                    responseObserver.onNext(Contract.ReadReply.newBuilder()
-                            .addAllAnnouncements(announcements)
-                            .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                            .build());
-                    responseObserver.onCompleted();
-
-                } catch (GeneralSecurityException | IOException e) {
-                    responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privKey));
-                }
-            }
-        };
-        serviceRegistry.addService(impl);
-        CountDownLatch latch = new CountDownLatch(1);
-        pstub.readGeneral(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
-            @Override
-            public void onNext(Contract.ReadReply value) {
-                countSuccess.getAndIncrement();
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                fail();
-            }
-
-            @Override
-            public void onCompleted() {
-                countCompleted.getAndIncrement();
-                latch.countDown();
-            }
-        });
-    }
-
-    @Test
-    public void readInvalidReply3TimesThenValid() throws IOException {
+    public void postInvalidReply3TimesThenValid() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
 
         grpcCleanup.register(InProcessServerBuilder.forName(serverName)
@@ -262,32 +325,26 @@ public class PerfectStubReadGeneralTest {
             final AtomicInteger i = new AtomicInteger(3);
 
             @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+            public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
                     int j = i.getAndDecrement();
                     if (j == 0) {
-                        List<Contract.Announcement> announcements = new ArrayList<>();
-                        responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                .addAllAnnouncements(announcements)
-                                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                .build());
+                        responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                     } else {
-                        responseObserver.onNext(Contract.ReadReply.newBuilder().build());
+                        //Just send an invalid mac reply
+                        responseObserver.onNext(Contract.MacReply.newBuilder().build());
                     }
                     responseObserver.onCompleted();
-                } catch (GeneralSecurityException | IOException e) {
+                } catch (GeneralSecurityException e) {
                     fail();
                 }
             }
         };
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
-        pstub.readGeneral(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+        pstub.postWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
+            public void onNext(Contract.MacReply value) {
                 countSuccess.incrementAndGet();
             }
 

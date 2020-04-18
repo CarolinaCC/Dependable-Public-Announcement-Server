@@ -1,4 +1,4 @@
-package dpas.utils.link;
+package dpas.utils.link.stub.perfect;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
@@ -8,6 +8,7 @@ import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
+import dpas.utils.link.PerfectStub;
 import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;

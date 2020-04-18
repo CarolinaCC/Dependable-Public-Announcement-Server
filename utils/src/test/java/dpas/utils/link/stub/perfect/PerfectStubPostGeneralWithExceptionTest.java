@@ -1,10 +1,12 @@
-package dpas.utils.link;
+package dpas.utils.link.stub.perfect;
 
-import com.google.protobuf.ByteString;
+import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
+import dpas.utils.ContractGenerator;
+import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
-import dpas.utils.auth.MacGenerator;
+import dpas.utils.link.PerfectStub;
 import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
@@ -18,8 +20,6 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,7 +28,8 @@ import static io.grpc.Status.CANCELLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class PerfectStubReadGeneralWithExceptionTest {
+public class PerfectStubPostGeneralWithExceptionTest {
+
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
@@ -40,13 +41,18 @@ public class PerfectStubReadGeneralWithExceptionTest {
 
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPKey;
-    private static PublicKey _pubKey;
+
+
+    private static final String MESSAGE = "Message";
+
+    private static Contract.Announcement _request;
+
 
     private ServiceDPASGrpc.ServiceDPASStub client;
 
 
     @BeforeClass
-    public static void oneTimeSetup() throws GeneralSecurityException {
+    public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
 
@@ -56,13 +62,16 @@ public class PerfectStubReadGeneralWithExceptionTest {
         _serverPrivKey = serverPair.getPrivate();
 
         KeyPair keyPair = keygen.generateKeyPair();
-        _pubKey = keyPair.getPublic();
+        PublicKey _pubKey = keyPair.getPublic();
+        PrivateKey _privKey = keyPair.getPrivate();
 
+        _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
+                MESSAGE, 0, CipherUtils.keyToString(_pubKey), null);
 
     }
 
     @Test
-    public void readInvalidExceptionThenValidReply() throws IOException {
+    public void postInvalidExceptionThenValidReply() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
 
         grpcCleanup.register(InProcessServerBuilder.forName(serverName)
@@ -80,33 +89,26 @@ public class PerfectStubReadGeneralWithExceptionTest {
             final AtomicInteger i = new AtomicInteger(3);
 
             @Override
-            public void readGeneral(Contract.ReadRequest readRequest, StreamObserver<Contract.ReadReply> responseObserver) {
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
                     int j = i.getAndDecrement();
                     if (j == 0) {
-                        List<Contract.Announcement> announcements = new ArrayList<>();
-                        responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                .addAllAnnouncements(announcements)
-                                .setMac(ByteString.copyFrom(MacGenerator.generateMac(readRequest, announcements.size(), _serverPrivKey)))
-                                .build());
+                        responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                         responseObserver.onCompleted();
                         return;
                     }
                     responseObserver.onError(Status.UNKNOWN.asRuntimeException());
 
-                } catch (GeneralSecurityException | IOException e) {
+                } catch (GeneralSecurityException e) {
                     fail();
                 }
             }
         };
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
-        pstub.readGeneralWithException(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+        pstub.postGeneralWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
+            public void onNext(Contract.MacReply value) {
                 countSuccess.getAndIncrement();
             }
 
@@ -134,7 +136,7 @@ public class PerfectStubReadGeneralWithExceptionTest {
     }
 
     @Test
-    public void readInvalidExceptionThenValidException() throws IOException {
+    public void postInvalidExceptionThenValidException() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
 
         grpcCleanup.register(InProcessServerBuilder.forName(serverName)
@@ -151,7 +153,7 @@ public class PerfectStubReadGeneralWithExceptionTest {
             final AtomicInteger i = new AtomicInteger(3);
 
             @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
 
                 int j = i.getAndDecrement();
                 if (j == 0) {
@@ -163,12 +165,9 @@ public class PerfectStubReadGeneralWithExceptionTest {
         };
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
-        pstub.readGeneralWithException(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+        pstub.postGeneralWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
+            public void onNext(Contract.MacReply value) {
                 fail();
             }
 
@@ -197,7 +196,7 @@ public class PerfectStubReadGeneralWithExceptionTest {
 
 
     @Test
-    public void readImediateValidExceptionTest() throws IOException {
+    public void postImediateValidExceptionTest() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
 
         grpcCleanup.register(InProcessServerBuilder.forName(serverName)
@@ -212,19 +211,16 @@ public class PerfectStubReadGeneralWithExceptionTest {
 
         ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
             }
         };
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
 
-        pstub.readGeneralWithException(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+        pstub.postGeneralWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
+            public void onNext(Contract.MacReply value) {
                 fail();
             }
 
@@ -251,7 +247,7 @@ public class PerfectStubReadGeneralWithExceptionTest {
     }
 
     @Test
-    public void readValidImediateReply() throws IOException {
+    public void postValidImediateReply() throws IOException {
 
         String serverName = InProcessServerBuilder.generateName();
 
@@ -268,15 +264,11 @@ public class PerfectStubReadGeneralWithExceptionTest {
 
         ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
-                    List<Contract.Announcement> announcements = new ArrayList<>();
-                    responseObserver.onNext(Contract.ReadReply.newBuilder()
-                            .addAllAnnouncements(announcements)
-                            .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                            .build());
+                    responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                     responseObserver.onCompleted();
-                } catch (GeneralSecurityException | IOException e) {
+                } catch (GeneralSecurityException e) {
                     fail();
                 }
             }
@@ -284,12 +276,9 @@ public class PerfectStubReadGeneralWithExceptionTest {
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
 
-        pstub.readGeneralWithException(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+        pstub.postGeneralWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
+            public void onNext(Contract.MacReply value) {
                 countSuccess.incrementAndGet();
             }
 
@@ -317,7 +306,7 @@ public class PerfectStubReadGeneralWithExceptionTest {
     }
 
     @Test
-    public void readInvalidReply3TimesThenValid() throws IOException {
+    public void postInvalidReply3TimesThenValid() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
 
         grpcCleanup.register(InProcessServerBuilder.forName(serverName)
@@ -336,32 +325,26 @@ public class PerfectStubReadGeneralWithExceptionTest {
             final AtomicInteger i = new AtomicInteger(3);
 
             @Override
-            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
                     int j = i.getAndDecrement();
                     if (j == 0) {
-                        List<Contract.Announcement> announcements = new ArrayList<>();
-                        responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                .addAllAnnouncements(announcements)
-                                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                .build());
+                        responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                     } else {
-                        responseObserver.onNext(Contract.ReadReply.newBuilder().build());
+                        //Just send an invalid mac reply
+                        responseObserver.onNext(Contract.MacReply.newBuilder().build());
                     }
                     responseObserver.onCompleted();
-                } catch (GeneralSecurityException | IOException e) {
+                } catch (GeneralSecurityException e) {
                     fail();
                 }
             }
         };
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
-        pstub.readGeneralWithException(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(2)
-                .build(), new StreamObserver<>() {
+        pstub.postGeneralWithException(_request, new StreamObserver<>() {
             @Override
-            public void onNext(Contract.ReadReply value) {
+            public void onNext(Contract.MacReply value) {
                 countSuccess.incrementAndGet();
             }
 
@@ -390,4 +373,3 @@ public class PerfectStubReadGeneralWithExceptionTest {
 
 
 }
-
