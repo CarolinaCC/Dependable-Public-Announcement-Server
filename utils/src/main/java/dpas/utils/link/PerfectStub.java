@@ -1,6 +1,5 @@
 package dpas.utils.link;
 
-import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.auth.CipherUtils;
@@ -33,8 +32,9 @@ public class PerfectStub {
                 //Since the operation is idempotent resending to a correct server has no impact
                 if (!MacVerifier.verifyMac(_serverKey, value, announcement)) {
                     post(announcement, replyObserver);
+                } else {
+                    replyObserver.onNext(value);
                 }
-                replyObserver.onNext(value);
             }
 
             @Override
@@ -95,8 +95,9 @@ public class PerfectStub {
                 //Since the operation is idempotent resending to a correct server has no impact
                 if (!MacVerifier.verifyMac(_serverKey, value, announcement)) {
                     postGeneral(announcement, replyObserver);
+                } else {
+                    replyObserver.onNext(value);
                 }
-                replyObserver.onNext(value);
             }
 
             @Override
