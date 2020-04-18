@@ -9,6 +9,7 @@ import io.grpc.stub.StreamObserver;
 
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
+import java.util.Base64;
 
 /**
  * Implementation of authenticated perfect point to point link
@@ -349,5 +350,9 @@ public class PerfectStub {
 
     public PublicKey getServerKey() {
         return _serverKey;
+    }
+
+    public String getServerId() {
+        return Base64.getEncoder().encodeToString(_serverKey.getEncoded());
     }
 }
