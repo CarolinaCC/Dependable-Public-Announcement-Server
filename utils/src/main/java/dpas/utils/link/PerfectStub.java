@@ -89,7 +89,7 @@ public class PerfectStub {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!ReplyValidator.validateReadGeneralReply(request, value, _serverKey)) {
                     readGeneralWithException(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -121,7 +121,7 @@ public class PerfectStub {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!ReplyValidator.validateReadGeneralReply(request, value, _serverKey)) {
                     readGeneralWithException(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
