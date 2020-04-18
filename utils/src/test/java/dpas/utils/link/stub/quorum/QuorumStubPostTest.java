@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.Dictionary;
@@ -80,6 +81,15 @@ public class QuorumStubPostTest {
         }
 
         var qstub = new QuorumStub(stubs, 1);
+
+
+        //Decipher message
+        String message = new String(CipherUtils.decodeAndDecipher(_request.getMessage(), _serverPrivKey), StandardCharsets.UTF_8);
+
+        _request = _request.toBuilder()
+                .setMessage(message)
+                .build();
+
         qstub.post(_request);
         for(int number: _assertions) {
             assertEquals(number, 1);
