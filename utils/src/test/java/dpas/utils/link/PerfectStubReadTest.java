@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static io.grpc.Status.CANCELLED;
 import static io.grpc.Status.INVALID_ARGUMENT;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class PerfectStubReadTest {
@@ -138,19 +139,22 @@ public class PerfectStubReadTest {
         client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                 InProcessChannelBuilder.forName(serverName).directExecutor().build()));
         PerfectStub pstub = new PerfectStub(client, _serverPKey);
+        final AtomicInteger countCompleted = new AtomicInteger(0);
+        final AtomicInteger countSuccess = new AtomicInteger(0);
+
         ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
             AtomicInteger i = new AtomicInteger(3);
+
             @Override
             public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                 try {
                     int j = i.getAndDecrement();
                     if (j == 0) {
                         List<Contract.Announcement> announcements = new ArrayList<>();
-                        announcements.add(_request);
-                        Contract.ReadReply.newBuilder()
+                        responseObserver.onNext(Contract.ReadReply.newBuilder()
                                 .addAllAnnouncements(announcements)
                                 .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                .build();
+                                .build());
                         responseObserver.onCompleted();
                         return;
                     }
@@ -169,7 +173,7 @@ public class PerfectStubReadTest {
                 .build(), new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
-                latch.countDown();
+                countSuccess.getAndIncrement();
             }
 
             @Override
@@ -179,7 +183,8 @@ public class PerfectStubReadTest {
 
             @Override
             public void onCompleted() {
-
+                countCompleted.getAndIncrement();
+                latch.countDown();
             }
         });
 
@@ -187,6 +192,8 @@ public class PerfectStubReadTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertEquals(countSuccess.get(), 1);
+            assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
             fail();
         }
@@ -201,6 +208,8 @@ public class PerfectStubReadTest {
         client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                 InProcessChannelBuilder.forName(serverName).directExecutor().build()));
         PerfectStub pstub = new PerfectStub(client, _serverPKey);
+        final AtomicInteger countCompleted = new AtomicInteger(0);
+        final AtomicInteger countSuccess = new AtomicInteger(0);
         ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
             AtomicInteger i = new AtomicInteger(3);
             @Override
@@ -209,11 +218,10 @@ public class PerfectStubReadTest {
                     int j = i.getAndDecrement();
                     if (j == 0) {
                         List<Contract.Announcement> announcements = new ArrayList<Contract.Announcement>();
-                        announcements.add(_request);
-                        Contract.ReadReply.newBuilder()
+                        responseObserver.onNext(Contract.ReadReply.newBuilder()
                                 .addAllAnnouncements(announcements)
                                 .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                .build();
+                                .build());
                         responseObserver.onCompleted();
                         return;
                     }
@@ -232,7 +240,7 @@ public class PerfectStubReadTest {
                 .build(), new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
-                latch.countDown();
+                countSuccess.getAndIncrement();
             }
 
             @Override
@@ -242,7 +250,8 @@ public class PerfectStubReadTest {
 
             @Override
             public void onCompleted() {
-
+                countCompleted.getAndIncrement();
+                latch.countDown();
             }
         });
 
@@ -264,16 +273,17 @@ public class PerfectStubReadTest {
         client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                 InProcessChannelBuilder.forName(serverName).directExecutor().build()));
         PerfectStub pstub = new PerfectStub(client, _serverPKey);
+        final AtomicInteger countCompleted = new AtomicInteger(0);
+        final AtomicInteger countSuccess = new AtomicInteger(0);
         ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
             public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                 try {
                     List<Contract.Announcement> announcements = new ArrayList<>();
-                    announcements.add(_request);
-                    Contract.ReadReply.newBuilder()
+                    responseObserver.onNext(Contract.ReadReply.newBuilder()
                             .addAllAnnouncements(announcements)
                             .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                            .build();
+                            .build());
                     responseObserver.onCompleted();
 
                 } catch (GeneralSecurityException | IOException e) {
@@ -289,7 +299,7 @@ public class PerfectStubReadTest {
                         .build(), new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
-                latch.countDown();
+                countSuccess.getAndIncrement();
             }
 
             @Override
@@ -299,7 +309,8 @@ public class PerfectStubReadTest {
 
             @Override
             public void onCompleted() {
-
+                countCompleted.getAndIncrement();
+                latch.countDown();
             }
         });
     }
