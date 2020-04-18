@@ -52,7 +52,7 @@ public class QuorumStubReadTest {
 
     @Test
     public void readNoExceptionsImmediateReply() throws IOException, InterruptedException {
-        var servers = allCorrectRead();
+        var servers = allEmpyServers();
         var stubs = new ArrayList<PerfectStub>();
         int i = 0;
         for (var server : servers) {
@@ -78,7 +78,7 @@ public class QuorumStubReadTest {
         assertEquals(reply.getAnnouncementsList().size(), 0);
     }
 
-    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allCorrectRead() {
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             servers.add(
