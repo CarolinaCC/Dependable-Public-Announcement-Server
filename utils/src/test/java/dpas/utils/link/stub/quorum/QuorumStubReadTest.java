@@ -19,8 +19,10 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -58,8 +60,23 @@ public class QuorumStubReadTest {
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, 1, CipherUtils.keyToString(_pubKey), null);
 
+        //Decipher message
+        String message = new String(CipherUtils.decodeAndDecipher(_request.getMessage(), _serverPrivKey), StandardCharsets.UTF_8);
+
+        _request = _request.toBuilder()
+                .setMessage(message)
+                .build();
+
         _request2 = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, 2, CipherUtils.keyToString(_pubKey), null);
+
+        //Decipher message
+        message = new String(CipherUtils.decodeAndDecipher(_request2.getMessage(), _serverPrivKey), StandardCharsets.UTF_8);
+
+        _request2 = _request2.toBuilder()
+                .setMessage(message)
+                .build();
+
 
     }
 
