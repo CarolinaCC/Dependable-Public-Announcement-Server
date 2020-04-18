@@ -80,11 +80,12 @@ public class App {
                     printHelp();
                     break;
                 case "quit":
+		    lib.finish();
                     return;
                 default:
-                    lib.finish();
                     printHelp();
             }
+	    return;
         }
     }
 
