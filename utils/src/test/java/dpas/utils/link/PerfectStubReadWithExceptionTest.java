@@ -46,16 +46,11 @@ public class PerfectStubReadWithExceptionTest {
         private static PublicKey _serverPKey;
         private static PublicKey _pubKey;
 
-        private static final String MESSAGE = "Message";
-
-        private static Contract.Announcement _request;
-
-
         private ServiceDPASGrpc.ServiceDPASStub client;
 
 
         @BeforeClass
-        public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
+        public static void oneTimeSetup() throws GeneralSecurityException {
             KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
             keygen.initialize(4096);
 
@@ -66,10 +61,7 @@ public class PerfectStubReadWithExceptionTest {
 
             KeyPair keyPair = keygen.generateKeyPair();
             _pubKey = keyPair.getPublic();
-            PrivateKey _privKey = keyPair.getPrivate();
 
-            _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                    MESSAGE, 0, CipherUtils.keyToString(_pubKey), null);
 
         }
 

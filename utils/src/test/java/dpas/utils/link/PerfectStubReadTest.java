@@ -40,54 +40,20 @@ public class PerfectStubReadTest {
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
     private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
-    private static PrivateKey _invalidPrivKey;
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
-    private static PublicKey _secondPubKey;
-    private static PrivateKey _secondPrivKey;
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPKey;
-    private static PublicKey _invalidPubKey;
 
-    private static String _secondNonce;
-    private static long _secondSeq;
-
-    private static String _nonce;
-    private static long _seq;
-    private static String _invalidNonce;
-
-    private static final String MESSAGE = "Message";
-    private static final String LONGMESSAGE = "A".repeat(255);
-
-    private static Contract.Announcement _nonUserequest;
-    private static Contract.Announcement _request;
-    private static Contract.Announcement _futureRequest;
-    private static Contract.Announcement _longRequest;
-    private static Contract.Announcement _invalidPubKeyRequest;
-
-    private static final int port = 9001;
-    private static final String host = "localhost";
-
-    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-    private Server _server;
-    private ManagedChannel _channel;
 
     private ServiceDPASGrpc.ServiceDPASStub client;
 
 
     @BeforeClass
-    public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
+    public static void oneTimeSetup() throws GeneralSecurityException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
-
-        _nonce = UUID.randomUUID().toString();
-        _secondNonce = UUID.randomUUID().toString();
-        _invalidNonce = UUID.randomUUID().toString();
-        _seq = 1;
-        _secondSeq = 1;
 
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
@@ -96,29 +62,6 @@ public class PerfectStubReadTest {
         KeyPair keyPair = keygen.generateKeyPair();
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
-
-        keyPair = keygen.generateKeyPair();
-        _secondPubKey = keyPair.getPublic();
-        _secondPrivKey = keyPair.getPrivate();
-
-        keyPair = keygen.generateKeyPair();
-        _invalidPubKey = keyPair.getPublic();
-        _invalidPrivKey = keyPair.getPrivate();
-
-        _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
-
-        _nonUserequest = ContractGenerator.generateAnnouncement(_serverPKey, _secondPubKey, _secondPrivKey,
-                MESSAGE, _secondSeq, CipherUtils.keyToString(_secondPubKey), null);
-
-        _longRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                LONGMESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
-
-        _invalidPubKeyRequest = ContractGenerator.generateAnnouncement(_serverPKey, _invalidPubKey, _invalidPrivKey,
-                MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
-
-        _futureRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _seq + 2, CipherUtils.keyToString(_pubKey), null);
 
     }
 
@@ -225,7 +168,7 @@ public class PerfectStubReadTest {
                         responseObserver.onCompleted();
                         return;
                     }
-                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _secondPrivKey));
+                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
 
                 } catch (GeneralSecurityException | IOException e) {
                     fail();
