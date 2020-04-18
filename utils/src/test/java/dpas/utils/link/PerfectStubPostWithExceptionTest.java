@@ -6,8 +6,6 @@ import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
 import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
@@ -21,7 +19,6 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,40 +35,17 @@ public class PerfectStubPostWithExceptionTest {
 
     private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
 
-    private static PrivateKey _invalidPrivKey;
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private static PublicKey _pubKey;
-    private static PrivateKey _privKey;
-    private static PublicKey _secondPubKey;
-    private static PrivateKey _secondPrivKey;
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPKey;
-    private static PublicKey _invalidPubKey;
 
-    private static String _secondNonce;
-    private static long _secondSeq;
-
-    private static String _nonce;
-    private static long _seq;
-    private static String _invalidNonce;
 
     private static final String MESSAGE = "Message";
-    private static final String LONGMESSAGE = "A".repeat(255);
 
-    private static Contract.Announcement _nonUserequest;
     private static Contract.Announcement _request;
-    private static Contract.Announcement _futureRequest;
-    private static Contract.Announcement _longRequest;
-    private static Contract.Announcement _invalidPubKeyRequest;
 
-    private static final int port = 9001;
-    private static final String host = "localhost";
-
-    private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-    private Server _server;
-    private ManagedChannel _channel;
 
     private ServiceDPASGrpc.ServiceDPASStub client;
 
@@ -81,42 +55,17 @@ public class PerfectStubPostWithExceptionTest {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
 
-        _nonce = UUID.randomUUID().toString();
-        _secondNonce = UUID.randomUUID().toString();
-        _invalidNonce = UUID.randomUUID().toString();
-        _seq = 1;
-        _secondSeq = 1;
 
         KeyPair serverPair = keygen.generateKeyPair();
         _serverPKey = serverPair.getPublic();
         _serverPrivKey = serverPair.getPrivate();
 
         KeyPair keyPair = keygen.generateKeyPair();
-        _pubKey = keyPair.getPublic();
-        _privKey = keyPair.getPrivate();
-
-        keyPair = keygen.generateKeyPair();
-        _secondPubKey = keyPair.getPublic();
-        _secondPrivKey = keyPair.getPrivate();
-
-        keyPair = keygen.generateKeyPair();
-        _invalidPubKey = keyPair.getPublic();
-        _invalidPrivKey = keyPair.getPrivate();
+        PublicKey _pubKey = keyPair.getPublic();
+        PrivateKey _privKey = keyPair.getPrivate();
 
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
-
-        _nonUserequest = ContractGenerator.generateAnnouncement(_serverPKey, _secondPubKey, _secondPrivKey,
-                MESSAGE, _secondSeq, CipherUtils.keyToString(_secondPubKey), null);
-
-        _longRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                LONGMESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
-
-        _invalidPubKeyRequest = ContractGenerator.generateAnnouncement(_serverPKey, _invalidPubKey, _invalidPrivKey,
-                MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
-
-        _futureRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                MESSAGE, _seq + 2, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, 0, CipherUtils.keyToString(_pubKey), null);
 
     }
 
@@ -135,8 +84,9 @@ public class PerfectStubPostWithExceptionTest {
         final AtomicInteger countSuccess = new AtomicInteger(0);
         final AtomicInteger countCompleted = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
-            AtomicInteger i = new AtomicInteger(3);
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
+            final AtomicInteger i = new AtomicInteger(3);
+
             @Override
             public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
@@ -198,17 +148,18 @@ public class PerfectStubPostWithExceptionTest {
 
         final AtomicInteger countError = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
-            AtomicInteger i = new AtomicInteger(3);
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
+            final AtomicInteger i = new AtomicInteger(3);
+
             @Override
             public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
 
-                    int j = i.getAndDecrement();
-                    if (j == 0) {
-                        responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
-                        return;
-                    }
-                    responseObserver.onError(Status.UNKNOWN.asRuntimeException());
+                int j = i.getAndDecrement();
+                if (j == 0) {
+                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
+                    return;
+                }
+                responseObserver.onError(Status.UNKNOWN.asRuntimeException());
             }
         };
         serviceRegistry.addService(impl);
@@ -257,10 +208,10 @@ public class PerfectStubPostWithExceptionTest {
 
         final AtomicInteger countError = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
             public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
-                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
+                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
             }
         };
         serviceRegistry.addService(impl);
@@ -310,7 +261,7 @@ public class PerfectStubPostWithExceptionTest {
         final AtomicInteger countSuccess = new AtomicInteger(0);
         final AtomicInteger countCompleted = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
             public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
@@ -369,8 +320,9 @@ public class PerfectStubPostWithExceptionTest {
 
         final AtomicInteger countCompleted = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
-            AtomicInteger i = new AtomicInteger(3);
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
+            final AtomicInteger i = new AtomicInteger(3);
+
             @Override
             public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 try {
