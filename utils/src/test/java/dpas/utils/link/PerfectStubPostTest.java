@@ -176,7 +176,7 @@ public class PerfectStubPostTest {
                 fail();
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            fail();
         }
     }
 }
