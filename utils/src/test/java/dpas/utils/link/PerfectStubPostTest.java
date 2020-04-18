@@ -235,4 +235,114 @@ public class PerfectStubPostTest {
             fail();
         }
     }
+
+    @Test
+    public void postGeneralTest() throws IOException {
+        String serverName = InProcessServerBuilder.generateName();
+        grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                .fallbackHandlerRegistry(serviceRegistry).directExecutor().build().start());
+        client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+        PerfectStub pstub = new PerfectStub(client, _serverPKey);
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+            AtomicInteger i = new AtomicInteger(3);
+            @Override
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                try {
+                    int j = i.getAndDecrement();
+                    if (j == 0) {
+                        responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
+                        responseObserver.onCompleted();
+                        return;
+                    }
+                    responseObserver.onError(Status.UNKNOWN.asRuntimeException());
+
+                } catch (GeneralSecurityException e) {
+                    fail();
+                }
+            }
+        };
+        serviceRegistry.addService(impl);
+        CountDownLatch latch = new CountDownLatch(1);
+        pstub.postGeneral(_request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                fail();
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        });
+
+        try {
+            if (!latch.await(4000, TimeUnit.SECONDS)) {
+                fail();
+            }
+        } catch (InterruptedException e) {
+            fail();
+        }
+    }
+
+
+    @Test
+    public void postGeneralValidExceptionTest() throws IOException {
+        String serverName = InProcessServerBuilder.generateName();
+        grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                .fallbackHandlerRegistry(serviceRegistry).directExecutor().build().start());
+        client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+        PerfectStub pstub = new PerfectStub(client, _serverPKey);
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+            AtomicInteger i = new AtomicInteger(3);
+            @Override
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                try {
+                    int j = i.getAndDecrement();
+                    if (j == 0) {
+                        responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
+                        responseObserver.onCompleted();
+                        return;
+                    }
+                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _secondPrivKey));
+
+                } catch (GeneralSecurityException e) {
+                    fail();
+                }
+            }
+        };
+        serviceRegistry.addService(impl);
+        CountDownLatch latch = new CountDownLatch(1);
+        pstub.postGeneral(_request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                fail();
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        });
+
+        try {
+            if (!latch.await(4000, TimeUnit.SECONDS)) {
+                fail();
+            }
+        } catch (InterruptedException e) {
+            fail();
+        }
+    }
+
 }
