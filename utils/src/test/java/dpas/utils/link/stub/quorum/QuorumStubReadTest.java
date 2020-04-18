@@ -15,12 +15,10 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
-import javax.imageio.spi.ServiceRegistry;
 import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -85,21 +83,16 @@ public class QuorumStubReadTest {
         for (int i = 0; i < 4; i++) {
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
-                        final AtomicInteger i = new AtomicInteger(3);
 
                         @Override
                         public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                             try {
-                                int j = i.getAndDecrement();
-                                if (j == 0) {
-                                    List<Contract.Announcement> announcements = new ArrayList<>();
-                                    responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                            .addAllAnnouncements(announcements)
-                                            .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                            .build());
-                                } else {
-                                    responseObserver.onNext(Contract.ReadReply.newBuilder().build());
-                                }
+
+                                List<Contract.Announcement> announcements = new ArrayList<>();
+                                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                                        .addAllAnnouncements(announcements)
+                                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
+                                        .build());
                                 responseObserver.onCompleted();
                             } catch (GeneralSecurityException | IOException e) {
                                 fail();
