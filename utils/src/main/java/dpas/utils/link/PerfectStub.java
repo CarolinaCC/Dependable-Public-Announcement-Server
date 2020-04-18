@@ -21,7 +21,6 @@ public class PerfectStub {
     }
 
     public void post(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
-        //TODO CIPHER MESSAGE WITH SERVER KEY FOR THE SERVER CALLS
 
         _stub.post(announcement, new StreamObserver<>() {
             @Override
@@ -82,4 +81,37 @@ public class PerfectStub {
             }
         });
     }
+
+    public void readGeneralWithException(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
+        _stub.readGeneral(request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.ReadReply value) {
+                //If we can't verify the response then either the attacker changed it (must retry until he stops)
+                //Or the server is byzantine (since we can't know must keep trying)
+                //Since the operation is idempotent resending to a correct server has no impact
+                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                    readGeneralWithException(request, replyObserver);
+                } else {
+                    replyObserver.onNext(value);
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                if (!ReplyValidator.verifyError(t, request, _serverKey)) {
+                    //Response was not authenticated, so It must be the attacker or a byzantine server
+                    //Either way retry until obtaining a valid answer
+                    readGeneralWithException(request, replyObserver);
+                } else {
+                    replyObserver.onError(t);
+                }
+            }
+
+            @Override
+            public void onCompleted() {
+                replyObserver.onCompleted();
+            }
+        });
+    }
+
 }
