@@ -1,6 +1,7 @@
 package dpas.utils.link.stub.quorum;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -58,7 +59,7 @@ public class QuorumStubReadGeneralTest {
         _privKey = keyPair.getPrivate();
 
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                MESSAGE, 1, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         //Decipher message
         String message = new String(CipherUtils.decodeAndDecipher(_request.getMessage(), _serverPrivKey), StandardCharsets.UTF_8);
@@ -68,7 +69,7 @@ public class QuorumStubReadGeneralTest {
                 .build();
 
         _request2 = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                MESSAGE, 2, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, 2, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         //Decipher message
         message = new String(CipherUtils.decodeAndDecipher(_request2.getMessage(), _serverPrivKey), StandardCharsets.UTF_8);
@@ -78,7 +79,7 @@ public class QuorumStubReadGeneralTest {
                 .build();
 
         _request3 = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                MESSAGE, 3, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, 3, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         //Decipher message
         message = new String(CipherUtils.decodeAndDecipher(_request3.getMessage(), _serverPrivKey), StandardCharsets.UTF_8);
@@ -144,6 +145,34 @@ public class QuorumStubReadGeneralTest {
         assertEquals(reply.getAnnouncementsList().size(), 2);
     }
 
+    @Test
+    public void readOneTwoAndThree() throws IOException, InterruptedException {
+        var servers = oneAndTwoAndThree();
+        var stubs = new ArrayList<PerfectStub>();
+        int i = 0;
+        for (var server : servers) {
+            serviceRegistry[i] = new MutableHandlerRegistry();
+            var registry = serviceRegistry[i];
+            String serverName = InProcessServerBuilder.generateName();
+            grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                    .fallbackHandlerRegistry(registry).directExecutor().build().start());
+            registry.addService(server);
+            ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                    InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+            PerfectStub pstub = new PerfectStub(client, _serverPKey);
+            stubs.add(pstub);
+            i++;
+        }
+
+        var qstub = new QuorumStub(stubs, 1);
+
+        var reply = qstub.readGeneral(Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(3)
+                .build());
+        assertEquals(reply.getAnnouncementsList().size(), 3);
+    }
+
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -153,6 +182,52 @@ public class QuorumStubReadGeneralTest {
                         public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                             try {
                                 List<Contract.Announcement> announcements = new ArrayList<>();
+                                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                                        .addAllAnnouncements(announcements)
+                                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
+                                        .build());
+                                responseObserver.onCompleted();
+                            } catch (GeneralSecurityException | IOException e) {
+                                fail();
+                            }
+                        }
+                    });
+        }
+        return servers;
+    }
+
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> oneAndTwo() {
+        List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            servers.add(
+                    new ServiceDPASGrpc.ServiceDPASImplBase() {
+                        @Override
+                        public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+                            try {
+                                List<Contract.Announcement> announcements = new ArrayList<>();
+                                announcements.add(_request);
+                                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                                        .addAllAnnouncements(announcements)
+                                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
+                                        .build());
+                                responseObserver.onCompleted();
+                            } catch (GeneralSecurityException | IOException e) {
+                                fail();
+                            }
+                        }
+                    });
+        }
+        for (int i = 0; i < 2; i++) {
+            servers.add(
+                    new ServiceDPASGrpc.ServiceDPASImplBase() {
+
+                        @Override
+                        public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+                            try {
+
+                                List<Contract.Announcement> announcements = new ArrayList<>();
+                                announcements.add(_request);
+                                announcements.add(_request2);
                                 responseObserver.onNext(Contract.ReadReply.newBuilder()
                                         .addAllAnnouncements(announcements)
                                         .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
@@ -233,77 +308,5 @@ public class QuorumStubReadGeneralTest {
         return servers;
     }
 
-    public static List<ServiceDPASGrpc.ServiceDPASImplBase> oneAndTwo() {
-        List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
-            servers.add(
-                    new ServiceDPASGrpc.ServiceDPASImplBase() {
-                        @Override
-                        public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                            try {
-                                List<Contract.Announcement> announcements = new ArrayList<>();
-                                announcements.add(_request);
-                                responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                        .addAllAnnouncements(announcements)
-                                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                        .build());
-                                responseObserver.onCompleted();
-                            } catch (GeneralSecurityException | IOException e) {
-                                fail();
-                            }
-                        }
-                    });
-        }
-        for (int i = 0; i < 2; i++) {
-            servers.add(
-                    new ServiceDPASGrpc.ServiceDPASImplBase() {
 
-                        @Override
-                        public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                            try {
-
-                                List<Contract.Announcement> announcements = new ArrayList<>();
-                                announcements.add(_request);
-                                announcements.add(_request2);
-                                responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                        .addAllAnnouncements(announcements)
-                                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey)))
-                                        .build());
-                                responseObserver.onCompleted();
-                            } catch (GeneralSecurityException | IOException e) {
-                                fail();
-                            }
-                        }
-                    });
-        }
-        return servers;
-    }
-
-    @Test
-    public void readOneTwoAndThree() throws IOException, InterruptedException {
-        var servers = oneAndTwoAndThree();
-        var stubs = new ArrayList<PerfectStub>();
-        int i = 0;
-        for (var server : servers) {
-            serviceRegistry[i] = new MutableHandlerRegistry();
-            var registry = serviceRegistry[i];
-            String serverName = InProcessServerBuilder.generateName();
-            grpcCleanup.register(InProcessServerBuilder.forName(serverName)
-                    .fallbackHandlerRegistry(registry).directExecutor().build().start());
-            registry.addService(server);
-            ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
-                    InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client, _serverPKey);
-            stubs.add(pstub);
-            i++;
-        }
-
-        var qstub = new QuorumStub(stubs, 1);
-
-        var reply = qstub.readGeneral(Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(3)
-                .build());
-        assertEquals(reply.getAnnouncementsList().size(), 3);
-    }
 }

@@ -66,7 +66,6 @@ public class QuorumStubPostTest {
         var stubs = new ArrayList<PerfectStub>();
         int i = 0;
         for (var server : servers) {
-            _assertions.add(1);
             serviceRegistry[i] = new MutableHandlerRegistry();
             var registry = serviceRegistry[i];
             String serverName = InProcessServerBuilder.generateName();
@@ -105,6 +104,7 @@ public class QuorumStubPostTest {
                         @Override
                         public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                             try {
+                                _assertions.add(1);
                                 responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                                 responseObserver.onCompleted();
                             } catch (GeneralSecurityException e) {

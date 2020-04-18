@@ -1,13 +1,11 @@
 package dpas.utils.link.stub.quorum;
 
-import com.google.protobuf.ByteString;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
-import dpas.utils.auth.MacGenerator;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -20,11 +18,9 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -66,7 +62,6 @@ public class QuorumStubPostGeneralTest {
         var stubs = new ArrayList<PerfectStub>();
         int i = 0;
         for (var server : servers) {
-            _assertions.add(1);
             serviceRegistry[i] = new MutableHandlerRegistry();
             var registry = serviceRegistry[i];
             String serverName = InProcessServerBuilder.generateName();
@@ -90,7 +85,7 @@ public class QuorumStubPostGeneralTest {
                 .build();
 
         qstub.postGeneral(_request);
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 4);
@@ -104,6 +99,7 @@ public class QuorumStubPostGeneralTest {
                         @Override
                         public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                             try {
+                                _assertions.add(1);
                                 responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                                 responseObserver.onCompleted();
                             } catch (GeneralSecurityException e) {
