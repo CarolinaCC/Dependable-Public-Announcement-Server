@@ -20,9 +20,9 @@ public class App {
 
     public static void main(String[] args) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
 
-        if (args.length < 5) {
+        if (args.length < 6) {
             System.out.println("Argument(s) missing!");
-            System.out.printf("<Usage> java ServerAddress ServerPort AppJksFile AppJkspassword ServerKeyAlias %s %n", App.class.getName());
+            System.out.printf("<Usage> java ServerAddress ServerPort AppJksFile AppJkspassword ServerKeyAlias NumFaults%s %n", App.class.getName());
             System.exit(-1);
         }
         String serverAddr = args[0];

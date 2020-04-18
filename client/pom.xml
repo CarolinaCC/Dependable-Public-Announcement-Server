@@ -16,6 +16,7 @@
         <client.KeyStoreFile>src/main/resources/client.jks</client.KeyStoreFile>
         <client.KeyStorePassword>client-password</client.KeyStorePassword>
         <server.PublicKeyAlias>server</server.PublicKeyAlias>
+        <DPAS.numFaults>1</DPAS.numFaults>
         <mainclass>dpas.client.app.App</mainclass>
     </properties>
 
@@ -53,6 +54,7 @@
                         <argument>${client.KeyStoreFile}</argument>
                         <argument>${client.KeyStorePassword}</argument>
                         <argument>${server.PublicKeyAlias}</argument>
+                        <argument>${DPAS.numFaults}</argument>
                     </arguments>
                 </configuration>
             </plugin>
