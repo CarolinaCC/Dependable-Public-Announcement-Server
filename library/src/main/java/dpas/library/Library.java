@@ -27,7 +27,7 @@ public class Library {
     public Library(String host, int port, PublicKey[] serverKey, int numFaults) {
         List<PerfectStub> stubs = new ArrayList<>();
         for (int i = 0; i < 3 * numFaults + 1; i++) {
-            ManagedChannel channel = NettyChannelBuilder.forAddress(host, port + i).usePlaintext().build();
+            ManagedChannel channel = NettyChannelBuilder.forAddress(host, port + i + 1).usePlaintext().build();
             var stub = ServiceDPASGrpc.newStub(channel);
             PerfectStub pStub = new PerfectStub(stub, serverKey[i]);
             stubs.add(pStub);
