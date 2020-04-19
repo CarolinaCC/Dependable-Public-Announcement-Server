@@ -34,8 +34,8 @@ public class QuorumStubPostGeneralWithExceptionTest {
 
     private static PublicKey _pubKey;
     private static PrivateKey _privKey;
-    private static PrivateKey _serverPrivKey;
-    private static PublicKey _serverPKey;
+    private static PrivateKey _serverPrivKey[];
+    private static PublicKey _serverPKey[];
     private static Contract.Announcement _request;
     private static List<Integer> _assertions = new ArrayList<>();
 
@@ -44,16 +44,21 @@ public class QuorumStubPostGeneralWithExceptionTest {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
 
-        KeyPair serverPair = keygen.generateKeyPair();
-        _serverPKey = serverPair.getPublic();
-        _serverPrivKey = serverPair.getPrivate();
+        _serverPKey = new PublicKey[4];
+        _serverPrivKey = new PrivateKey[4];
+
+        for (int i = 0; i < 4; ++i) {
+            KeyPair serverPair = keygen.generateKeyPair();
+            _serverPKey[i] = serverPair.getPublic();
+            _serverPrivKey[i] = serverPair.getPrivate();
+        }
 
         KeyPair keyPair = keygen.generateKeyPair();
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
 
-        _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
-                "m", 0, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+        _request = ContractGenerator.generateAnnouncement(_pubKey, _privKey,
+                "m", 0, CipherUtils.keyToString(_pubKey), null);
     }
 
     @Test
@@ -70,19 +75,12 @@ public class QuorumStubPostGeneralWithExceptionTest {
             registry.addService(server);
             ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                     InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client, _serverPKey);
+            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
             stubs.add(pstub);
             i++;
         }
 
         var qstub = new QuorumStub(stubs, 1);
-
-        //Decipher message
-        String message = new String(CipherUtils.decodeAndDecipher(_request.getMessage(), _serverPrivKey), StandardCharsets.UTF_8);
-
-        _request = _request.toBuilder()
-                .setMessage(message)
-                .build();
 
         qstub.postGeneralWithException(_request);
         for (int number : _assertions) {
@@ -91,16 +89,22 @@ public class QuorumStubPostGeneralWithExceptionTest {
         assertEquals(_assertions.size(), 4);
     }
 
+    @Test
+    public void postAllOkExceptOne() {
+
+    }
+
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
+            final int j = i;
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
                         @Override
                         public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                             try {
                                 _assertions.add(1);
-                                responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
+                                responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey[j]));
                                 responseObserver.onCompleted();
                             } catch (GeneralSecurityException e) {
                                 fail();

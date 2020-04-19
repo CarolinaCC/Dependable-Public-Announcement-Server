@@ -67,7 +67,7 @@ public class QuorumStubPostWithExceptionTest {
 
     @Test
     public void postNoExceptionsImmediateReply() throws IOException, InterruptedException, GeneralSecurityException {
-        var servers = allEmpyServers();
+        var servers = allEmptyServers();
         var stubs = new ArrayList<PerfectStub>();
         int i = 0;
         for (var server : servers) {
@@ -93,7 +93,7 @@ public class QuorumStubPostWithExceptionTest {
         assertEquals(_assertions.size(), 4);
     }
 
-    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmptyServers() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             final int j = i;
