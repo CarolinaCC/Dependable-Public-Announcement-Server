@@ -26,6 +26,7 @@ import java.security.*;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.grpc.Status.CANCELLED;
 import static org.junit.Assert.assertEquals;
@@ -123,6 +124,34 @@ public class QuorumStubPostWithExceptionTest {
         assertEquals(_assertions.size(), 4);
     }
 
+    @Test
+    public void noConsensusThenConsensus() throws IOException, InterruptedException, GeneralSecurityException {
+        var servers = allEmpyServersTwoExceptionsThenSuccess();
+        var stubs = new ArrayList<PerfectStub>();
+        int i = 0;
+        for (var server : servers) {
+            serviceRegistry[i] = new MutableHandlerRegistry();
+            var registry = serviceRegistry[i];
+            String serverName = InProcessServerBuilder.generateName();
+            grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                    .fallbackHandlerRegistry(registry).directExecutor().build().start());
+            registry.addService(server);
+            ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                    InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
+            stubs.add(pstub);
+            i++;
+        }
+
+        var qstub = new QuorumStub(stubs, 1);
+
+        qstub.postWithException(_request);
+        for(int number: _assertions) {
+            assertEquals(number, 1);
+        }
+        assertEquals(_assertions.size(), 8);
+    }
+
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -171,6 +200,56 @@ public class QuorumStubPostWithExceptionTest {
 
                     }
                 });
+        return servers;
+    }
+
+
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServersTwoExceptionsThenSuccess() {
+        List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            final int j = i;
+            servers.add(
+                    new ServiceDPASGrpc.ServiceDPASImplBase() {
+                        @Override
+                        public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                            try {
+                                _assertions.add(1);
+                                responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey[j]));
+                                responseObserver.onCompleted();
+                            } catch (GeneralSecurityException e) {
+                                fail();
+                            }
+                        }
+                    });
+        }
+        for (int i = 2; i < 4; i++) {
+            final int j = i;
+
+            servers.add(
+                    new ServiceDPASGrpc.ServiceDPASImplBase() {
+                        AtomicInteger t = new AtomicInteger(1);
+                        @Override
+                        public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                            if (j == 3) {
+                                var curr = t.getAndDecrement();
+                                if (curr == 0) {
+                                    _assertions.add(1);
+                                    try {
+                                        responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey[j]));
+                                    } catch (GeneralSecurityException e) {
+                                        fail();
+                                    }
+                                    responseObserver.onCompleted();
+                                    return;
+                                }
+                            }
+                                _assertions.add(1);
+                                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[j]));
+
+
+                        }
+                    });
+        }
         return servers;
     }
 
