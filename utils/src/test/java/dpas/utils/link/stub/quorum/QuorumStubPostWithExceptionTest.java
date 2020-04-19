@@ -149,7 +149,40 @@ public class QuorumStubPostWithExceptionTest {
         for(int number: _assertions) {
             assertEquals(number, 1);
         }
-        assertEquals(_assertions.size(), 8);
+        assertEquals(_assertions.size(), 12);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void majorityException() throws IOException, InterruptedException, GeneralSecurityException {
+        var servers = allExceptionOneOk();
+        var stubs = new ArrayList<PerfectStub>();
+        int i = 0;
+        for (var server : servers) {
+            serviceRegistry[i] = new MutableHandlerRegistry();
+            var registry = serviceRegistry[i];
+            String serverName = InProcessServerBuilder.generateName();
+            grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                    .fallbackHandlerRegistry(registry).directExecutor().build().start());
+            registry.addService(server);
+            ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                    InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
+            stubs.add(pstub);
+            i++;
+        }
+
+        var qstub = new QuorumStub(stubs, 1);
+
+        try {
+            qstub.postWithException(_request);
+        }catch(RuntimeException e) {
+            for (int number : _assertions) {
+                assertEquals(number, 1);
+            }
+            assertEquals(_assertions.size(), 4);
+            assertEquals(e.getMessage(), "CANCELLED: Invalid security values provided");
+            throw e;
+        }
     }
 
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {
@@ -203,6 +236,35 @@ public class QuorumStubPostWithExceptionTest {
         return servers;
     }
 
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allExceptionOneOk() {
+        List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            final int j = i;
+            servers.add(
+                    new ServiceDPASGrpc.ServiceDPASImplBase() {
+                        @Override
+                        public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                            _assertions.add(1);
+                            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[j]));
+                        }
+                    });
+        }
+        servers.add(
+                new ServiceDPASGrpc.ServiceDPASImplBase() {
+                    @Override
+                    public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                        _assertions.add(1);
+                        try {
+                            responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey[3]));
+                        } catch (GeneralSecurityException e) {
+                            fail();
+                        }
+                        responseObserver.onCompleted();
+                    }
+                });
+        return servers;
+    }
+
 
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServersTwoExceptionsThenSuccess() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
@@ -227,7 +289,7 @@ public class QuorumStubPostWithExceptionTest {
 
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
-                        AtomicInteger t = new AtomicInteger(1);
+                        AtomicInteger t = new AtomicInteger(2);
                         @Override
                         public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                             if (j == 3) {
