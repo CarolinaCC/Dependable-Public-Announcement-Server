@@ -24,16 +24,14 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-public class QuorumConcurrencyTest {
+public class QuorumConcurrencyWithFaultTest {
 
     private Server[] _servers;
     private QuorumStub _stub;
@@ -57,10 +55,10 @@ public class QuorumConcurrencyTest {
 
     @Parameterized.Parameters
     public static Object[][] data() {
-        return new Object[4][0];
+        return new Object[5][0];
     }
 
-    public QuorumConcurrencyTest() {
+    public QuorumConcurrencyWithFaultTest() {
     }
 
     @BeforeClass
@@ -76,8 +74,8 @@ public class QuorumConcurrencyTest {
             _serverPrivKey[i] = keyPair.getPrivate();
         }
 
-        _users = new KeyPair[NUMBER_THREADS];
-        for (int i = 0; i < NUMBER_THREADS; ++i) {
+        _users = new KeyPair[NUMBER_THREADS + 1];
+        for (int i = 0; i < NUMBER_THREADS + 1; ++i) {
             _users[i] = keygen.generateKeyPair();
         }
     }
@@ -92,7 +90,8 @@ public class QuorumConcurrencyTest {
         _channels = new ManagedChannel[4];
         _executors = new ExecutorService[4];
         for (int i = 0; i < 4; i++) {
-            var executor = Executors.newSingleThreadExecutor();
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+            executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
             BindableService impl = new ServiceDPASSafeImpl(_serverPrivKey[i], manager);
             _servers[i] = NettyServerBuilder.forPort(port + i).addService(impl).build();
             _servers[i].start();
@@ -135,15 +134,15 @@ public class QuorumConcurrencyTest {
     @After
     public void teardown() {
         for (int i = 0; i < 4; i++) {
-            _channels[i].shutdownNow();
             _executors[i].shutdownNow();
+            _channels[i].shutdownNow();
             _servers[i].shutdownNow();
 
         }
     }
 
 
-    private void postGeneralRun(int id) throws GeneralSecurityException, IOException, CommonDomainException, InterruptedException {
+    private void postGeneralRun(int id) throws GeneralSecurityException, CommonDomainException, InterruptedException {
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
@@ -170,7 +169,7 @@ public class QuorumConcurrencyTest {
             threads[i] = new Thread(() -> {
                 try {
                     postGeneralRun(id);
-                } catch (CommonDomainException | IOException | GeneralSecurityException | InterruptedException e) {
+                } catch (CommonDomainException | GeneralSecurityException | InterruptedException e) {
                     fail();
                 }
             });
@@ -178,6 +177,8 @@ public class QuorumConcurrencyTest {
 
         Stream.of(threads).forEach(Thread::start);
 
+        Thread.sleep(400);
+        _servers[0].shutdownNow();
         for (Thread thread : threads) {
             thread.join();
         }

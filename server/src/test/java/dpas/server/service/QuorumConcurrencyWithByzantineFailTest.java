@@ -6,6 +6,7 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
+import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
 import io.grpc.BindableService;
@@ -24,16 +25,15 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+import static io.grpc.Status.CANCELLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-public class QuorumConcurrencyTest {
+public class QuorumConcurrencyWithByzantineFailTest {
 
     private Server[] _servers;
     private QuorumStub _stub;
@@ -57,10 +57,10 @@ public class QuorumConcurrencyTest {
 
     @Parameterized.Parameters
     public static Object[][] data() {
-        return new Object[4][0];
+        return new Object[5][0];
     }
 
-    public QuorumConcurrencyTest() {
+    public QuorumConcurrencyWithByzantineFailTest() {
     }
 
     @BeforeClass
@@ -76,8 +76,8 @@ public class QuorumConcurrencyTest {
             _serverPrivKey[i] = keyPair.getPrivate();
         }
 
-        _users = new KeyPair[NUMBER_THREADS];
-        for (int i = 0; i < NUMBER_THREADS; ++i) {
+        _users = new KeyPair[NUMBER_THREADS + 1];
+        for (int i = 0; i < NUMBER_THREADS + 1; ++i) {
             _users[i] = keygen.generateKeyPair();
         }
     }
@@ -91,9 +91,36 @@ public class QuorumConcurrencyTest {
         _servers = new Server[4];
         _channels = new ManagedChannel[4];
         _executors = new ExecutorService[4];
-        for (int i = 0; i < 4; i++) {
-            var executor = Executors.newSingleThreadExecutor();
-            BindableService impl = new ServiceDPASSafeImpl(_serverPrivKey[i], manager);
+
+        var byzImpl  = new ServiceDPASGrpc.ServiceDPASImplBase() {
+
+            @Override
+            public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
+            }
+
+            @Override
+            public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
+            }
+        };
+        _servers[0] = NettyServerBuilder.forPort(port).addService(byzImpl).build();
+        _servers[0].start();
+        var executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        _channels[0] = NettyChannelBuilder
+                .forAddress(host, port)
+                .executor(executor)
+                .usePlaintext()
+                .build();
+        var stub = new PerfectStub(ServiceDPASGrpc.newStub(_channels[0]), _serverPubKey[0]);
+        stubs[0] = stub;
+        _executors[0] = executor;
+
+        for (int i = 1; i < 4; i++) {
+            executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+            executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+            var impl = new ServiceDPASSafeImpl(_serverPrivKey[i], manager);
             _servers[i] = NettyServerBuilder.forPort(port + i).addService(impl).build();
             _servers[i].start();
             _channels[i] = NettyChannelBuilder
@@ -101,15 +128,20 @@ public class QuorumConcurrencyTest {
                     .executor(executor)
                     .usePlaintext()
                     .build();
-            var stub = new PerfectStub(ServiceDPASGrpc.newStub(_channels[i]), _serverPubKey[i]);
+            stub = new PerfectStub(ServiceDPASGrpc.newStub(_channels[i]), _serverPubKey[i]);
             stubs[i] = stub;
             _executors[i] = executor;
         }
         _stub = new QuorumStub(Arrays.asList(stubs), 1);
 
-        CountDownLatch latch = new CountDownLatch(NUMBER_THREADS * 4);
+        CountDownLatch latch = new CountDownLatch(NUMBER_THREADS * 3);
+        int k = 0;
         for (var pstub : stubs) {
             //Register Users
+            if (k == 0) {
+                k++;
+                continue;
+            }
             for (int i = 0; i < NUMBER_THREADS; i++) {
                 pstub.register(ContractGenerator.generateRegisterRequest(_users[i].getPublic(), _users[i].getPrivate()), new StreamObserver<>() {
                     @Override
@@ -135,15 +167,15 @@ public class QuorumConcurrencyTest {
     @After
     public void teardown() {
         for (int i = 0; i < 4; i++) {
-            _channels[i].shutdownNow();
             _executors[i].shutdownNow();
+            _channels[i].shutdownNow();
             _servers[i].shutdownNow();
 
         }
     }
 
 
-    private void postGeneralRun(int id) throws GeneralSecurityException, IOException, CommonDomainException, InterruptedException {
+    private void postGeneralRun(int id) throws GeneralSecurityException, CommonDomainException, InterruptedException {
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
         for (int i = 0; i < NUMBER_POSTS / NUMBER_THREADS; i++) {
@@ -170,7 +202,7 @@ public class QuorumConcurrencyTest {
             threads[i] = new Thread(() -> {
                 try {
                     postGeneralRun(id);
-                } catch (CommonDomainException | IOException | GeneralSecurityException | InterruptedException e) {
+                } catch (CommonDomainException | GeneralSecurityException | InterruptedException e) {
                     fail();
                 }
             });
@@ -178,6 +210,7 @@ public class QuorumConcurrencyTest {
 
         Stream.of(threads).forEach(Thread::start);
 
+        _servers[0].shutdownNow();
         for (Thread thread : threads) {
             thread.join();
         }
@@ -188,6 +221,5 @@ public class QuorumConcurrencyTest {
                         .build());
         //Check that each announcement was posted correctly
         assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS);
-
     }
 }

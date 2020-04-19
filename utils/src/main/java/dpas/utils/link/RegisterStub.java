@@ -1,7 +1,6 @@
 package dpas.utils.link;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -11,8 +10,6 @@ import dpas.utils.auth.CipherUtils;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
-import java.util.Set;
 import java.util.UUID;
 
 public class RegisterStub {
@@ -29,14 +26,14 @@ public class RegisterStub {
                 .setNumber(number)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var reply = _stub.readWithException(request);
+        var reply = _stub.read(request);
         if (reply.getAnnouncementsCount() != 0) {
             var announcement = reply.getAnnouncements(reply.getAnnouncementsCount() - 1);
-            _stub.postWithException(announcement);
+            _stub.post(announcement);
         }
         Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
         int i = 0;
-        for( var a: reply.getAnnouncementsList()) {
+        for (var a : reply.getAnnouncementsList()) {
             announcements[i] = a;
             i++;
         }
@@ -48,11 +45,11 @@ public class RegisterStub {
                 .setNumber(number)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var reply = _stub.readGeneralWithException(request);
+        var reply = _stub.readGeneral(request);
 
         Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
         int i = 0;
-        for( var a: reply.getAnnouncementsList()) {
+        for (var a : reply.getAnnouncementsList()) {
             announcements[i] = a;
             i++;
         }
@@ -66,10 +63,10 @@ public class RegisterStub {
                 .setPublicKey(ByteString.copyFrom(pub.getEncoded()))
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var seq = _stub.getSeq(_stub.readWithException(req).getAnnouncementsList());
+        var seq = _stub.getSeq(_stub.read(req).getAnnouncementsList());
         var request = ContractGenerator.generateAnnouncement(pub, priv,
                 message, seq, CipherUtils.keyToString(pub), references);
-        _stub.postWithException(request);
+        _stub.post(request);
     }
 
 
@@ -79,10 +76,10 @@ public class RegisterStub {
                 .setNumber(1)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var seq = _stub.getSeq(_stub.readGeneralWithException(req).getAnnouncementsList());
+        var seq = _stub.getSeq(_stub.readGeneral(req).getAnnouncementsList());
         var request = ContractGenerator.generateAnnouncement(pub, priv,
                 message, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, references);
-        _stub.postGeneralWithException(request);
+        _stub.postGeneral(request);
     }
 
 }
