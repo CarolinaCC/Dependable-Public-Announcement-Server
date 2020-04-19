@@ -13,6 +13,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.grpc.util.MutableHandlerRegistry;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,6 +63,11 @@ public class QuorumStubPostWithExceptionTest {
         _request = ContractGenerator.generateAnnouncement(_pubKey, _privKey,
                 "m", 0, CipherUtils.keyToString(_pubKey), null);
 
+    }
+
+    @Before
+    public void setup() {
+        _assertions = new ArrayList<>();
     }
 
     @Test
@@ -298,7 +304,7 @@ public class QuorumStubPostWithExceptionTest {
 
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allExceptionsDifferentThenEqual() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             final int j = i;
             AtomicInteger t = new AtomicInteger(j);
             servers.add(
@@ -316,6 +322,19 @@ public class QuorumStubPostWithExceptionTest {
                         }
                     });
         }
+        servers.add(
+                new ServiceDPASGrpc.ServiceDPASImplBase() {
+                    @Override
+                    public void post(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                        try {
+                            _assertions.add(1);
+                            responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey[3]));
+                            responseObserver.onCompleted();
+                        } catch (GeneralSecurityException e) {
+                            fail();
+                        }
+                    }
+                });
         return servers;
     }
 

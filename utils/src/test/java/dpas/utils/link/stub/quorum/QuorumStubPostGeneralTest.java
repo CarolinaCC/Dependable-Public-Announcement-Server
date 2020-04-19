@@ -13,6 +13,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.grpc.util.MutableHandlerRegistry;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,6 +55,11 @@ public class QuorumStubPostGeneralTest {
 
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 "m", 0, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+    }
+
+    @Before
+    public void setup() {
+        _assertions = new ArrayList<>();
     }
 
     @Test
