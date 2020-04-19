@@ -213,7 +213,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
 
     @Test
     public void consensusAtThirdTryOKs() throws IOException, GeneralSecurityException, InterruptedException {
-        var servers = ();
+        var servers = allEmpyServerExceptionsDifferentThenOKS();
         var stubs = new ArrayList<PerfectStub>();
         int i = 0;
         for (var server : servers) {
@@ -235,7 +235,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
         for (int number : _assertions) {
             assertEquals(number, 1);
         }
-        assertEquals(_assertions.size(), 4);
+        assertEquals(_assertions.size(), 12);
     }
 
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {
@@ -442,9 +442,9 @@ public class QuorumStubPostGeneralWithExceptionTest {
         return servers;
     }
 
-    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServerExceptionsDifferentThenOKs() {
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServerExceptionsDifferentThenOKS() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             final int j = i;
             AtomicInteger t = new AtomicInteger(j);
             servers.add(
@@ -455,16 +455,28 @@ public class QuorumStubPostGeneralWithExceptionTest {
 
                             int k = t.getAndDecrement();
                             if (k <= 0) {
-                                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[j]));
+                                try {
+                                    responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey[j]));
+                                } catch (GeneralSecurityException e) {
+                                    fail();
+                                }
+                                responseObserver.onCompleted();
                             } else {
                                 responseObserver.onError(ErrorGenerator.generate(CANCELLED, UUID.randomUUID().toString(), request, _serverPrivKey[j]));
                             }
                         }
                     });
         }
+        servers.add(
+                new ServiceDPASGrpc.ServiceDPASImplBase() {
+                    @Override
+                    public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                        _assertions.add(1);
+                        responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[3]));
+                    }
+                });
         return servers;
     }
-
 
 }
 
