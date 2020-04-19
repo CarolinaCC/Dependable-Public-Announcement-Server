@@ -19,7 +19,7 @@ public class GeneralBoard implements AnnouncementBoard {
     public static final String GENERAL_BOARD_IDENTIFIER = "DPAS-GENERAL-BOARD";
 
     @Override
-    public synchronized void post(Announcement announcement) throws NullAnnouncementException {
+    public void post(Announcement announcement) throws NullAnnouncementException {
         if (announcement == null) {
             throw new NullAnnouncementException("Invalid Announcement: Cannot be null");
         }

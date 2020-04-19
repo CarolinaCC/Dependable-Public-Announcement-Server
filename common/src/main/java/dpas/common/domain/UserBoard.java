@@ -22,7 +22,7 @@ public class UserBoard implements AnnouncementBoard {
     }
 
     @Override
-    public synchronized void post(Announcement announcement) throws NullAnnouncementException, InvalidUserException {
+    public void post(Announcement announcement) throws NullAnnouncementException, InvalidUserException {
         checkArguments(announcement);
         _posts.add(announcement);
     }
