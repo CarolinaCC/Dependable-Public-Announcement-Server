@@ -10,7 +10,7 @@ rm ../server/src/main/resources/save/*
 
 for j in $(seq 1 1 $i) 
 do
-       let k=9000+$j	
+  let k=9000+$j
 	cd ../server
 	mvn compile exec:java -Dserver.publicKeyAlias=server-$j \
 		-Dserver.persistenceFile=src/main/resources/save/save-$j.json \

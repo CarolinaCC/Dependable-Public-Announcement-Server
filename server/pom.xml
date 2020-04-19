@@ -15,9 +15,9 @@
         <server.port>9000</server.port>
         <server.persistenceFile>src/main/resources/save/save.json</server.persistenceFile>
         <server.keyStoreFile>src/main/resources/server.jks</server.keyStoreFile>
-        <server.publicKeyAlias>server</server.publicKeyAlias>
+        <server.publicKeyAlias>server-1</server.publicKeyAlias>
         <server.KeyStorePassword>server-password</server.KeyStorePassword>
-        <server.PrivateKeyPassword>server-password</server.PrivateKeyPassword>
+        <server.PrivateKeyPassword>server-1-password</server.PrivateKeyPassword>
         <server.Id>1</server.Id>
         <dpas.f>0</dpas.f>
     </properties>

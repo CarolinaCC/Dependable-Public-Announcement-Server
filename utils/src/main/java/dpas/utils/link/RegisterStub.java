@@ -34,7 +34,13 @@ public class RegisterStub {
             var announcement = reply.getAnnouncements(reply.getAnnouncementsCount() - 1);
             _stub.postWithException(announcement);
         }
-        return (Contract.Announcement[]) reply.getAnnouncementsList().toArray();
+        Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
+        int i = 0;
+        for( var a: reply.getAnnouncementsList()) {
+            announcements[i] = a;
+            i++;
+        }
+        return announcements;
     }
 
     public Contract.Announcement[] readGeneral(int number) throws InterruptedException, GeneralSecurityException {
@@ -43,7 +49,14 @@ public class RegisterStub {
                 .setNonce(UUID.randomUUID().toString())
                 .build();
         var reply = _stub.readGeneralWithException(request);
-        return (Contract.Announcement[]) reply.getAnnouncementsList().toArray();
+
+        Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
+        int i = 0;
+        for( var a: reply.getAnnouncementsList()) {
+            announcements[i] = a;
+            i++;
+        }
+        return announcements;
     }
 
     public void post(PublicKey pub, PrivateKey priv, String message, Contract.Announcement[] references)

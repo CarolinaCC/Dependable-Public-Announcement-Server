@@ -1,6 +1,5 @@
 package dpas.client.app;
 
-import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.library.Library;
@@ -43,12 +42,15 @@ public class App {
         String alias = args[4];
         _keystore = KeyStore.getInstance("JKS");
 
-        PublicKey pubKey;
-        try (FileInputStream fis = new FileInputStream(jksFile)) {
-            _keystore.load(fis, jksPassword);
-            pubKey = _keystore.getCertificate(alias).getPublicKey();
+        int numFaults = Integer.parseInt(args[5]);
+        PublicKey[] publicKeys = new PublicKey[numFaults * 3 + 1];
+        for (int i = 0; i < numFaults * 3 + 1; i++) {
+            try (FileInputStream fis = new FileInputStream(jksFile)) {
+                _keystore.load(fis, jksPassword);
+                publicKeys[i] = _keystore.getCertificate(alias + "-" + (1 + i)).getPublicKey();
+            }
         }
-        Library lib = new Library(serverAddr, port, pubKey);
+        Library lib = new Library(serverAddr, port, publicKeys, numFaults);
         mainLoop(lib);
     }
 
@@ -80,12 +82,10 @@ public class App {
                     printHelp();
                     break;
                 case "quit":
-		    lib.finish();
                     return;
                 default:
                     printHelp();
             }
-	    return;
         }
     }
 

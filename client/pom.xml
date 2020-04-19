@@ -16,7 +16,7 @@
         <client.KeyStoreFile>src/main/resources/client.jks</client.KeyStoreFile>
         <client.KeyStorePassword>client-password</client.KeyStorePassword>
         <server.PublicKeyAlias>server</server.PublicKeyAlias>
-        <DPAS.numFaults>1</DPAS.numFaults>
+        <DPAS.numFaults>0</DPAS.numFaults>
         <mainclass>dpas.client.app.App</mainclass>
     </properties>
 
