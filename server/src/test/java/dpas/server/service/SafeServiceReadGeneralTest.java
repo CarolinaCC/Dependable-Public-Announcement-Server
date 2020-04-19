@@ -118,7 +118,6 @@ public class SafeServiceReadGeneralTest {
     @Test
     public void readValid() throws GeneralSecurityException, IOException {
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(1)
                 .setNonce("Nonce")
                 .build();
@@ -150,7 +149,7 @@ public class SafeServiceReadGeneralTest {
                 .build();
 
         try {
-            _stub.read(_readRequest);
+            _stub.readGeneral(_readRequest);
 
         } catch (StatusRuntimeException e) {
             Metadata data = e.getTrailers();
