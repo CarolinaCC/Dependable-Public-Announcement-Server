@@ -82,6 +82,7 @@ public class App {
                     printHelp();
                     break;
                 case "quit":
+                    lib.finish();
                     return;
                 default:
                     printHelp();

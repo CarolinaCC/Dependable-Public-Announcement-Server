@@ -10,6 +10,9 @@ import dpas.utils.link.QuorumStub;
 import dpas.utils.link.RegisterStub;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.netty.channel.*;
+import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop;
+import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup;
 import io.grpc.stub.StreamObserver;
 
 import java.security.PrivateKey;
@@ -17,17 +20,32 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Library {
 
     private final RegisterStub _stub;
     private final List<PerfectStub> _pstubs;
+    private final List<ExecutorService> _executors;
+    private final List<ManagedChannel> _channels;
     private final int _numFaults;
 
     public Library(String host, int port, PublicKey[] serverKey, int numFaults) {
+        _channels = new ArrayList<>();
+        _executors = new ArrayList<>();
         List<PerfectStub> stubs = new ArrayList<>();
         for (int i = 0; i < 3 * numFaults + 1; i++) {
-            ManagedChannel channel = NettyChannelBuilder.forAddress(host, port + i + 1).usePlaintext().build();
+            //One thread for each channel
+            var executor = Executors.newSingleThreadExecutor();
+            ManagedChannel channel = NettyChannelBuilder
+                    .forAddress(host, port + i + 1)
+                    .usePlaintext()
+                    .executor(executor)
+                    .build();
+            _channels.add(channel);
+            _executors.add(executor);
             var stub = ServiceDPASGrpc.newStub(channel);
             PerfectStub pStub = new PerfectStub(stub, serverKey[i]);
             stubs.add(pStub);
@@ -35,6 +53,11 @@ public class Library {
         _pstubs = stubs;
         _stub = new RegisterStub(new QuorumStub(stubs, numFaults));
         _numFaults = numFaults;
+    }
+
+    public void finish() {
+        _executors.forEach(ExecutorService::shutdownNow);
+        _channels.forEach(ManagedChannel::shutdownNow);
     }
 
 
