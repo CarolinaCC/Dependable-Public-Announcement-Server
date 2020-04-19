@@ -3,6 +3,7 @@ package dpas.utils.link;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
 import dpas.utils.auth.CipherUtils;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
 import java.security.GeneralSecurityException;
@@ -49,6 +50,56 @@ public class QuorumStub {
         latch.await();
     }
 
+    public void postGeneralWithException(Announcement announcement) throws GeneralSecurityException, InterruptedException {
+        Map<String, String> replies = new ConcurrentHashMap<>();
+        Map<String, Integer> replyCount = new ConcurrentHashMap<>();
+        Optional<String> res;
+        do {
+            CountDownLatch latch = new CountDownLatch(2 * _numFaults + 1);
+            for (PerfectStub stub : _stubs) {
+                Announcement a = announcement
+                        .toBuilder()
+                        .setMessage(CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey()))
+                        .build();
+                stub.postGeneralWithException(a, new StreamObserver<>() {
+                    @Override
+                    public synchronized void onNext(Contract.MacReply value) {
+                        //Perfect Stub already guarantees the reply is valid
+                        serverReply(stub.getServerId(), "OK", replies, replyCount);
+                        if (latch.getCount() != 0) {
+                            latch.countDown();
+                        }
+                    }
+
+                    @Override
+                    public synchronized void onError(Throwable t) {
+                        //Perfect Stub already guarantees the reply is valid
+                        serverReply(stub.getServerId(), t.getMessage(), replies, replyCount);
+                        if (latch.getCount() != 0) {
+                            latch.countDown();
+                        }
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                    }
+                });
+            }
+            latch.await();
+            res = replyCount.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue() >= 2 * _numFaults + 1)
+                    .map(Map.Entry::getKey)
+                    .findFirst();
+
+        } while (res.isEmpty());
+        if (!res.get().equals("OK")) {
+            //An exception Occurred
+            throw new RuntimeException(res.get());
+        }
+    }
+
+
     public void postWithException(Announcement announcement) throws GeneralSecurityException, InterruptedException {
         Map<String, String> replies = new ConcurrentHashMap<>();
         Map<String, Integer> replyCount = new ConcurrentHashMap<>();
@@ -92,17 +143,24 @@ public class QuorumStub {
                     .findFirst();
 
         } while (res.isEmpty());
-    }
-
-    public void serverReply(String key,  String reply, Map<String, String> replies, Map<String, Integer> replyCount) {
-        replies.put(key, reply);
-        if (replyCount.containsKey(key)) {
-            replyCount.put(key, replyCount.get(key) + 1);
-        } else {
-            replyCount.put(key, 1);
+        if (!res.get().equals("OK")) {
+            //An exception Occurred
+            throw new RuntimeException(res.get());
         }
     }
 
+    public void serverReply(String serverKey, String reply, Map<String, String> replies, Map<String, Integer> replyCount) {
+        var prevReply = replies.put(serverKey, reply);
+        if (prevReply != null) {
+            //Delete previous reply
+            replyCount.put(prevReply, replyCount.get(prevReply) - 1);
+        }
+        if (replyCount.containsKey(reply)) {
+            replyCount.put(reply, replyCount.get(reply) + 1);
+        } else {
+            replyCount.put(reply, 1);
+        }
+    }
 
 
     public void postGeneral(Announcement announcement) throws GeneralSecurityException, InterruptedException {
