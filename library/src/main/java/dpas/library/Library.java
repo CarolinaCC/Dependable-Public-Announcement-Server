@@ -1,249 +1,100 @@
 package dpas.library;
 
-import com.google.protobuf.ByteString;
-import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
-import dpas.grpc.contract.Contract.ReadReply;
-import dpas.grpc.contract.Contract.ReadRequest;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.MacVerifier;
+import dpas.utils.link.PerfectStub;
+import dpas.utils.link.QuorumStub;
+import dpas.utils.link.RegisterStub;
 import io.grpc.ManagedChannel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import io.grpc.stub.StreamObserver;
 
-import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Base64;
-import java.util.UUID;
-
-import static dpas.common.domain.GeneralBoard.GENERAL_BOARD_IDENTIFIER;
-
-import static dpas.utils.auth.ReplyValidator.validateReadGeneralReply;
-import static dpas.utils.auth.ReplyValidator.validateReadReply;
-import static dpas.utils.auth.ReplyValidator.verifyError;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public class Library {
 
-    private final ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
-    private final PublicKey _serverKey;
-    private final ManagedChannel _channel;
+    private final RegisterStub _stub;
+    private final List<PerfectStub> _pstubs;
 
-    public Library(String host, int port, PublicKey serverKey) {
-        _channel = NettyChannelBuilder.forAddress(host, port).usePlaintext().build();
-        _stub = ServiceDPASGrpc.newBlockingStub(_channel);
-        _serverKey = serverKey;
-    }
 
-    public void finish() {
-        _channel.shutdown();
-    }
-
-    private long getSeq(PublicKey pubKey) {
-        var request = ReadRequest.newBuilder().build();
-        try {
-            String nonce = UUID.randomUUID().toString();
-            request = Contract.ReadRequest.newBuilder()
-                    .setNonce(nonce)
-                    .setPublicKey(ByteString.copyFrom(pubKey.getEncoded()))
-                    .setNumber(1)
-                    .build();
-            var reply = _stub.read(request);
-
-            if (!validateReadReply(request, reply, _serverKey, pubKey)) {
-                return -1;
-            }
-            var a = reply.getAnnouncementsList();
-            if (a.size() == 0) {
-                return 0;
-            } else {
-                return a.get(a.size() - 1).getSeq() + 1;
-            }
-
-        } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request, _serverKey)) {
-                System.out.println("Unable to authenticate server response");
-                return -1;
-            }
-            Status status = e.getStatus();
-            System.out.println("An error occurred: " + status.getDescription());
+    public Library(String host, int port, PublicKey[] serverKey, int numFaults) {
+        List<PerfectStub> stubs = new ArrayList<>();
+        for (int i = 0; i < 3 * numFaults + 1; i++) {
+            ManagedChannel channel = NettyChannelBuilder.forAddress(host, port + i).usePlaintext().build();
+            var stub = ServiceDPASGrpc.newStub(channel);
+            PerfectStub pStub = new PerfectStub(stub, serverKey[i]);
+            stubs.add(pStub);
         }
-        return -1;
-    }
-
-    private long getSeqGeneral() {
-        var request = ReadRequest.newBuilder().build();
-        try {
-            String nonce = UUID.randomUUID().toString();
-            request = Contract.ReadRequest.newBuilder()
-                    .setNonce(nonce)
-                    .setNumber(1)
-                    .build();
-            var reply = _stub.readGeneral(request);
-
-            if (!validateReadGeneralReply(request, reply, _serverKey)) {
-                return -1;
-            }
-            var a = reply.getAnnouncementsList();
-            if (a.size() == 0) {
-                return 0;
-            } else {
-                return a.get(a.size() - 1).getSeq() + 1;
-            }
-        } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request, _serverKey)) {
-                System.out.println("Unable to authenticate server response");
-                return -1;
-            }
-            Status status = e.getStatus();
-            System.out.println("An error occurred: " + status.getDescription());
-        }
-        return -1;
+        _pstubs = stubs;
+        _stub = new RegisterStub(new QuorumStub(stubs, numFaults));
     }
 
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
-        RegisterRequest request = RegisterRequest.newBuilder().build();
         try {
-            request = ContractGenerator.generateRegisterRequest(publicKey, privkey);
-            var reply = _stub.register(request);
+            CountDownLatch latch = new CountDownLatch(_pstubs.size());
+            RegisterRequest request = ContractGenerator.generateRegisterRequest(publicKey, privkey);
+            for(var stub : _pstubs) {
+                stub.registerWithException(request, new StreamObserver<>() {
+                    @Override
+                    public void onNext(Contract.MacReply value) {}
 
-            if (!MacVerifier.verifyMac(request, reply, _serverKey)) {
-                System.out.println("An error occurred: Unable to validate server response");
+                    @Override
+                    public void onError(Throwable t) {
+                        System.out.println(t.getMessage());
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        latch.countDown();
+                    }
+                });
             }
-        } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request, _serverKey)) {
-                System.out.println("Unable to authenticate server response");
-                return;
-            }
-            Status status = e.getStatus();
-            System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException e) {
-            //Should never happen
-            System.out.println("An error has occurred that has forced the application to shutdown");
-            System.exit(1);
+            latch.await();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
-        Announcement request = Announcement.newBuilder().build();
         try {
-            var seq = getSeq(key);
-            if (seq == -1) {
-                return;
-            }
-            request = ContractGenerator.generateAnnouncement(_serverKey, key, privateKey,
-                    String.valueOf(message),
-                    seq, Base64.getEncoder().encodeToString(key.getEncoded()), a);
-            var reply = _stub.post(request);
-
-            if (!MacVerifier.verifyMac(_serverKey, reply, request)) {
-                System.out.println("An error occurred: Unable to validate server response.");
-            }
-        } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request, _serverKey)) {
-                System.out.println("Unable to validate server response");
-                return;
-            }
-            Status status = e.getStatus();
-            System.out.println("An error occurred: " + status.getDescription());
-
-        } catch (GeneralSecurityException | CommonDomainException e) {
-            //Should never happen
-            System.out.println("An error has occurred that has forced the application to shutdown");
-            System.exit(1);
+            _stub.post(key, privateKey, String.valueOf(message), a);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
-
     }
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
-        Announcement request = Announcement.newBuilder().build();
         try {
-            var seq = getSeqGeneral();
-            if (seq == -1) {
-                return;
-            }
-            request = ContractGenerator.generateAnnouncement(_serverKey, pubKey, privateKey, String.valueOf(message),
-                    seq, GENERAL_BOARD_IDENTIFIER, a);
-
-            var reply = _stub.postGeneral(request);
-
-            if (!MacVerifier.verifyMac(_serverKey, reply, request)) {
-                System.out.println("An error occurred: Unable to validate server response");
-            }
-        } catch (StatusRuntimeException e) {
-            if (!verifyError(e, request, _serverKey)) {
-                System.out.println("Unable to authenticate server response");
-                return;
-            }
-            Status status = e.getStatus();
-            System.out.println("An error occurred: " + status.getDescription());
-        } catch (GeneralSecurityException | CommonDomainException e) {
-            //Should never happen
-            System.out.println("An error has occurred that has forced the application to shutdown");
-            System.exit(1);
+            _stub.postGeneral(pubKey, privateKey, String.valueOf(message), a);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 
     public Announcement[] read(PublicKey publicKey, int number) {
-        var request = ReadRequest.newBuilder().build();
         try {
-            request = ReadRequest.newBuilder()
-                    .setPublicKey(ByteString.copyFrom(publicKey.getEncoded()))
-                    .setNonce(UUID.randomUUID().toString())
-                    .setNumber(number)
-                    .build();
-            return readReply(request, _stub.read(request), publicKey);
-
-        } catch (StatusRuntimeException e) {
-            return readError(e, request);
+            return _stub.read(publicKey, number);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new Announcement[0];
         }
     }
 
     public Announcement[] readGeneral(int number) {
-        var request = ReadRequest.newBuilder().build();
         try {
-            request = ReadRequest.newBuilder()
-                    .setNonce(UUID.randomUUID().toString())
-                    .setNumber(number)
-                    .build();
-
-            return readGeneralReply(request, _stub.readGeneral(request));
-        } catch (StatusRuntimeException e) {
-            return readError(e, request);
-        }
-    }
-
-    private Announcement[] readError(StatusRuntimeException e, ReadRequest request) {
-        if (!verifyError(e, request, _serverKey)) {
-            System.out.println("Unable to authenticate server response");
+            return _stub.readGeneral(number);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new Announcement[0];
         }
-        Status status = e.getStatus();
-        System.out.println("An error occurred: " + status.getDescription());
-        return new Announcement[0];
     }
-
-    private Announcement[] readReply(ReadRequest request, ReadReply reply, PublicKey authorKey) {
-        if (!validateReadReply(request, reply, _serverKey, authorKey)) {
-            System.out.println("Unable to authenticate server response");
-            return new Announcement[0];
-        }
-        var a = new Announcement[reply.getAnnouncementsCount()];
-        return reply.getAnnouncementsList().toArray(a);
-    }
-
-    private Announcement[] readGeneralReply(ReadRequest request, ReadReply reply) {
-        if (!validateReadGeneralReply(request, reply, _serverKey)) {
-            System.out.println("Unable to authenticate server response");
-            return new Announcement[0];
-        }
-        var a = new Announcement[reply.getAnnouncementsCount()];
-        return reply.getAnnouncementsList().toArray(a);
-    }
-
 }
