@@ -2,11 +2,13 @@ package dpas.utils.link;
 
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.Announcement;
+import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -227,6 +229,120 @@ public class QuorumStub {
                 .stream()
                 .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
                 .get();
+    }
+
+    public Contract.ReadReply readWithException(Contract.ReadRequest request) throws GeneralSecurityException, InterruptedException {
+        Map<String, String> replies = new ConcurrentHashMap<>();
+        Map<String, Integer> replyCount = new ConcurrentHashMap<>();
+        Optional<String> res;
+        final List<Contract.ReadReply> readReplies = new ArrayList<>();
+        do {
+            CountDownLatch latch = new CountDownLatch(2 * _numFaults + 1);
+            for (PerfectStub stub : _stubs) {
+                stub.readWithException(request, new StreamObserver<>() {
+                    @Override
+                    public synchronized void onNext(Contract.ReadReply value) {
+                        //Perfect Stub already guarantees the reply is valid
+                        synchronized (readReplies) {
+                            readReplies.add(value);
+                        }
+                        serverReply(stub.getServerId(), "OK", replies, replyCount);
+                        if (latch.getCount() != 0) {
+                            latch.countDown();
+                        }
+
+                    }
+
+                    @Override
+                    public synchronized void onError(Throwable t) {
+                        //Perfect Stub already guarantees the reply is valid
+                        serverReply(stub.getServerId(), t.getMessage(), replies, replyCount);
+                        if (latch.getCount() != 0) {
+                            latch.countDown();
+                        }
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                    }
+                });
+            }
+            latch.await();
+            res = replyCount.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue() >= 2 * _numFaults + 1)
+                    .map(Map.Entry::getKey)
+                    .findFirst();
+
+        } while (res.isEmpty());
+        if (!res.get().equals("OK")) {
+            //An exception Occurred
+            throw new RuntimeException(res.get());
+        } else {
+            synchronized (readReplies) {
+                return readReplies
+                        .stream()
+                        .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
+                        .get();
+            }
+        }
+    }
+
+    public Contract.ReadReply readGeneralWithException(Contract.ReadRequest request) throws GeneralSecurityException, InterruptedException {
+        Map<String, String> replies = new ConcurrentHashMap<>();
+        Map<String, Integer> replyCount = new ConcurrentHashMap<>();
+        Optional<String> res;
+        final List<Contract.ReadReply> readReplies = new ArrayList<>();
+        do {
+            CountDownLatch latch = new CountDownLatch(2 * _numFaults + 1);
+            for (PerfectStub stub : _stubs) {
+                stub.readGeneralWithException(request, new StreamObserver<>() {
+                    @Override
+                    public synchronized void onNext(Contract.ReadReply value) {
+                        //Perfect Stub already guarantees the reply is valid
+                        synchronized (readReplies) {
+                            readReplies.add(value);
+                        }
+                        serverReply(stub.getServerId(), "OK", replies, replyCount);
+                        if (latch.getCount() != 0) {
+                            latch.countDown();
+                        }
+
+                    }
+
+                    @Override
+                    public synchronized void onError(Throwable t) {
+                        //Perfect Stub already guarantees the reply is valid
+                        serverReply(stub.getServerId(), t.getMessage(), replies, replyCount);
+                        if (latch.getCount() != 0) {
+                            latch.countDown();
+                        }
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                    }
+                });
+            }
+            latch.await();
+            res = replyCount.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue() >= 2 * _numFaults + 1)
+                    .map(Map.Entry::getKey)
+                    .findFirst();
+
+        } while (res.isEmpty());
+        if (!res.get().equals("OK")) {
+            //An exception Occurred
+            throw new RuntimeException(res.get());
+        } else {
+            synchronized (readReplies) {
+                return readReplies
+                        .stream()
+                        .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
+                        .get();
+            }
+        }
     }
 
 
