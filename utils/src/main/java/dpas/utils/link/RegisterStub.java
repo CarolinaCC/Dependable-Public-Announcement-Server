@@ -82,7 +82,7 @@ public class RegisterStub {
         var seq = _stub.getSeq(_stub.readGeneralWithException(req).getAnnouncementsList());
         var request = ContractGenerator.generateAnnouncement(pub, priv,
                 message, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, references);
-        _stub.postWithException(request);
+        _stub.postGeneralWithException(request);
     }
 
 }

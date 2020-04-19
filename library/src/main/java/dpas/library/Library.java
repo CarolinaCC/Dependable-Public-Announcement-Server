@@ -22,7 +22,7 @@ public class Library {
 
     private final RegisterStub _stub;
     private final List<PerfectStub> _pstubs;
-
+    private final int _numFaults;
 
     public Library(String host, int port, PublicKey[] serverKey, int numFaults) {
         List<PerfectStub> stubs = new ArrayList<>();
@@ -34,12 +34,13 @@ public class Library {
         }
         _pstubs = stubs;
         _stub = new RegisterStub(new QuorumStub(stubs, numFaults));
+        _numFaults = numFaults;
     }
 
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
-            CountDownLatch latch = new CountDownLatch(_pstubs.size());
+            CountDownLatch latch = new CountDownLatch(2 * _numFaults + 1);
             RegisterRequest request = ContractGenerator.generateRegisterRequest(publicKey, privkey);
             for(var stub : _pstubs) {
                 stub.registerWithException(request, new StreamObserver<>() {
