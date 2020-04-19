@@ -14,6 +14,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.grpc.util.MutableHandlerRegistry;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.grpc.Status.CANCELLED;
@@ -41,6 +43,12 @@ public class QuorumStubPostGeneralWithExceptionTest {
     private static PublicKey _serverPKey[];
     private static Contract.Announcement _request;
     private static List<Integer> _assertions = new ArrayList<>();
+
+    @Before
+    public void setup() {
+        _assertions = new ArrayList<>();
+    }
+
 
     @BeforeClass
     public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
@@ -145,10 +153,10 @@ public class QuorumStubPostGeneralWithExceptionTest {
         for (int number : _assertions) {
             assertEquals(number, 1);
         }
-        assertEquals(_assertions.size(), 4);
+        assertEquals(_assertions.size(), 8);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void oneOkThreeExceptions() throws IOException, GeneralSecurityException, InterruptedException {
         var servers = allEmpyServersOneOK();
         var stubs = new ArrayList<PerfectStub>();
@@ -176,9 +184,9 @@ public class QuorumStubPostGeneralWithExceptionTest {
         assertEquals(_assertions.size(), 4);
     }
 
-    @Test
-    public void consensusAtThirdTry() throws IOException, GeneralSecurityException, InterruptedException {
-        var servers = allEmpyServersOneOK();
+    @Test(expected = RuntimeException.class)
+    public void consensusAtThirdTryException() throws IOException, GeneralSecurityException, InterruptedException {
+        var servers = allEmpyServerExceptionsDifferentThenSame();
         var stubs = new ArrayList<PerfectStub>();
         int i = 0;
         for (var server : servers) {
@@ -196,7 +204,33 @@ public class QuorumStubPostGeneralWithExceptionTest {
         }
 
         var qstub = new QuorumStub(stubs, 1);
+        qstub.postGeneralWithException(_request);
+        for (int number : _assertions) {
+            assertEquals(number, 1);
+        }
+        assertEquals(_assertions.size(), 4);
+    }
 
+    @Test
+    public void consensusAtThirdTryOKs() throws IOException, GeneralSecurityException, InterruptedException {
+        var servers = ();
+        var stubs = new ArrayList<PerfectStub>();
+        int i = 0;
+        for (var server : servers) {
+            serviceRegistry[i] = new MutableHandlerRegistry();
+            var registry = serviceRegistry[i];
+            String serverName = InProcessServerBuilder.generateName();
+            grpcCleanup.register(InProcessServerBuilder.forName(serverName)
+                    .fallbackHandlerRegistry(registry).directExecutor().build().start());
+            registry.addService(server);
+            ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
+                    InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
+            stubs.add(pstub);
+            i++;
+        }
+
+        var qstub = new QuorumStub(stubs, 1);
         qstub.postGeneralWithException(_request);
         for (int number : _assertions) {
             assertEquals(number, 1);
@@ -379,6 +413,52 @@ public class QuorumStubPostGeneralWithExceptionTest {
                             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[j]));
 
 
+                        }
+                    });
+        }
+        return servers;
+    }
+
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServerExceptionsDifferentThenSame() {
+        List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            final int j = i;
+            AtomicInteger t = new AtomicInteger(j);
+            servers.add(
+                    new ServiceDPASGrpc.ServiceDPASImplBase() {
+                        @Override
+                        public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                            _assertions.add(1);
+
+                            int k = t.getAndDecrement();
+                            if (k <= 0) {
+                                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[j]));
+                            } else {
+                                responseObserver.onError(ErrorGenerator.generate(CANCELLED, UUID.randomUUID().toString(), request, _serverPrivKey[j]));
+                            }
+                        }
+                    });
+        }
+        return servers;
+    }
+
+    public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServerExceptionsDifferentThenOKs() {
+        List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            final int j = i;
+            AtomicInteger t = new AtomicInteger(j);
+            servers.add(
+                    new ServiceDPASGrpc.ServiceDPASImplBase() {
+                        @Override
+                        public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
+                            _assertions.add(1);
+
+                            int k = t.getAndDecrement();
+                            if (k <= 0) {
+                                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[j]));
+                            } else {
+                                responseObserver.onError(ErrorGenerator.generate(CANCELLED, UUID.randomUUID().toString(), request, _serverPrivKey[j]));
+                            }
                         }
                     });
         }
