@@ -1,17 +1,27 @@
 package dpas.server;
 
+import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.security.SecurityManager;
+import dpas.utils.link.PerfectStub;
 import io.grpc.BindableService;
+import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup;
+import io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.concurrent.Executors;
 
 public class ServerDPAS {
 
@@ -19,9 +29,9 @@ public class ServerDPAS {
         System.out.println(ServerDPAS.class.getSimpleName());
 
         // check arguments
-        if (args.length < 7) {
+        if (args.length < 6) {
             System.err.println("Argument(s) missing!");
-            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword serverId maxFaults %s %n",
+            System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword maxFaults %s %n",
                     ServerDPAS.class.getName());
             return;
         }
@@ -30,6 +40,7 @@ public class ServerDPAS {
         String jksPassword = args[3];
         String keyPairAlias = args[4];
         String privKeyPassword = args[5];
+        int maxFaults = Integer.parseInt(args[6]);
 
         if (!jksPath.endsWith(".jks")) {
             System.out.println("Invalid argument: Client key store must be a JKS file!");
@@ -67,6 +78,7 @@ public class ServerDPAS {
 
         Server server = startServer(Integer.parseInt(args[0]), args[1], privKey);
 
+        loadServerKeys("localhost", maxFaults, ks);
         // Do not exit the main thread. Wait until server is terminated.
         server.awaitTermination();
     }
@@ -83,5 +95,27 @@ public class ServerDPAS {
         }
         // Code never reaches here
         return null;
+    }
+
+    public static List<PerfectStub> loadServerKeys(String host, int maxFaults, KeyStore ks) throws KeyStoreException {
+        var stubs = new ArrayList<PerfectStub>();
+        int numServers = 3 * maxFaults + 1;
+        for(int i = 1; i <= numServers; ++i) {
+            var alias = "server-" + i;
+            var pubKey = ks.getCertificate(alias).getPublicKey();
+            int port = 9000 + i;
+            var executor = Executors.newSingleThreadExecutor(); //One thread for each stub
+            var eventGroup = new NioEventLoopGroup(1); //One thread for each channel
+            ManagedChannel channel = NettyChannelBuilder
+                    .forAddress(host, port)
+                    .usePlaintext()
+                    .channelType(NioSocketChannel.class)
+                    .eventLoopGroup(eventGroup)
+                    .executor(executor)
+                    .build();
+            var stub = new PerfectStub(ServiceDPASGrpc.newStub(channel), pubKey);
+            stubs.add(stub);
+        }
+        return stubs;
     }
 }

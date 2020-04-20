@@ -18,8 +18,7 @@
         <server.publicKeyAlias>server-1</server.publicKeyAlias>
         <server.KeyStorePassword>server-password</server.KeyStorePassword>
         <server.PrivateKeyPassword>server-1-password</server.PrivateKeyPassword>
-        <server.Id>1</server.Id>
-        <dpas.f>0</dpas.f>
+        <dpas.f>1</dpas.f>
     </properties>
     <dependencies>
         <dependency>
@@ -82,7 +81,6 @@
                         <argument>${server.KeyStorePassword}</argument>
                         <argument>${server.publicKeyAlias}</argument>
                         <argumennt>${server.PrivateKeyPassword}</argumennt>
-                        <argument>${server.Id}</argument>
                         <argument>${dpas.f}</argument>
                     </arguments>
                 </configuration>
