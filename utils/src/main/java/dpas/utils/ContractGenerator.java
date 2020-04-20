@@ -8,11 +8,14 @@ import dpas.grpc.contract.Contract.MacReply;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.MacGenerator;
+import io.grpc.StatusRuntimeException;
 
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,6 +39,7 @@ public class ContractGenerator {
                 .setSignature(ByteString.copyFrom(signature))
                 .addAllReferences(references)
                 .setSeq(seq)
+                .setIdentifier(generateIdentifier(pubKey, seq, boardIdentifier))
                 .build();
     }
 
@@ -58,7 +62,26 @@ public class ContractGenerator {
                 .setSignature(ByteString.copyFrom(signature))
                 .addAllReferences(references)
                 .setSeq(seq)
+                .setIdentifier(generateIdentifier(pubKey, seq, boardIdentifier))
                 .build();
+    }
+
+    private static String generateIdentifier(PublicKey authorKey, long seq, String boardIdentifier) {
+        try {
+            var content = new StringBuilder()
+                    .append(seq)
+                    .append(boardIdentifier)
+                    .append(Base64.getEncoder().encodeToString(authorKey.getEncoded()))
+                    .toString();
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(content.getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        }catch (GeneralSecurityException e) {
+            //never happens
+            return "";
+        }
+
     }
 
     public static RegisterRequest generateRegisterRequest(PublicKey pubKey, PrivateKey privKey) throws GeneralSecurityException {

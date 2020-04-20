@@ -11,6 +11,7 @@ import javax.crypto.Cipher;
 import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,6 +85,9 @@ public class MacVerifier {
             if (!sign.verify(announcement.getSignature().toByteArray())) {
                 return false;
             }
+            if (!verifySeq(announcement.getSeq(), authorKey.getEncoded(), boardIdentifier, announcement.getIdentifier())) {
+                return false;
+            }
         } catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
             return false;
         }
@@ -95,6 +99,24 @@ public class MacVerifier {
             PublicKey authorKey = keyFromBytes(announcement.getPublicKey().toByteArray());
             return verifySignature(announcement, authorKey, GeneralBoard.GENERAL_BOARD_IDENTIFIER);
         } catch (GeneralSecurityException e) {
+            return false;
+        }
+    }
+
+    public static boolean verifySeq(long seq, byte[] authorKey, String boardIdentifier, String identifier) {
+
+        try {
+            var content = new StringBuilder()
+                    .append(seq)
+                    .append(boardIdentifier)
+                    .append(Base64.getEncoder().encodeToString(authorKey))
+                    .toString();
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(content.getBytes());
+            var realId = Base64.getEncoder().encodeToString(hash);
+            return realId.equals(identifier);
+        } catch (NoSuchAlgorithmException e) {
             return false;
         }
     }
