@@ -139,16 +139,9 @@ public class QuorumConcurrencyWithFaultTest {
                     .build();
             var reply = _stub.readGeneral(req);
             var seq = _stub.getSeq(reply.getAnnouncementsList());
-            Contract.Announcement request;
-            if (reply.getAnnouncementsCount() != 0) {
-                var a = reply.getAnnouncements(reply.getAnnouncementsCount() - 1); //Reference previous announcement
-
-                request = ContractGenerator.generateAnnouncement(pub, priv,
-                        MESSAGE, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, new Contract.Announcement[]{a});
-            } else {
-                request = ContractGenerator.generateAnnouncement(pub, priv,
-                        MESSAGE, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
-            }
+            var a = reply.getAnnouncementsList().toArray(new Contract.Announcement[reply.getAnnouncementsCount()]);
+            var request = ContractGenerator.generateAnnouncement(pub, priv, MESSAGE,
+                    seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, a);
             try {
                 _stub.postGeneral(request);
             } catch (RuntimeException e) {
@@ -199,15 +192,9 @@ public class QuorumConcurrencyWithFaultTest {
                     .build();
             var reply = _stub.read(req);
             var seq = _stub.getSeq(reply.getAnnouncementsList());
-            Contract.Announcement request;
-            if (reply.getAnnouncementsCount() != 0) {
-                var a = reply.getAnnouncements(reply.getAnnouncementsCount() - 1); //Reference previous announcement
-                request = ContractGenerator.generateAnnouncement(pub, priv,
-                        MESSAGE, seq, Base64.getEncoder().encodeToString(pub.getEncoded()), new Contract.Announcement[]{a});
-            } else {
-                request = ContractGenerator.generateAnnouncement(pub, priv,
-                        MESSAGE, seq, Base64.getEncoder().encodeToString(pub.getEncoded()), null);
-            }
+            var a = reply.getAnnouncementsList().toArray(new Contract.Announcement[reply.getAnnouncementsCount()]);
+            var request = ContractGenerator.generateAnnouncement(pub, priv,
+                    MESSAGE, seq, Base64.getEncoder().encodeToString(pub.getEncoded()), a);
             try {
                 _stub.post(request);
             } catch (RuntimeException e) {
