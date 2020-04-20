@@ -32,6 +32,7 @@ import java.util.Base64;
 
 import static org.junit.Assert.*;
 
+@Ignore
 public class PersistenceManagerTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();

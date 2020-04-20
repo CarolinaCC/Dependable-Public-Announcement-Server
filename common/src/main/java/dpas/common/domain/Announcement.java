@@ -20,6 +20,7 @@ public class Announcement {
     private final AnnouncementBoard _board;
     private final long _seq;
     private final String _hash;
+    private final String _identifier;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq) throws CommonDomainException {
@@ -33,6 +34,7 @@ public class Announcement {
         _board = board;
         _seq = seq;
         _hash = generateHash();
+        _identifier = generateIdentifier();
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
@@ -104,7 +106,7 @@ public class Announcement {
     }
 
     public String getIdentifier() {
-        return _hash;
+        return _identifier;
     }
 
     public AnnouncementBoard getBoard() {
@@ -125,7 +127,7 @@ public class Announcement {
                 .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
                 .setSignature(ByteString.copyFrom(_signature))
                 .setSeq(_seq)
-                .setIdentifier(_hash)
+                .setIdentifier(_identifier)
                 .build();
     }
 
@@ -165,7 +167,22 @@ public class Announcement {
             //Should never happen
             throw new InvalidHashException("Error: Could not get SHA-256 Hash");
         }
+    }
 
+    private String generateIdentifier() throws CommonDomainException {
+        try {
+            var builder = new StringBuilder()
+                    .append(_seq)
+                    .append(_board.getIdentifier())
+                    .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(builder.toString().getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            //Should never happen
+            throw new InvalidHashException("Error: Could not get SHA-256 Hash");
+        }
     }
 
 

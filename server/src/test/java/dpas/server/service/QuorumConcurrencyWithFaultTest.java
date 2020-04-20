@@ -150,7 +150,7 @@ public class QuorumConcurrencyWithFaultTest {
                     .setNumber(1)
                     .setNonce("Nonce")
                     .build();
-            var seq = _stub.getSeq(_stub.readGeneralWithException(req).getAnnouncementsList());
+            var seq = _stub.getSeq(_stub.readGeneral(req).getAnnouncementsList());
             var request = ContractGenerator.generateAnnouncement(pub, priv,
                     MESSAGE, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
             try {
