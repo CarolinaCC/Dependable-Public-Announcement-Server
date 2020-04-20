@@ -214,7 +214,10 @@ public class Announcement {
     public static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier, long seq) {
         var builder = new StringBuilder();
         builder.append(message);
-        Stream.ofNullable(references).flatMap(Set::stream).forEach(builder::append);
+        Stream.ofNullable(references)
+                .flatMap(Set::stream)
+                .sorted() //Sort references to ensure the same signature on client and server
+                .forEach(builder::append);
         builder.append(boardIdentifier);
         builder.append(seq);
         return builder.toString().getBytes();

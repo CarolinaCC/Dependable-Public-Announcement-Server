@@ -21,6 +21,31 @@ public class QuorumStub {
         _quorumSize = 2 * _numFaults + 1;
     }
 
+
+    public void register(Contract.RegisterRequest request) throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(_quorumSize);
+        for (PerfectStub stub : _stubs) {
+            stub.register(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.MacReply value) {
+                    //Perfect Stub already guarantees the reply is valid
+                    synchronized (latch) {
+                        if (latch.getCount() != 0) {
+                            latch.countDown();
+                        }
+                    }
+                }
+
+                @Override
+                public void onError(Throwable t) {}
+
+                @Override
+                public void onCompleted() {}
+            });
+        }
+        latch.await();
+    }
+
     public void post(Announcement announcement) throws GeneralSecurityException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(_quorumSize);
         for (PerfectStub stub : _stubs) {

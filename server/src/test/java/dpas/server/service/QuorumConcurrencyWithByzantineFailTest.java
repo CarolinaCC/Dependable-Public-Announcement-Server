@@ -97,7 +97,6 @@ public class QuorumConcurrencyWithByzantineFailTest {
         _executors = new ExecutorService[4];
 
         var byzImpl  = new ServiceDPASGrpc.ServiceDPASImplBase() {
-
             @Override
             public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
@@ -115,6 +114,11 @@ public class QuorumConcurrencyWithByzantineFailTest {
 
             @Override
             public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
+            }
+
+            @Override
+            public void register(Contract.RegisterRequest request, StreamObserver<Contract.MacReply> responseObserver) {
                 responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
             }
         };
@@ -154,34 +158,9 @@ public class QuorumConcurrencyWithByzantineFailTest {
         }
         _stub = new QuorumStub(Arrays.asList(stubs), 1);
 
-        CountDownLatch latch = new CountDownLatch(NUMBER_THREADS * 3);
-        int k = 0;
-        for (var pstub : stubs) {
-            //Register Users
-            if (k == 0) {
-                k++;
-                continue;
-            }
-            for (int i = 0; i < NUMBER_THREADS; i++) {
-                pstub.register(ContractGenerator.generateRegisterRequest(_users[i].getPublic(), _users[i].getPrivate()), new StreamObserver<>() {
-                    @Override
-                    public void onNext(Contract.MacReply value) {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable t) {
-
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        latch.countDown();
-                    }
-                });
-            }
+        for (int i = 0; i < NUMBER_THREADS; i++) {
+            _stub.register(ContractGenerator.generateRegisterRequest(_users[i].getPublic(), _users[i].getPrivate()));
         }
-        latch.await();
     }
 
     @After

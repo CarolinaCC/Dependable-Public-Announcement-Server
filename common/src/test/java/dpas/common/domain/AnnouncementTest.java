@@ -7,11 +7,11 @@ import org.junit.Test;
 
 import java.security.*;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class AnnouncementTest {
 
@@ -30,6 +30,10 @@ public class AnnouncementTest {
     private PrivateKey _privKey;
 
     private AnnouncementBoard _board;
+
+
+    private Announcement _ref;
+    private Announcement _ref2;
 
 
     @Before
@@ -60,11 +64,15 @@ public class AnnouncementTest {
 
         byte[] otherSignature = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, new HashSet<>(), _board, _seq);
 
+        byte[] otherSignature2 = Announcement.generateSignature(otherPrivateKey, OTHER_MESSAGE, new HashSet<>(), _board, _seq + 1);
+
         User otherUser = new User(otherPublicKey);
-        Announcement ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, _user.getUserBoard(), _seq);
+        _ref = new Announcement(otherSignature, otherUser, OTHER_MESSAGE, null, _user.getUserBoard(), _seq);
+        _ref2 = new Announcement(otherSignature2, otherUser, OTHER_MESSAGE, null, _user.getUserBoard(), _seq + 1);
 
         //Add it to references
-        _references.add(ref);
+        _references.add(_ref);
+        //Add it to references
     }
 
     @After
@@ -82,6 +90,20 @@ public class AnnouncementTest {
         assertEquals(announcement.getUser(), _user);
         assertEquals(announcement.getMessage(), MESSAGE);
         assertEquals(announcement.getReferences(), _references);
+    }
+
+    @Test
+    public void sameSignatureWithDiferentOrderedRefs() throws CommonDomainException {
+        Set<String> refs = new LinkedHashSet<>();
+        refs.add(_ref.getIdentifier());
+        refs.add(_ref2.getIdentifier());
+        byte[] signature = Announcement.generateSignature(_privKey, MESSAGE, refs, _board, _seq);
+        refs = new LinkedHashSet<>();
+        refs.add(_ref2.getIdentifier());
+        refs.add(_ref.getIdentifier());
+        byte[] signature2 = Announcement.generateSignature(_privKey, MESSAGE, refs, _board, _seq);
+
+        assertArrayEquals(signature, signature2);
     }
 
     @Test
@@ -138,6 +160,4 @@ public class AnnouncementTest {
     public void invalidMessage() throws CommonDomainException {
         new Announcement(_signature, _user, INVALID_MESSAGE, _references, _board, _seq);
     }
-
-
 }

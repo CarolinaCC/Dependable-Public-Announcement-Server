@@ -10,6 +10,7 @@ import dpas.utils.auth.CipherUtils;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Base64;
 import java.util.UUID;
 
 public class RegisterStub {
@@ -80,6 +81,11 @@ public class RegisterStub {
         var request = ContractGenerator.generateAnnouncement(pub, priv,
                 message, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, references);
         _stub.postGeneral(request);
+    }
+
+    public void register(PublicKey pub, PrivateKey priv) throws InterruptedException, GeneralSecurityException {
+        var req = ContractGenerator.generateRegisterRequest(pub, priv);
+        _stub.register(req);
     }
 
 }

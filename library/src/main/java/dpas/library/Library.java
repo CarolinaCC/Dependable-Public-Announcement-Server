@@ -67,26 +67,7 @@ public class Library {
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
-            CountDownLatch latch = new CountDownLatch(2 * _numFaults + 1);
-            RegisterRequest request = ContractGenerator.generateRegisterRequest(publicKey, privkey);
-            for(var stub : _pstubs) {
-                stub.registerWithException(request, new StreamObserver<>() {
-                    @Override
-                    public void onNext(Contract.MacReply value) {}
-
-                    @Override
-                    public void onError(Throwable t) {
-                        System.out.println(t.getMessage());
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        latch.countDown();
-                    }
-                });
-            }
-            latch.await();
+            _stub.register(publicKey, privkey);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

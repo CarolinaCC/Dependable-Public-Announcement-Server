@@ -7,17 +7,14 @@ import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.CipherUtils;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
-import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup;
 import io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel;
-import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -29,7 +26,6 @@ import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -115,29 +111,9 @@ public class QuorumConcurrencyTest {
         }
         _stub = new QuorumStub(Arrays.asList(stubs), 1);
 
-        CountDownLatch latch = new CountDownLatch(NUMBER_THREADS * 4);
-        for (var pstub : stubs) {
-            //Register Users
-            for (int i = 0; i < NUMBER_THREADS; i++) {
-                pstub.register(ContractGenerator.generateRegisterRequest(_users[i].getPublic(), _users[i].getPrivate()), new StreamObserver<>() {
-                    @Override
-                    public void onNext(Contract.MacReply value) {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable t) {
-
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        latch.countDown();
-                    }
-                });
-            }
+        for (int i = 0; i < NUMBER_THREADS; i++) {
+            _stub.register(ContractGenerator.generateRegisterRequest(_users[i].getPublic(), _users[i].getPrivate()));
         }
-        latch.await();
     }
 
     @After
@@ -258,9 +234,9 @@ public class QuorumConcurrencyTest {
 
         for (var pair : _users) {
             var reply = _stub.read(Contract.ReadRequest.newBuilder()
-                            .setNumber(0)
-                            .setPublicKey(ByteString.copyFrom(pair.getPublic().getEncoded()))
-                            .build());
+                    .setNumber(0)
+                    .setPublicKey(ByteString.copyFrom(pair.getPublic().getEncoded()))
+                    .build());
             //Check that each announcement was posted correctly
             assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS / NUMBER_THREADS);
             _stub.post(reply.getAnnouncements(reply.getAnnouncementsCount() - 1)); //Write Back like a atomic register

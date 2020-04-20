@@ -166,7 +166,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     protected Announcement generateAnnouncement(Contract.Announcement request, AnnouncementBoard board, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
-        String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey), StandardCharsets.UTF_8);
+        String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey));
         if (request.getSeq() > board.getSeq() + 1) {
             //Invalid Seq (General Board is a (N,N) register so it can't be higher than curr + 1
             throw new InvalidSeqException("Invalid seq");
@@ -177,7 +177,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     protected Announcement generateAnnouncement(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
         PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
-        String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey), StandardCharsets.UTF_8);
+        String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey));
 
         User user = _users.get(key);
         if (user == null) {

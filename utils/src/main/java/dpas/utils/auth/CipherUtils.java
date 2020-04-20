@@ -28,6 +28,7 @@ public class CipherUtils {
         return Base64.getEncoder().encodeToString(cipher(content, key));
     }
 
+
     public static String keyToString(Key key) {
         return Base64.getEncoder().encodeToString(key.getEncoded());
     }
