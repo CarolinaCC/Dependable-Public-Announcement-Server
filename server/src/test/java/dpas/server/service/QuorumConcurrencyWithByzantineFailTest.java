@@ -14,6 +14,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup;
+import io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel;
 import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
@@ -120,12 +122,15 @@ public class QuorumConcurrencyWithByzantineFailTest {
         for (int i = 1; i < 4; i++) {
             executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
             executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+            var eventGroup = new NioEventLoopGroup(1); //One thread for each channel
             var impl = new ServiceDPASSafeImpl(_serverPrivKey[i], manager);
             _servers[i] = NettyServerBuilder.forPort(port + i).addService(impl).build();
             _servers[i].start();
             _channels[i] = NettyChannelBuilder
                     .forAddress(host, port + i)
                     .executor(executor)
+                    .channelType(NioSocketChannel.class)
+                    .eventLoopGroup(eventGroup)
                     .usePlaintext()
                     .build();
             stub = new PerfectStub(ServiceDPASGrpc.newStub(_channels[i]), _serverPubKey[i]);

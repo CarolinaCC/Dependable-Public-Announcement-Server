@@ -13,6 +13,7 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.channel.*;
 import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop;
 import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup;
+import io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel;
 import io.grpc.stub.StreamObserver;
 
 import java.security.PrivateKey;
@@ -38,10 +39,13 @@ public class Library {
         List<PerfectStub> stubs = new ArrayList<>();
         for (int i = 0; i < 3 * numFaults + 1; i++) {
             //One thread for each channel
-            var executor = Executors.newSingleThreadExecutor();
+            var executor = Executors.newSingleThreadExecutor(); //One thread for each stub
+            var eventGroup = new NioEventLoopGroup(1); //One thread for each channel
             ManagedChannel channel = NettyChannelBuilder
                     .forAddress(host, port + i + 1)
                     .usePlaintext()
+                    .channelType(NioSocketChannel.class)
+                    .eventLoopGroup(eventGroup)
                     .executor(executor)
                     .build();
             _channels.add(channel);
