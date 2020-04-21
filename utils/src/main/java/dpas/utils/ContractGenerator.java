@@ -9,6 +9,7 @@ import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.MacGenerator;
 import io.grpc.StatusRuntimeException;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -21,6 +22,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ContractGenerator {
+
+    public static final byte[] ECHO = "ECHO".getBytes();
+
+    public static final byte[] READY = "READY".getBytes();
 
     public static Contract.Announcement generateAnnouncement(PublicKey pubKey, PrivateKey privKey, String message, long seq,
                                                              String boardIdentifier, Announcement[] a)
@@ -101,7 +106,7 @@ public class ContractGenerator {
     public static Contract.EchoRegister generateEchoRegister(Contract.RegisterRequest request, PrivateKey serverKey, String serverId) throws GeneralSecurityException {
         return Contract.EchoRegister.newBuilder()
                 .setRequest(request)
-                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request.getMac().toByteArray(), serverKey)))
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(ArrayUtils.addAll(request.getMac().toByteArray(), ECHO), serverKey)))
                 .setServerKey(serverId)
                 .build();
     }
@@ -109,7 +114,7 @@ public class ContractGenerator {
     public static Contract.ReadyRegister generateReadyRegister(Contract.RegisterRequest request, PrivateKey serverKey, String serverId) throws GeneralSecurityException {
         return Contract.ReadyRegister.newBuilder()
                 .setRequest(request)
-                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request.getMac().toByteArray(), serverKey)))
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(ArrayUtils.addAll(request.getMac().toByteArray(), READY), serverKey)))
                 .setServerKey(serverId)
                 .build();
     }

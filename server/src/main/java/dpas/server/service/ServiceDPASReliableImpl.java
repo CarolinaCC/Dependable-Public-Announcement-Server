@@ -137,8 +137,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             _securityManager.validateRequest(request);
             //to validate the public key
-            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-            rbRegister(request);
+            brbRegister(request);
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
             responseObserver.onCompleted();
 
@@ -345,7 +344,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         _deliveredMessages.get(request.getMac().toStringUtf8()).countDown();
     }
 
-    private void rbRegister(Contract.RegisterRequest request) throws GeneralSecurityException, InterruptedException {
+    private void brbRegister(Contract.RegisterRequest request) throws GeneralSecurityException, InterruptedException {
         broadcastEchoRegister(request);
         _deliveredMessages.putIfAbsent(request.getMac().toStringUtf8(), new CountDownLatch(1));
         _deliveredMessages.get(request.getMac().toStringUtf8()).await();

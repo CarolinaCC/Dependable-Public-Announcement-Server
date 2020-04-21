@@ -60,7 +60,7 @@ public class ReliableServerRegisterTest {
 
     @Parameterized.Parameters
     public static Object[][] data() {
-        return new Object[30][0];
+        return new Object[15][0];
     }
 
     public ReliableServerRegisterTest() {
@@ -122,8 +122,8 @@ public class ReliableServerRegisterTest {
     @After
     public void teardown() {
         for (int i = 0; i < 4; i++) {
-            _executors[i].shutdown();
             _channels[i].shutdown();
+            _executors[i].shutdown();
             _servers[i].shutdown();
 
         }
@@ -160,6 +160,43 @@ public class ReliableServerRegisterTest {
         for(var impl : _impls) {
             assertEquals(impl.getUsers().size(), 1);
             assertNotNull(impl.getUsers().get(_pubKey));
+        }
+    }
+
+    @Test
+    public void invalidMacRegister() throws InterruptedException {
+        new Thread(() -> {
+            try {
+                var req = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
+                req = req.toBuilder().setMac(ByteString.copyFrom(new byte[] {1, 2, 3})).build();
+                _stub.register(req);
+            } catch (InterruptedException | GeneralSecurityException e) {
+                fail();
+            }
+        }).start();
+
+        Thread.sleep(1000);
+        for(var impl : _impls) {
+            assertEquals(impl.getUsers().size(), 0);
+        }
+    }
+
+
+    @Test
+    public void invalidKeyRegister() throws InterruptedException {
+        new Thread(() -> {
+            try {
+                var req = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
+                req = req.toBuilder().setPublicKey(ByteString.copyFrom(new byte[] {1, 2, 3, 4})).build();
+                _stub.register(req);
+            } catch (InterruptedException | GeneralSecurityException e) {
+                fail();
+            }
+        }).start();
+
+        Thread.sleep(1000);
+        for(var impl : _impls) {
+            assertEquals(impl.getUsers().size(), 0);
         }
     }
 

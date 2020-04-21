@@ -20,6 +20,10 @@ import static dpas.utils.auth.CipherUtils.keyFromBytes;
 
 public class MacVerifier {
 
+    public static final byte[] ECHO = "ECHO".getBytes();
+
+    public static final byte[] READY = "READY".getBytes();
+
     public static boolean verifyMac(Contract.RegisterRequest request, Contract.MacReply reply, PublicKey serverKey) {
         try {
             byte[] mac = reply.getMac().toByteArray();
@@ -59,11 +63,11 @@ public class MacVerifier {
     }
 
     public static boolean verifyMac(Contract.EchoRegister request, Contract.MacReply reply, PublicKey serverKey) {
-        return verifyMac(serverKey, request.getMac().toByteArray(), reply.getMac().toByteArray());
+        return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), ECHO), reply.getMac().toByteArray());
     }
 
     public static boolean verifyMac(Contract.ReadyRegister request, Contract.MacReply reply, PublicKey serverKey) {
-        return verifyMac(serverKey, request.getMac().toByteArray(), reply.getMac().toByteArray());
+        return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), READY), reply.getMac().toByteArray());
     }
 
     public static boolean verifyMac(PublicKey key, StatusRuntimeException e) {

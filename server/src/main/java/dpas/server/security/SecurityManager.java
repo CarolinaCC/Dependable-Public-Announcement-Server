@@ -5,6 +5,7 @@ import dpas.server.security.exception.IllegalMacException;
 import dpas.utils.auth.ByteUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacVerifier;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -17,6 +18,9 @@ import static io.grpc.Status.UNAUTHENTICATED;
 
 public class SecurityManager {
 
+    public static final byte[] ECHO = "ECHO".getBytes();
+
+    public static final byte[] READY = "READY".getBytes();
 
     public void validateRequest(Contract.RegisterRequest request) throws GeneralSecurityException, IllegalMacException {
         PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
@@ -38,7 +42,7 @@ public class SecurityManager {
             throw new IllegalMacException("Ilegal Server Key");
         }
         var mac = request.getMac().toByteArray();
-        var content = request.getRequest().getMac().toByteArray();
+        var content = ArrayUtils.addAll(request.getRequest().getMac().toByteArray(), ECHO);
         if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
             throw new IllegalMacException("Invalid Mac For Request");
         }
@@ -51,7 +55,7 @@ public class SecurityManager {
             throw new IllegalMacException("Ilegal Server Key");
         }
         var mac = request.getMac().toByteArray();
-        var content = request.getRequest().getMac().toByteArray();
+        var content = ArrayUtils.addAll(request.getRequest().getMac().toByteArray(), READY);
         if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
             throw new IllegalMacException("Invalid Mac For Request");
         }
