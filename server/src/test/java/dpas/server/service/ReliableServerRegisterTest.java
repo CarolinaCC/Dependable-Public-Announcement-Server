@@ -162,4 +162,158 @@ public class ReliableServerRegisterTest {
             assertNotNull(impl.getUsers().get(_pubKey));
         }
     }
+
+    @Test
+    public void validRepeatedRegister() throws GeneralSecurityException, InterruptedException {
+        for(int i = 0; i < 5; i++) {
+            _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
+        }
+
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        //Perform a read and wait for all servers to respond to garantee that all servers see the register
+        CountDownLatch latch = new CountDownLatch(4);
+        for (var stub: _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {}
+
+                @Override
+                public void onCompleted() {}
+            });
+        }
+        latch.await();
+
+        for(var impl : _impls) {
+            assertEquals(impl.getUsers().size(), 1);
+            assertNotNull(impl.getUsers().get(_pubKey));
+        }
+    }
+
+    @Test
+    public void oneServerRegister() throws GeneralSecurityException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        _stubs[0].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<Contract.MacReply>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        });
+
+        latch.await();
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        //Perform a read and wait for all servers to respond to garantee that all servers see the register
+        CountDownLatch latch2 = new CountDownLatch(4);
+        for (var stub: _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {}
+
+                @Override
+                public void onCompleted() {}
+            });
+        }
+        latch2.await();
+
+        for(var impl : _impls) {
+            assertEquals(impl.getUsers().size(), 1);
+            assertNotNull(impl.getUsers().get(_pubKey));
+        }
+    }
+
+    @Test
+    public void twoServerRegister() throws GeneralSecurityException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(2);
+        _stubs[0].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<Contract.MacReply>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        });
+        _stubs[1].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        });
+
+        latch.await();
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        //Perform a read and wait for all servers to respond to garantee that all servers see the register
+        CountDownLatch latch2 = new CountDownLatch(4);
+        for (var stub: _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {}
+
+                @Override
+                public void onCompleted() {}
+            });
+        }
+        latch2.await();
+
+        for(var impl : _impls) {
+            assertEquals(impl.getUsers().size(), 1);
+            assertNotNull(impl.getUsers().get(_pubKey));
+        }
+    }
 }
