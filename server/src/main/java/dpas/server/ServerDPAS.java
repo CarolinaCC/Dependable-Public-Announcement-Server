@@ -13,6 +13,7 @@ import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup;
 import io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +30,7 @@ public class ServerDPAS {
         System.out.println(ServerDPAS.class.getSimpleName());
 
         // check arguments
-        if (args.length < 6) {
+        if (args.length < 7) {
             System.err.println("Argument(s) missing!");
             System.err.printf("<Usage> java port SaveFile KeyStoreFile KeyStorePassword ServerKeyPairAlias ServerPrivateKeyPassword maxFaults %s %n",
                     ServerDPAS.class.getName());
@@ -40,7 +41,7 @@ public class ServerDPAS {
         String jksPassword = args[3];
         String keyPairAlias = args[4];
         String privKeyPassword = args[5];
-        int maxFaults = Integer.parseInt(args[6]);
+        int numFaults = Integer.parseInt(args[6]);
 
         if (!jksPath.endsWith(".jks")) {
             System.out.println("Invalid argument: Client key store must be a JKS file!");
@@ -76,21 +77,23 @@ public class ServerDPAS {
 
         System.out.println("Retrieved server key pair successfully!");
 
-        Server server = startServer(Integer.parseInt(args[0]), args[1], privKey);
+        var stubs = loadServerKeys("localhost", numFaults, ks);
 
-        loadServerKeys("localhost", maxFaults, ks);
+        Server server = startServer(Integer.parseInt(args[0]), args[1], privKey, pubKey, stubs, numFaults);
+
         // Do not exit the main thread. Wait until server is terminated.
         server.awaitTermination();
     }
 
-    public static Server startServer(int port, String saveFile, PrivateKey privateKey) {
+    public static Server startServer(int port, String saveFile, PrivateKey privateKey, PublicKey pubKey, List<PerfectStub> stubs, int numFaults) {
         try {
-            final BindableService impl = new PersistenceManager(saveFile).load(new SecurityManager(), privateKey);
+            final BindableService impl = new PersistenceManager(saveFile).load(new SecurityManager(), privateKey,
+                    stubs, Base64.getEncoder().encodeToString(pubKey.getEncoded()), numFaults);
             final Server server = NettyServerBuilder.forPort(port).addService(impl).build();
             server.start();
             return server;
         } catch (Exception e) {
-            System.out.println("Error Initializing server: Invalid State Load " + e.getMessage());
+            System.out.println("Error Initializing server: " + e.getMessage());
             System.exit(1);
         }
         // Code never reaches here

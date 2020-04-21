@@ -80,7 +80,7 @@
                         <argument>${server.keyStoreFile}</argument>
                         <argument>${server.KeyStorePassword}</argument>
                         <argument>${server.publicKeyAlias}</argument>
-                        <argumennt>${server.PrivateKeyPassword}</argumennt>
+                        <argument>${server.PrivateKeyPassword}</argument>
                         <argument>${dpas.f}</argument>
                     </arguments>
                 </configuration>

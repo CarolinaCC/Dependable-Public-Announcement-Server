@@ -3,8 +3,12 @@ package dpas.server.persistence;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.server.security.SecurityManager;
 import dpas.server.service.ServiceDPASPersistentImpl;
+import dpas.server.service.ServiceDPASReliableImpl;
 import dpas.server.service.ServiceDPASSafeImpl;
+import dpas.utils.link.PerfectStub;
 import org.apache.commons.io.FileUtils;
+
+import java.util.List;
 
 import javax.json.*;
 import java.io.*;
@@ -74,6 +78,13 @@ public class PersistenceManager {
     public synchronized ServiceDPASSafeImpl load(SecurityManager manager, PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
         ServiceDPASSafeImpl service = new ServiceDPASSafeImpl(this, privateKey, manager);
+        parseJsonArray(jsonArray, service);
+        return service;
+    }
+
+    public synchronized ServiceDPASReliableImpl load(SecurityManager manager, PrivateKey privateKey, List<PerfectStub> stubs, String serverId, int numFaults) throws GeneralSecurityException, CommonDomainException, IOException {
+        JsonArray jsonArray = readSaveFile();
+        var service = new ServiceDPASReliableImpl(this, privateKey, manager, stubs, serverId, numFaults);
         parseJsonArray(jsonArray, service);
         return service;
     }
