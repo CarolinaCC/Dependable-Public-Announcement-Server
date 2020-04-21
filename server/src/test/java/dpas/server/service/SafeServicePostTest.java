@@ -45,10 +45,12 @@ public class SafeServicePostTest {
     private static String _invalidNonce;
 
     private static final String MESSAGE = "Message";
+    private static final String OTHER_MESSAGE = "Other Message";
     private static final String LONGMESSAGE = "A".repeat(255);
 
     private static Contract.Announcement _nonUserequest;
     private static Contract.Announcement _request;
+    private static Contract.Announcement _request2;
     private static Contract.Announcement _futureRequest;
     private static Contract.Announcement _longRequest;
     private static Contract.Announcement _invalidPubKeyRequest;
@@ -92,6 +94,10 @@ public class SafeServicePostTest {
 
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
+
+
+        _request2 = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
+                OTHER_MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
 
         _nonUserequest = ContractGenerator.generateAnnouncement(_serverPKey, _secondPubKey, _secondPrivKey,
                 MESSAGE, _secondSeq, CipherUtils.keyToString(_secondPubKey), null);
@@ -182,8 +188,8 @@ public class SafeServicePostTest {
         var reply = _stub.post(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
-        reply = _stub.post(_request);
-        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
+        reply = _stub.post(_request2);
+        assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request2));
         assertEquals(_impl._announcements.size(), 1);
     }
 
