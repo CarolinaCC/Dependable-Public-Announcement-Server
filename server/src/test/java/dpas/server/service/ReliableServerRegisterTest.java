@@ -58,7 +58,7 @@ public class ReliableServerRegisterTest {
 
     @Parameterized.Parameters
     public static Object[][] data() {
-        return new Object[15][0];
+        return new Object[5][0];
     }
 
     public ReliableServerRegisterTest() {
@@ -120,9 +120,9 @@ public class ReliableServerRegisterTest {
     @After
     public void teardown() {
         for (int i = 0; i < 4; i++) {
-            _channels[i].shutdown();
-            _executors[i].shutdown();
-            _servers[i].shutdown();
+            _channels[i].shutdownNow();
+            _executors[i].shutdownNow();
+            _servers[i].shutdownNow();
 
         }
     }

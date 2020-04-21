@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.junit.Assert.*;
 
+@RunWith(Parameterized.class)
 public class ReliableCrashServerRegisterTest {
     private PerfectStub[] _stubs;
     private Server[] _servers;
@@ -47,7 +49,7 @@ public class ReliableCrashServerRegisterTest {
 
     @Parameterized.Parameters
     public static Object[][] data() {
-        return new Object[15][0];
+        return new Object[5][0];
     }
 
     public ReliableCrashServerRegisterTest() {
@@ -114,11 +116,10 @@ public class ReliableCrashServerRegisterTest {
     @After
     public void teardown() {
         for (int i = 0; i < 4; i++) {
-            _channels[i].shutdown();
-            _executors[i].shutdown();
+            _channels[i].shutdownNow();
+            _executors[i].shutdownNow();
             if (i != 3)
-                _servers[i].shutdown();
-
+                _servers[i].shutdownNow();
         }
     }
 
