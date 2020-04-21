@@ -58,6 +58,14 @@ public class MacVerifier {
         }
     }
 
+    public static boolean verifyMac(Contract.EchoRegister request, Contract.MacReply reply, PublicKey serverKey) {
+        return verifyMac(serverKey, request.getMac().toByteArray(), reply.getMac().toByteArray());
+    }
+
+    public static boolean verifyMac(Contract.ReadyRegister request, Contract.MacReply reply, PublicKey serverKey) {
+        return verifyMac(serverKey, request.getMac().toByteArray(), reply.getMac().toByteArray());
+    }
+
     public static boolean verifyMac(PublicKey key, StatusRuntimeException e) {
         Metadata data = e.getTrailers();
         byte[] content = ArrayUtils.addAll(data.get(ErrorGenerator.contentKey), e.getMessage().getBytes());

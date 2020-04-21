@@ -3,6 +3,7 @@ package dpas.server.security;
 import dpas.grpc.contract.Contract;
 import dpas.server.security.exception.IllegalMacException;
 import dpas.utils.auth.ByteUtils;
+import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacVerifier;
 
 import java.io.IOException;
@@ -10,6 +11,9 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Map;
+
+import static io.grpc.Status.UNAUTHENTICATED;
 
 public class SecurityManager {
 
@@ -25,5 +29,31 @@ public class SecurityManager {
         if (!MacVerifier.verifyMac(key, content, mac))
             throw new IllegalMacException("Could not validate request");
 
+    }
+
+    public void validateRequest(Contract.EchoRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+        validateRequest(request.getRequest());
+        var pubKey = serverKeys.get(request.getServerKey());
+        if (pubKey == null) {
+            throw new IllegalMacException("Ilegal Server Key");
+        }
+        var mac = request.getMac().toByteArray();
+        var content = request.getRequest().getMac().toByteArray();
+        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+            throw new IllegalMacException("Invalid Mac For Request");
+        }
+    }
+
+    public void validateRequest(Contract.ReadyRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+        validateRequest(request.getRequest());
+        var pubKey = serverKeys.get(request.getServerKey());
+        if (pubKey == null) {
+            throw new IllegalMacException("Ilegal Server Key");
+        }
+        var mac = request.getMac().toByteArray();
+        var content = request.getRequest().getMac().toByteArray();
+        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+            throw new IllegalMacException("Invalid Mac For Request");
+        }
     }
 }

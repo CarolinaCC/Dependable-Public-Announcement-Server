@@ -23,6 +23,16 @@ public class ErrorGenerator {
         return fillMetadata(request.getNonce().getBytes(), privKey, statusException);
     }
 
+    public static StatusRuntimeException generate(Status status, String message, Contract.EchoRegister request, PrivateKey privKey) {
+        var statusException = status.withDescription(message).asRuntimeException(new Metadata());
+        return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
+    }
+
+    public static StatusRuntimeException generate(Status status, String message, Contract.ReadyRegister request, PrivateKey privKey) {
+        var statusException = status.withDescription(message).asRuntimeException(new Metadata());
+        return fillMetadata(request.getMac().toByteArray(), privKey, statusException);
+    }
+
     public static StatusRuntimeException generate(Status status, String message, Contract.Announcement request, PrivateKey privKey) {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());
         return fillMetadata(request.getSignature().toByteArray(), privKey, statusException);

@@ -97,4 +97,20 @@ public class ContractGenerator {
                 .setMac(ByteString.copyFrom(replyMac))
                 .build();
     }
+
+    public static Contract.EchoRegister generateEchoRegister(Contract.RegisterRequest request, PrivateKey serverKey, String serverId) throws GeneralSecurityException {
+        return Contract.EchoRegister.newBuilder()
+                .setRequest(request)
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request.getMac().toByteArray(), serverKey)))
+                .setServerKey(serverId)
+                .build();
+    }
+
+    public static Contract.ReadyRegister generateReadyRegister(Contract.RegisterRequest request, PrivateKey serverKey, String serverId) throws GeneralSecurityException {
+        return Contract.ReadyRegister.newBuilder()
+                .setRequest(request)
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(request.getMac().toByteArray(), serverKey)))
+                .setServerKey(serverId)
+                .build();
+    }
 }

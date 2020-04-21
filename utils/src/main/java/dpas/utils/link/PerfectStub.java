@@ -282,15 +282,16 @@ public class PerfectStub {
         });
     }
 
-    public void register(Contract.RegisterRequest request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.register(request, new StreamObserver<>() {
+
+    public void echoRegister(Contract.EchoRegister request, StreamObserver<Contract.MacReply> replyObserver) {
+        _stub.echoRegister(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
                 if (!MacVerifier.verifyMac(request, value, _serverKey)) {
-                    register(request, replyObserver);
+                    echoRegister(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
                 }
@@ -302,7 +303,7 @@ public class PerfectStub {
                 //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                register(request, replyObserver);
+                echoRegister(request, replyObserver);
             }
 
             @Override
@@ -311,6 +312,38 @@ public class PerfectStub {
             }
         });
     }
+
+    public void readyRegister(Contract.ReadyRegister request, StreamObserver<Contract.MacReply> replyObserver) {
+        _stub.readyRegister(request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+                //If we can't verify the response then either the attacker changed it (must retry until he stops)
+                //Or the server is byzantine (since we can't know must keep trying)
+                //Since the operation is idempotent resending to a correct server has no impact
+                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                    readyRegister(request, replyObserver);
+                } else {
+                    replyObserver.onNext(value);
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                //If an error occurred it is either a byzantine client (we don't care about him)
+                //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
+                //A byzantine server (since we can't know, we must retry still)
+                //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
+                readyRegister(request, replyObserver);
+            }
+
+            @Override
+            public void onCompleted() {
+                replyObserver.onCompleted();
+            }
+        });
+    }
+
+
 
     public void registerWithException(Contract.RegisterRequest request, StreamObserver<Contract.MacReply> replyObserver) {
         _stub.register(request, new StreamObserver<>() {
