@@ -211,7 +211,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
             var id = request.getRequest().getMac().toStringUtf8();
 
-            broadcastEchoRegister(request.getRequest());
+            //broadcastEchoRegister(request.getRequest());
 
             _echosCount.putIfAbsent(id, new HashSet<>());
             var echos = _echosCount.get(id);

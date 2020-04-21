@@ -55,7 +55,6 @@ public class ReliableServerRegisterTest {
     private static final int port = 9000;
 
 
-
     @Parameterized.Parameters
     public static Object[][] data() {
         return new Object[5][0];
@@ -91,7 +90,7 @@ public class ReliableServerRegisterTest {
         _servers = new Server[4];
         _channels = new ManagedChannel[4];
         _executors = new ExecutorService[4];
-        for(int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             var executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
             var eventGroup = new NioEventLoopGroup(1); //One thread for each channel
             executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
@@ -139,7 +138,7 @@ public class ReliableServerRegisterTest {
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
         CountDownLatch latch = new CountDownLatch(4);
-        for (var stub: _stubs) {
+        for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -147,15 +146,17 @@ public class ReliableServerRegisterTest {
                 }
 
                 @Override
-                public void onError(Throwable t) {}
+                public void onError(Throwable t) {
+                }
 
                 @Override
-                public void onCompleted() {}
+                public void onCompleted() {
+                }
             });
         }
         latch.await();
 
-        for(var impl : _impls) {
+        for (var impl : _impls) {
             assertEquals(impl.getUsers().size(), 1);
             assertNotNull(impl.getUsers().get(_pubKey));
         }
@@ -166,7 +167,7 @@ public class ReliableServerRegisterTest {
         new Thread(() -> {
             try {
                 var req = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
-                req = req.toBuilder().setMac(ByteString.copyFrom(new byte[] {1, 2, 3})).build();
+                req = req.toBuilder().setMac(ByteString.copyFrom(new byte[]{1, 2, 3})).build();
                 _stub.register(req);
             } catch (InterruptedException | GeneralSecurityException e) {
                 fail();
@@ -174,7 +175,7 @@ public class ReliableServerRegisterTest {
         }).start();
 
         Thread.sleep(1000);
-        for(var impl : _impls) {
+        for (var impl : _impls) {
             assertEquals(impl.getUsers().size(), 0);
         }
     }
@@ -185,7 +186,7 @@ public class ReliableServerRegisterTest {
         new Thread(() -> {
             try {
                 var req = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
-                req = req.toBuilder().setPublicKey(ByteString.copyFrom(new byte[] {1, 2, 3, 4})).build();
+                req = req.toBuilder().setPublicKey(ByteString.copyFrom(new byte[]{1, 2, 3, 4})).build();
                 _stub.register(req);
             } catch (InterruptedException | GeneralSecurityException e) {
                 fail();
@@ -193,14 +194,14 @@ public class ReliableServerRegisterTest {
         }).start();
 
         Thread.sleep(1000);
-        for(var impl : _impls) {
+        for (var impl : _impls) {
             assertEquals(impl.getUsers().size(), 0);
         }
     }
 
     @Test
     public void validRepeatedRegister() throws GeneralSecurityException, InterruptedException {
-        for(int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
         }
 
@@ -212,7 +213,7 @@ public class ReliableServerRegisterTest {
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
         CountDownLatch latch = new CountDownLatch(4);
-        for (var stub: _stubs) {
+        for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -220,27 +221,28 @@ public class ReliableServerRegisterTest {
                 }
 
                 @Override
-                public void onError(Throwable t) {}
+                public void onError(Throwable t) {
+                }
 
                 @Override
-                public void onCompleted() {}
+                public void onCompleted() {
+                }
             });
         }
         latch.await();
 
-        for(var impl : _impls) {
+        for (var impl : _impls) {
             assertEquals(impl.getUsers().size(), 1);
             assertNotNull(impl.getUsers().get(_pubKey));
         }
     }
 
+
     @Test
     public void oneServerRegister() throws GeneralSecurityException, InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        _stubs[0].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<Contract.MacReply>() {
+        _stubs[1].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
-                latch.countDown();
             }
 
             @Override
@@ -254,44 +256,20 @@ public class ReliableServerRegisterTest {
             }
         });
 
-        latch.await();
-        var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                .setNumber(0)
-                .setNonce("Nonce1")
-                .build();
+        Thread.sleep(2000);
 
-        //Perform a read and wait for all servers to respond to garantee that all servers see the register
-        CountDownLatch latch2 = new CountDownLatch(4);
-        for (var stub: _stubs) {
-            stub.read(request, new StreamObserver<>() {
-                @Override
-                public void onNext(Contract.ReadReply value) {
-                    latch2.countDown();
-                }
-
-                @Override
-                public void onError(Throwable t) {}
-
-                @Override
-                public void onCompleted() {}
-            });
-        }
-        latch2.await();
-
-        for(var impl : _impls) {
-            assertEquals(impl.getUsers().size(), 1);
-            assertNotNull(impl.getUsers().get(_pubKey));
+        for (int i = 0; i < 4; i++) {
+            assertEquals(_impls[i].getUsers().size(), 0);
+            assertNull(_impls[i].getUsers().get(_pubKey));
         }
     }
 
     @Test
     public void twoServerRegister() throws GeneralSecurityException, InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(2);
-        _stubs[0].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<Contract.MacReply>() {
+        _stubs[0].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
-                latch.countDown();
+
             }
 
             @Override
@@ -307,7 +285,7 @@ public class ReliableServerRegisterTest {
         _stubs[1].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
-                latch.countDown();
+
             }
 
             @Override
@@ -321,7 +299,34 @@ public class ReliableServerRegisterTest {
             }
         });
 
-        latch.await();
+        Thread.sleep(2000);
+        for (int i = 0; i < 4; i++) {
+            assertEquals(_impls[i].getUsers().size(), 0);
+            assertNull(_impls[i].getUsers().get(_pubKey));
+        }
+    }
+
+    @Test
+    public void validQuorumRegister() throws GeneralSecurityException, InterruptedException {
+        for (int i = 0; i < 3; i++) {
+            _stubs[i].register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey), new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.MacReply value) {
+
+                }
+
+                @Override
+                public void onError(Throwable t) {
+
+                }
+
+                @Override
+                public void onCompleted() {
+
+                }
+            });
+        }
+
         var request = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
@@ -329,24 +334,27 @@ public class ReliableServerRegisterTest {
                 .build();
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
-        CountDownLatch latch2 = new CountDownLatch(4);
-        for (var stub: _stubs) {
+        CountDownLatch latch = new CountDownLatch(4);
+        for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
-                    latch2.countDown();
+                    latch.countDown();
                 }
 
                 @Override
-                public void onError(Throwable t) {}
+                public void onError(Throwable t) {
+                }
 
                 @Override
-                public void onCompleted() {}
+                public void onCompleted() {
+                }
             });
         }
-        latch2.await();
+        latch.await();
 
-        for(var impl : _impls) {
+        //Despite only sending to a quorum, all serveres delivered per the BRB specification
+        for (var impl : _impls) {
             assertEquals(impl.getUsers().size(), 1);
             assertNotNull(impl.getUsers().get(_pubKey));
         }
