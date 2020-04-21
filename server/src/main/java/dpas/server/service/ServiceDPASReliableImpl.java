@@ -17,6 +17,7 @@ import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
 import dpas.utils.link.PerfectStub;
+import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
@@ -61,7 +62,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     private final Map<String, CountDownLatch> _deliveredMessages = new ConcurrentHashMap<>();
 
 
-    public ServiceDPASReliableImpl(PersistenceManager manager, PrivateKey privKey, SecurityManager securityManager, List<PerfectStub> servers, String serverId, int quorumSize, int numFaults) {
+    public ServiceDPASReliableImpl(PersistenceManager manager, PrivateKey privKey, SecurityManager securityManager, List<PerfectStub> servers, String serverId, int numFaults) {
         super(manager);
         _privateKey = privKey;
         _securityManager = securityManager;
@@ -71,12 +72,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         for (var stub : servers) {
             _serverKeys.put(stub.getServerId(), stub.getServerKey());
         }
-        _quorumSize = quorumSize;
+        _quorumSize = 2 * numFaults + 1;
         _numFaults = numFaults;
     }
 
     //Use with tests only
-    public ServiceDPASReliableImpl(PrivateKey privKey, SecurityManager securityManager, List<PerfectStub> servers, String serverId, int quorumSize, int numFaults) {
+    public ServiceDPASReliableImpl(PrivateKey privKey, SecurityManager securityManager, List<PerfectStub> servers, String serverId, int numFaults) {
         super(null);
         _privateKey = privKey;
         _securityManager = securityManager;
@@ -86,7 +87,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         for (var stub : servers) {
             _serverKeys.put(stub.getServerId(), stub.getServerKey());
         }
-        _quorumSize = quorumSize;
+        _quorumSize = 2 * numFaults + 1;
         _numFaults = numFaults;
     }
 
@@ -280,46 +281,56 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         var curr = _sentEchos.putIfAbsent(request.getMac().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            for (var stub : _servers) {
-                stub.echoRegister(ContractGenerator.generateEchoRegister(request, _privateKey, _serverId), new StreamObserver<>() {
-                    @Override
-                    public void onNext(MacReply value) {
+            var echo = ContractGenerator.generateEchoRegister(request, _privateKey, _serverId);
 
-                    }
+            //If we don't do this we get an error because we can't send RPCs from an RPC
+            Context ctx = Context.current().fork();
+            ctx.run(() -> {
+                for (var stub : _servers) {
+                    stub.echoRegister(echo, new StreamObserver<>() {
+                        @Override
+                        public void onNext(MacReply value) {
+                        }
 
-                    @Override
-                    public void onError(Throwable t) {
+                        @Override
+                        public void onError(Throwable t) {
+                        }
 
-                    }
-
-                    @Override
-                    public void onCompleted() {
-
-                    }
-                });
-            }
+                        @Override
+                        public void onCompleted() {
+                        }
+                    });
+                }
+            });
         }
     }
+
 
     private void broadcastReadyRegister(Contract.RegisterRequest request) throws GeneralSecurityException {
         var curr = _sentReadies.putIfAbsent(request.getMac().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            for (var stub : _servers) {
-                stub.readyRegister(ContractGenerator.generateReadyRegister(request, _privateKey, _serverId), new StreamObserver<>() {
-                    @Override
-                    public void onNext(MacReply value) {
-                    }
+            var ready = ContractGenerator.generateReadyRegister(request, _privateKey, _serverId);
+            //If we don't do this we get an error because we can't send RPCs from an RPC
+            Context ctx = Context.current().fork();
+            ctx.run(() -> {
+                for (var stub : _servers) {
+                    stub.readyRegister(ready, new StreamObserver<>() {
+                        @Override
+                        public void onNext(MacReply value) {
+                        }
 
-                    @Override
-                    public void onError(Throwable t) {
-                    }
+                        @Override
+                        public void onError(Throwable t) {
+                        }
 
-                    @Override
-                    public void onCompleted() {
-                    }
-                });
-            }
+                        @Override
+                        public void onCompleted() {
+                        }
+                    });
+                }
+            });
+
         }
     }
 
