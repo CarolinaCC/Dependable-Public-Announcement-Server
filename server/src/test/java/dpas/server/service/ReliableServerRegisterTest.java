@@ -50,13 +50,11 @@ public class ReliableServerRegisterTest {
 
     private ExecutorService[] _executors;
 
-    private static final String MESSAGE = "Message";
 
     private static final String host = "localhost";
     private static final int port = 9000;
 
-    private static final int NUMBER_THREADS = 4;
-    private static final int NUMBER_POSTS = NUMBER_THREADS * 10;
+
 
     @Parameterized.Parameters
     public static Object[][] data() {
