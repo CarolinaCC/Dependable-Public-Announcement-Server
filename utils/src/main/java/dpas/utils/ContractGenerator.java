@@ -111,10 +111,26 @@ public class ContractGenerator {
                 .build();
     }
 
+    public static Contract.EchoAnnouncement generateEchoAnnouncement(Contract.Announcement request, PrivateKey serverKey, String serverId) throws GeneralSecurityException {
+        return Contract.EchoAnnouncement.newBuilder()
+                .setRequest(request)
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(ArrayUtils.addAll(request.getSignature().toByteArray(), ECHO), serverKey)))
+                .setServerKey(serverId)
+                .build();
+    }
+
     public static Contract.ReadyRegister generateReadyRegister(Contract.RegisterRequest request, PrivateKey serverKey, String serverId) throws GeneralSecurityException {
         return Contract.ReadyRegister.newBuilder()
                 .setRequest(request)
                 .setMac(ByteString.copyFrom(MacGenerator.generateMac(ArrayUtils.addAll(request.getMac().toByteArray(), READY), serverKey)))
+                .setServerKey(serverId)
+                .build();
+    }
+
+    public static Contract.ReadyAnnouncement generateReadyAnnouncement(Contract.Announcement request, PrivateKey serverKey, String serverId) throws GeneralSecurityException {
+        return Contract.ReadyAnnouncement.newBuilder()
+                .setRequest(request)
+                .setMac(ByteString.copyFrom(MacGenerator.generateMac(ArrayUtils.addAll(request.getSignature().toByteArray(), READY), serverKey)))
                 .setServerKey(serverId)
                 .build();
     }

@@ -66,7 +66,15 @@ public class MacVerifier {
         return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), ECHO), reply.getMac().toByteArray());
     }
 
+    public static boolean verifyMac(Contract.EchoAnnouncement request, Contract.MacReply reply, PublicKey serverKey) {
+        return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), ECHO), reply.getMac().toByteArray());
+    }
+
     public static boolean verifyMac(Contract.ReadyRegister request, Contract.MacReply reply, PublicKey serverKey) {
+        return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), READY), reply.getMac().toByteArray());
+    }
+
+    public static boolean verifyMac(Contract.ReadyAnnouncement request, Contract.MacReply reply, PublicKey serverKey) {
         return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), READY), reply.getMac().toByteArray());
     }
 
