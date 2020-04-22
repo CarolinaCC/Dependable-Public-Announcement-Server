@@ -1,6 +1,7 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -100,19 +101,19 @@ public class ReliableByzantineServicePostGeneralTest {
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
         _request = ContractGenerator.generateAnnouncement(_pubKey, _privKey,
-                MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request1 = ContractGenerator.generateAnnouncement(_serverPubKey[0], _privKey,
-                MESSAGE1, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE1, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request2 = ContractGenerator.generateAnnouncement(_serverPubKey[1], _pubKey, _privKey,
-                MESSAGE2, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE2, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request3 = ContractGenerator.generateAnnouncement(_serverPubKey[2], _pubKey, _privKey,
-                MESSAGE3, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE3, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request4 = ContractGenerator.generateAnnouncement(_serverPubKey[3], _pubKey, _privKey,
-                MESSAGE4, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE4, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
         _requests = new Contract.Announcement[4];
         _requests[0] = _request1;
         _requests[1] = _request2;
@@ -215,22 +216,21 @@ public class ReliableByzantineServicePostGeneralTest {
     }
 
     @Test
-    public void validPost() throws GeneralSecurityException, InterruptedException {
+    public void validPostGeneral() throws GeneralSecurityException, InterruptedException {
         _stub.postGeneral(_request);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
 
-        Thread.sleep(2000);
+        Thread.sleep(4000);
 
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(1, value.getAnnouncementsCount());
@@ -252,11 +252,10 @@ public class ReliableByzantineServicePostGeneralTest {
     }
 
     @Test
-    public void validRepeatedPost() throws GeneralSecurityException, InterruptedException {
+    public void validRepeatedPostGeneral() throws GeneralSecurityException, InterruptedException {
         _stub.postGeneral(_request);
         _stub.postGeneral(_request);
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
@@ -267,7 +266,7 @@ public class ReliableByzantineServicePostGeneralTest {
 
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(1, value.getAnnouncementsCount());
@@ -289,7 +288,7 @@ public class ReliableByzantineServicePostGeneralTest {
     }
 
     @Test
-    public void oneServerPost() throws InterruptedException, GeneralSecurityException {
+    public void oneServerPostGeneral() throws InterruptedException, GeneralSecurityException {
         var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[1].getServerKey())).build();
         _stubs[1].postGeneral(req, new StreamObserver<>() {
             @Override
@@ -311,13 +310,12 @@ public class ReliableByzantineServicePostGeneralTest {
         CountDownLatch latch = new CountDownLatch(3);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(0, value.getAnnouncementsCount());
@@ -337,7 +335,7 @@ public class ReliableByzantineServicePostGeneralTest {
     }
 
     @Test
-    public void twoServerPost() throws InterruptedException, GeneralSecurityException {
+    public void twoServerPostGeneral() throws InterruptedException, GeneralSecurityException {
         for (int i = 0; i < 2; i++) {
             var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[i].getServerKey())).build();
             _stubs[i].postGeneral(req, new StreamObserver<>() {
@@ -361,13 +359,12 @@ public class ReliableByzantineServicePostGeneralTest {
         CountDownLatch latch = new CountDownLatch(3);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(0, value.getAnnouncementsCount());
@@ -387,7 +384,7 @@ public class ReliableByzantineServicePostGeneralTest {
     }
 
     @Test
-    public void quorumServerPost() throws InterruptedException, GeneralSecurityException {
+    public void quorumServerPostGeneral() throws InterruptedException, GeneralSecurityException {
         final CountDownLatch latch = new CountDownLatch(3);
         for (int i = 1; i < 4; i++) {
             var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[i].getServerKey())).build();
@@ -413,13 +410,12 @@ public class ReliableByzantineServicePostGeneralTest {
         Thread.sleep(1000);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(1, value.getAnnouncementsCount());
@@ -465,14 +461,14 @@ public class ReliableByzantineServicePostGeneralTest {
 
         CountDownLatch latch = new CountDownLatch(3);
 
+
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(0, value.getAnnouncementsCount()); //Since client is bizantine, he tried to write diferent values in each server but could not
@@ -491,4 +487,55 @@ public class ReliableByzantineServicePostGeneralTest {
         latch.await();
     }
 
+    @Test
+    public void weirdBizantineBehaviour() throws InterruptedException {
+        for (int i = 0; i < 4; i++) {
+            for(int j = i; j < 4; j++) {
+                _stubs[i].postGeneral(_requests[j], new StreamObserver<>() {
+                    @Override
+                    public void onNext(Contract.MacReply value) {
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+
+                    }
+
+                    @Override
+                    public void onCompleted() {
+
+                    }
+                });
+            }
+        }
+
+        Thread.sleep(2000);
+
+        CountDownLatch latch = new CountDownLatch(3);
+
+
+        var request = Contract.ReadRequest.newBuilder()
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        for (var stub : _stubs) {
+            stub.readGeneral(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    assertEquals(0, value.getAnnouncementsCount()); //Since client is bizantine, he tried to write diferent values in each server but could not
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+        }
+        latch.await();
+    }
 }

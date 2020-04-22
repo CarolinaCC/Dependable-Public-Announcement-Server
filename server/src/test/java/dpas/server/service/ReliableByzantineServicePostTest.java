@@ -226,7 +226,7 @@ public class ReliableByzantineServicePostTest {
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
 
-        Thread.sleep(2000);
+        Thread.sleep(4000);
 
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
