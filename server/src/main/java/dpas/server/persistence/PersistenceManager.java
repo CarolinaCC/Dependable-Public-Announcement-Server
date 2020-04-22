@@ -8,7 +8,7 @@ import dpas.server.service.ServiceDPASSafeImpl;
 import dpas.utils.link.PerfectStub;
 import org.apache.commons.io.FileUtils;
 
-import java.util.List;
+import java.util.*;
 
 import javax.json.*;
 import java.io.*;
@@ -21,10 +21,6 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class PersistenceManager {
@@ -109,12 +105,20 @@ public class PersistenceManager {
                 for (int j = 0; j < jsonReferences.size(); j++) {
                     references.add(jsonReferences.getString(j));
                 }
+
+                JsonObject jsonBroadCastProof = operation.getJsonObject("BroadCastProof");
+                Map<String, String> broadcastproof = new HashMap<>();
+                Set<String> keys = jsonBroadCastProof.keySet();
+                for (String mapKey: keys) {
+                    broadcastproof.put(mapKey, jsonBroadCastProof.getString(mapKey));
+                }
+
                 long seq = operation.getInt("Sequencer");
 
                 if (operation.getString("Type").equals("Post"))
-                    service.addAnnouncement(operation.getString("Message"), key, signature, references, seq);
+                    service.addAnnouncement(operation.getString("Message"), key, signature, references, seq, broadcastproof);
                 else
-                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, seq);
+                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, seq, broadcastproof);
                 userSeqs.put(key, userSeqs.get(key) + 1);
             }
         }

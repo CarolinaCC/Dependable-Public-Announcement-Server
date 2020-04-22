@@ -19,6 +19,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
@@ -121,6 +122,18 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         _announcements.put(announcement.getIdentifier(), announcement);
     }
 
+    public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
+            throws CommonDomainException {
+
+        var refs = getReferences(references);
+        var user = _users.get(key);
+        var board = user.getUserBoard();
+
+        var announcement = new Announcement(signature, user, message, refs, board, seq, broadcastProof);
+        board.post(announcement);
+        _announcements.put(announcement.getIdentifier(), announcement);
+    }
+
     public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
             throws CommonDomainException {
 
@@ -129,6 +142,18 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         var board = _generalBoard;
 
         var announcement = new Announcement(signature, user, message, refs, board, seq);
+        _generalBoard.post(announcement);
+        _announcements.put(announcement.getIdentifier(), announcement);
+    }
+
+    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastproof)
+            throws CommonDomainException {
+
+        var refs = getReferences(references);
+        var user = _users.get(key);
+        var board = _generalBoard;
+
+        var announcement = new Announcement(signature, user, message, refs, board, seq, broadcastproof);
         _generalBoard.post(announcement);
         _announcements.put(announcement.getIdentifier(), announcement);
     }
