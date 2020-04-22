@@ -271,8 +271,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void echoAnnouncement(Contract.EchoAnnouncement request, StreamObserver<MacReply> responseObserver) {
         try {
-            //TODO
-            _securityManager.validateRequest(request, _serverKeys);
+            _securityManager.validateAnnouncement(request, _serverKeys);
 
             var id = request.getRequest().getSignature().toStringUtf8();
 

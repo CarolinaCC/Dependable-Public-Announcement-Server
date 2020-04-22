@@ -29,6 +29,9 @@ public class SecurityManager {
         validateRequest(mac, content, publicKey);
     }
 
+
+
+
     private void validateRequest(byte[] mac, byte[] content, PublicKey key) throws IllegalMacException {
         if (!MacVerifier.verifyMac(key, content, mac))
             throw new IllegalMacException("Could not validate request");
@@ -48,7 +51,8 @@ public class SecurityManager {
         }
     }
 
-    public void validateRequest(Contract.ReadyRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+
+    public void validateAnnouncement(Contract.EchoAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
         validateRequest(request.getRequest());
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
