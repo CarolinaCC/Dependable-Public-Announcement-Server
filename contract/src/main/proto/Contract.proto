@@ -11,6 +11,8 @@ service ServiceDPAS {
     rpc readyRegister(ReadyRegister) returns (MacReply);
     rpc echoAnnouncement(EchoAnnouncement) returns (MacReply);
     rpc readyAnnouncement(ReadyAnnouncement) returns (MacReply);
+    rpc echoAnnouncementGeneral(EchoAnnouncement) returns (MacReply);
+    rpc readyAnnouncementGeneral(ReadyAnnouncement) returns (MacReply);
 }
 //
 message RegisterRequest {

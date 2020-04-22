@@ -13,9 +13,7 @@ import dpas.server.persistence.PersistenceManager;
 import dpas.server.security.SecurityManager;
 import dpas.server.security.exception.IllegalMacException;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.CipherUtils;
-import dpas.utils.auth.ErrorGenerator;
-import dpas.utils.auth.MacGenerator;
+import dpas.utils.auth.*;
 import dpas.utils.link.PerfectStub;
 import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
@@ -158,6 +156,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             var announcement = generateAnnouncement(request, _privateKey);
 
             var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            brbAnnouncement(request);
             if (curr == null) {
                 //Announcement with that identifier does not exist yet
                 save(announcement.toJson("Post"));
@@ -174,6 +173,9 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (InterruptedException e) {
+            //Never happens
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "An Error occurred in the server", request, _privateKey));
         }
 
     }
@@ -183,6 +185,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             var announcement = generateAnnouncement(request, _generalBoard, _privateKey);
 
+            brbAnnouncementGeneral(request);
             var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr == null) {
                 //Announcement with that identifier does not exist yet
@@ -200,6 +203,9 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (InterruptedException e) {
+            //Never happens
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "An Error occurred in the server", request, _privateKey));
         }
     }
 
@@ -273,9 +279,9 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             _securityManager.validateAnnouncement(request, _serverKeys);
 
-            var id = request.getRequest().getSignature().toStringUtf8();
+            generateAnnouncement(request.getRequest(), _privateKey);
 
-            //broadcastEchoRegister(request.getRequest());
+            var id = request.getRequest().getSignature().toStringUtf8();
 
             _echosCount.putIfAbsent(id, new HashSet<>());
             var echos = _echosCount.get(id);
@@ -290,11 +296,9 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             }
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
             responseObserver.onCompleted();
-        } catch (IllegalMacException e) {
-            //TODO
+        } catch (IllegalMacException | CommonDomainException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
-            //TODO
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         }
     }
@@ -303,6 +307,8 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     public void readyAnnouncement(Contract.ReadyAnnouncement request, StreamObserver<MacReply> responseObserver) {
         try {
             _securityManager.validateAnnouncement(request, _serverKeys);
+
+            generateAnnouncement(request.getRequest(), _privateKey);
 
             var id = request.getRequest().getSignature().toStringUtf8();
 
@@ -328,6 +334,72 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (GeneralSecurityException e) {
            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+        } catch (CommonDomainException e) {
+            //This never happens by the security manager
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
+        }
+    }
+
+    @Override
+    public void echoAnnouncementGeneral(Contract.EchoAnnouncement request, StreamObserver<MacReply> responseObserver) {
+        try {
+            _securityManager.validateAnnouncement(request, _serverKeys);
+
+            generateAnnouncement(request.getRequest(), _generalBoard, _privateKey);
+
+            var id = request.getRequest().getSignature().toStringUtf8();
+
+            _echosCount.putIfAbsent(id, new HashSet<>());
+            var echos = _echosCount.get(id);
+            synchronized (echos) {
+                var notExisted = echos.add(request.getMac().toStringUtf8());
+                if (notExisted) {
+                    //First time seeing this echo
+                    if (echos.size() == _quorumSize) {
+                        broadcastReadyAnnouncementGeneral(request.getRequest());
+                    }
+                }
+            }
+            responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
+            responseObserver.onCompleted();
+        } catch (IllegalMacException | CommonDomainException e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+        }
+    }
+
+    @Override
+    public void readyAnnouncementGeneral(Contract.ReadyAnnouncement request, StreamObserver<MacReply> responseObserver) {
+        try {
+            _securityManager.validateAnnouncement(request, _serverKeys);
+
+            generateAnnouncement(request.getRequest(), _generalBoard, _privateKey);
+
+            var id = request.getRequest().getSignature().toStringUtf8();
+
+            _readyCount.putIfAbsent(id, new HashSet<>());
+            var countSet = _readyCount.get(id);
+            synchronized (countSet) {
+                var notExisted = countSet.add(request.getMac().toStringUtf8());
+                if (notExisted) {
+                    if (countSet.size() == _numFaults + 1) {
+                        //Amplification Step
+                        broadcastReadyAnnouncement(request.getRequest());
+                    }
+                    if (countSet.size() == _quorumSize) {
+                        deliverAnnouncement(request.getRequest());
+                    }
+                }
+            }
+            responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
+            responseObserver.onCompleted();
+        } catch (IllegalMacException e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (IOException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (CommonDomainException e) {
             //This never happens by the security manager
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
@@ -380,8 +452,35 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             Context ctx = Context.current().fork();
             ctx.run(() -> {
                 for (var stub : _servers) {
-                    //TODO
                     stub.echoAnnouncement(echo, new StreamObserver<>() {
+                        @Override
+                        public void onNext(MacReply value) {
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private void broadcastEchoAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException {
+        var curr = _sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
+        if (curr == null) {
+            //First time broadcasting
+            var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
+
+            //If we don't do this we get an error because we can't send RPCs from an RPC
+            Context ctx = Context.current().fork();
+            ctx.run(() -> {
+                for (var stub : _servers) {
+                    stub.echoAnnouncementGeneral(echo, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
                         }
@@ -431,14 +530,39 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         var curr = _sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            //TODO
             var ready = ContractGenerator.generateReadyAnnouncement(request, _privateKey, _serverId);
             //If we don't do this we get an error because we can't send RPCs from an RPC
             Context ctx = Context.current().fork();
             ctx.run(() -> {
                 for (var stub : _servers) {
-                    //TODO
                     stub.readyAnnouncement(ready, new StreamObserver<>() {
+                        @Override
+                        public void onNext(MacReply value) {
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private void broadcastReadyAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException {
+        var curr = _sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
+        if (curr == null) {
+            //First time broadcasting
+            var ready = ContractGenerator.generateReadyAnnouncement(request, _privateKey, _serverId);
+            //If we don't do this we get an error because we can't send RPCs from an RPC
+            Context ctx = Context.current().fork();
+            ctx.run(() -> {
+                for (var stub : _servers) {
+                    stub.readyAnnouncementGeneral(ready, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
                         }
@@ -468,12 +592,27 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void deliverAnnouncement(Contract.Announcement request) throws GeneralSecurityException, CommonDomainException, IOException {
+        _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        _deliveredMessages.get(request.getIdentifier()).countDown();
     }
+
 
     private void brbRegister(Contract.RegisterRequest request) throws GeneralSecurityException, InterruptedException {
         broadcastEchoRegister(request); //Received Message start RBR Echo
         _deliveredMessages.putIfAbsent(request.getMac().toStringUtf8(), new CountDownLatch(1));
         _deliveredMessages.get(request.getMac().toStringUtf8()).await();
+    }
+
+    private void brbAnnouncement(Contract.Announcement request) throws GeneralSecurityException, InterruptedException {
+        broadcastEchoAnnouncement(request); //Received Message start RBR Echo
+        _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        _deliveredMessages.get(request.getIdentifier()).await();
+    }
+
+    private void brbAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException, InterruptedException {
+        broadcastEchoAnnouncementGeneral(request); //Received Message start RBR Echo
+        _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        _deliveredMessages.get(request.getIdentifier()).await();
     }
 
 
@@ -485,6 +624,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             //Invalid Seq (General Board is a (N,N) register so it can't be higher than curr + 1
             throw new InvalidSeqException("Invalid seq");
         }
+
+        if (!MacVerifier.verifySeq(request.getSeq(), request.getPublicKey().toByteArray(),
+                board.getIdentifier(), request.getIdentifier())) {
+            throw new InvalidSeqException("Invalid seq");
+        }
+
         return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
@@ -501,6 +646,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             //Invalid Seq (User Board is a (1,N) register so it must be curr + 1 (or a past one that is repeated)
             throw new InvalidSeqException("Invalid seq");
         }
+
+        if (!MacVerifier.verifySeq(request.getSeq(), request.getPublicKey().toByteArray(),
+                Base64.getEncoder().encodeToString(request.getPublicKey().toByteArray()), request.getIdentifier())) {
+            throw new InvalidSeqException("Invalid seq");
+        }
+
         return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());
     }
 }
