@@ -380,7 +380,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         var curr = _sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            //TODO
             var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
 
             //If we don't do this we get an error because we can't send RPCs from an RPC
