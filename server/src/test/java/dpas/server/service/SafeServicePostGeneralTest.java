@@ -42,6 +42,8 @@ public class SafeServicePostGeneralTest {
     private static Contract.Announcement _secondUserRequest;
     private static Contract.Announcement _invalidSeqRequest;
     private static Contract.Announcement _invalidPubKeyRequest;
+    private static Contract.Announcement _invalidIdentifierRequest;
+
 
     private static final int port = 9001;
     private static final String host = "localhost";
@@ -79,6 +81,8 @@ public class SafeServicePostGeneralTest {
 
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, 1, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
+
+        _invalidIdentifierRequest = Contract.Announcement.newBuilder(_request).setIdentifier("").build();
 
         _request2 = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, 2, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
@@ -144,6 +148,21 @@ public class SafeServicePostGeneralTest {
         reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
+    }
+
+    @Test
+    public void postInvalidIdentifier() throws GeneralSecurityException, IOException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid identifier");
+        try {
+            _stub.postGeneral(_invalidIdentifierRequest);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidIdentifierRequest.getSignature().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
     }
 
 

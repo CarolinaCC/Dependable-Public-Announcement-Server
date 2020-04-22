@@ -16,6 +16,7 @@ import dpas.utils.auth.CipherUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
+import dpas.utils.auth.MacVerifier;
 import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
@@ -26,6 +27,7 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.stream.Collectors;
 
 import static io.grpc.Status.*;
@@ -171,6 +173,12 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             //Invalid Seq (General Board is a (N,N) register so it can't be higher than curr + 1
             throw new InvalidSeqException("Invalid seq");
         }
+
+        if (!MacVerifier.verifySeq(request.getSeq(), request.getPublicKey().toByteArray(),
+                board.getIdentifier(), request.getIdentifier())) {
+            throw new InvalidSeqException("Invalid identifier");
+        }
+
         return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
@@ -187,8 +195,15 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             //Invalid Seq (User Board is a (1,N) register so it must be curr + 1 (or a past one that is repeated)
             throw new InvalidSeqException("Invalid seq");
         }
+
+        if (!MacVerifier.verifySeq(request.getSeq(), request.getPublicKey().toByteArray(),
+                Base64.getEncoder().encodeToString(request.getPublicKey().toByteArray()), request.getIdentifier())) {
+            throw new InvalidSeqException("Invalid identifier");
+        }
+
         return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());
     }
+
 
     //Don't want to save when testing
     private void save(JsonObject object) throws IOException {

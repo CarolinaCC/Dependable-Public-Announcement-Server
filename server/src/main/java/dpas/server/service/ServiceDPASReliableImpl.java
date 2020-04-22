@@ -627,7 +627,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
         if (!MacVerifier.verifySeq(request.getSeq(), request.getPublicKey().toByteArray(),
                 board.getIdentifier(), request.getIdentifier())) {
-            throw new InvalidSeqException("Invalid seq");
+            throw new InvalidSeqException("Invalid identifier");
         }
 
         return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
@@ -649,7 +649,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
         if (!MacVerifier.verifySeq(request.getSeq(), request.getPublicKey().toByteArray(),
                 Base64.getEncoder().encodeToString(request.getPublicKey().toByteArray()), request.getIdentifier())) {
-            throw new InvalidSeqException("Invalid seq");
+            throw new InvalidSeqException("Invalid identifier");
         }
 
         return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());

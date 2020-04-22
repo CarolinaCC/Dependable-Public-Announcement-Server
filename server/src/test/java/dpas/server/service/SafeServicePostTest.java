@@ -54,6 +54,8 @@ public class SafeServicePostTest {
     private static Contract.Announcement _futureRequest;
     private static Contract.Announcement _longRequest;
     private static Contract.Announcement _invalidPubKeyRequest;
+    private static Contract.Announcement _invalidIdentifierRequest;
+    private static Contract.Announcement _invalidSeqRequest;
 
     private static final int port = 9001;
     private static final String host = "localhost";
@@ -95,6 +97,10 @@ public class SafeServicePostTest {
         _request = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
 
+        _invalidSeqRequest = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
+                MESSAGE, _seq + 10, CipherUtils.keyToString(_pubKey), null);
+
+        _invalidIdentifierRequest = Contract.Announcement.newBuilder(_request).setIdentifier("").build();
 
         _request2 = ContractGenerator.generateAnnouncement(_serverPKey, _pubKey, _privKey,
                 OTHER_MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
@@ -145,6 +151,37 @@ public class SafeServicePostTest {
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
         assertEquals(_impl._announcements.size(), 1);
     }
+
+    @Test
+    public void postInvalidIdentifier() throws GeneralSecurityException, IOException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid identifier");
+        try {
+            _stub.post(_invalidIdentifierRequest);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidIdentifierRequest.getSignature().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
+    }
+
+    @Test
+    public void postInvalidSeq() throws GeneralSecurityException, IOException {
+        exception.expect(StatusRuntimeException.class);
+        exception.expectMessage("Invalid seq");
+        try {
+            _stub.post(_invalidSeqRequest);
+        } catch (StatusRuntimeException e) {
+            Metadata data = e.getTrailers();
+            assertArrayEquals(data.get(ErrorGenerator.contentKey), _invalidSeqRequest.getSignature().toByteArray());
+            assertEquals(e.getStatus().getCode(), Status.UNAUTHENTICATED.getCode());
+            assertTrue(MacVerifier.verifyMac(_serverPKey, e));
+            throw e;
+        }
+    }
+
 
     @Test
     public void postNonUser() throws GeneralSecurityException, IOException {
