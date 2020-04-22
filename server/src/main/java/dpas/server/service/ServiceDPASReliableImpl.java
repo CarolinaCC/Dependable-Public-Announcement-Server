@@ -20,10 +20,8 @@ import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -153,15 +151,11 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void post(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-            var announcement = generateAnnouncement(request, _privateKey);
 
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            generateAnnouncement(request, _privateKey); //validate request
+
             brbAnnouncement(request);
-            if (curr == null) {
-                //Announcement with that identifier does not exist yet
-                save(announcement.toJson("Post"));
-                announcement.getUser().getUserBoard().post(announcement);
-            }
+
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
             responseObserver.onCompleted();
 
@@ -169,8 +163,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
-        } catch (IOException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (InterruptedException e) {
@@ -183,15 +175,10 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-            var announcement = generateAnnouncement(request, _generalBoard, _privateKey);
+            generateAnnouncement(request, _generalBoard, _privateKey);
 
             brbAnnouncementGeneral(request);
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
-            if (curr == null) {
-                //Announcement with that identifier does not exist yet
-                save(announcement.toJson("PostGeneral"));
-                _generalBoard.post(announcement);
-            }
+
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
             responseObserver.onCompleted();
 
@@ -199,8 +186,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
-        } catch (IOException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (CommonDomainException | IllegalArgumentException e) {
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (InterruptedException e) {
@@ -385,10 +370,10 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 if (notExisted) {
                     if (countSet.size() == _numFaults + 1) {
                         //Amplification Step
-                        broadcastReadyAnnouncement(request.getRequest());
+                        broadcastReadyAnnouncementGeneral(request.getRequest());
                     }
                     if (countSet.size() == _quorumSize) {
-                        deliverAnnouncement(request.getRequest());
+                        deliverAnnouncementGeneral(request.getRequest());
                     }
                 }
             }
@@ -591,7 +576,23 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         _deliveredMessages.get(request.getMac().toStringUtf8()).countDown();
     }
 
-    private void deliverAnnouncement(Contract.Announcement request) throws GeneralSecurityException, CommonDomainException, IOException {
+    private void deliverAnnouncement(Contract.Announcement request) throws CommonDomainException, GeneralSecurityException, IOException {
+        //Is called only one time
+        var announcement = generateAnnouncement(request);
+        _announcements.putIfAbsent(request.getIdentifier(), announcement);
+        save(announcement.toJson("Post"));
+        announcement.getUser().getUserBoard().post(announcement);
+        _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        _deliveredMessages.get(request.getIdentifier()).countDown();
+
+    }
+
+    private void deliverAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException, CommonDomainException, IOException {
+        //Is called only one time
+        var announcement = generateAnnouncement(request, _generalBoard, _privateKey);
+        _announcements.putIfAbsent(request.getIdentifier(), announcement);
+        save(announcement.toJson("PostGeneral"));
+        _generalBoard.post(announcement);
         _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
         _deliveredMessages.get(request.getIdentifier()).countDown();
     }
@@ -609,6 +610,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             broadcastEchoAnnouncement(request); //Received Message start RBR Echo
         }
         _deliveredMessages.get(request.getIdentifier()).await();
+
     }
 
     private void brbAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException, InterruptedException {
