@@ -150,9 +150,8 @@ public class ReliableCrashServerPostTest {
             _servers[i] = NettyServerBuilder.forPort(port + i).addService(impl).build();
             if (i != 3) {
                 _servers[i].start();
-                _impls[i] = impl;
             }
-
+            _impls[i] = impl;
         }
         _stub = new QuorumStub(Arrays.asList(_stubs), 1);
 
@@ -181,9 +180,6 @@ public class ReliableCrashServerPostTest {
                 .build();
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
-
-        Thread.sleep(2000);
-
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
@@ -218,9 +214,6 @@ public class ReliableCrashServerPostTest {
                 .build();
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
-
-        Thread.sleep(2000);
-
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
@@ -366,8 +359,6 @@ public class ReliableCrashServerPostTest {
         }
         latch.await();
         CountDownLatch latch2 = new CountDownLatch(3);
-        Thread.sleep(1000);
-
         var request = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)

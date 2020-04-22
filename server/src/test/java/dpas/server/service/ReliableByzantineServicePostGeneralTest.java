@@ -226,8 +226,6 @@ public class ReliableByzantineServicePostGeneralTest {
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
 
-        Thread.sleep(4000);
-
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
             stub.readGeneral(request, new StreamObserver<>() {
@@ -261,9 +259,6 @@ public class ReliableByzantineServicePostGeneralTest {
                 .build();
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
-
-        Thread.sleep(2000);
-
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
             stub.readGeneral(request, new StreamObserver<>() {
@@ -407,7 +402,6 @@ public class ReliableByzantineServicePostGeneralTest {
         }
         latch.await();
         CountDownLatch latch2 = new CountDownLatch(3);
-        Thread.sleep(1000);
 
         var request = Contract.ReadRequest.newBuilder()
                 .setNumber(0)

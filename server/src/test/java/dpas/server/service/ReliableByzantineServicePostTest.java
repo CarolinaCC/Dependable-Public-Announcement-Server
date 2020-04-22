@@ -224,9 +224,6 @@ public class ReliableByzantineServicePostTest {
                 .setNonce("Nonce1")
                 .build();
 
-        //Perform a read and wait for all servers to respond to garantee that all servers see the register
-
-        Thread.sleep(4000);
 
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
@@ -261,9 +258,6 @@ public class ReliableByzantineServicePostTest {
                 .setNonce("Nonce1")
                 .build();
 
-        //Perform a read and wait for all servers to respond to garantee that all servers see the register
-
-        Thread.sleep(2000);
 
         CountDownLatch latch = new CountDownLatch(3);
         for (var stub : _stubs) {
@@ -410,7 +404,6 @@ public class ReliableByzantineServicePostTest {
         }
         latch.await();
         CountDownLatch latch2 = new CountDownLatch(3);
-        Thread.sleep(1000);
 
         var request = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
