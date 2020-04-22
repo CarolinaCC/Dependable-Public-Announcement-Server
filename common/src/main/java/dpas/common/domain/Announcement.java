@@ -8,6 +8,8 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import java.security.*;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,6 +23,7 @@ public class Announcement {
     private final long _seq;
     private final String _hash;
     private final String _identifier;
+    private final Map<String, String> _broadcastProof;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq) throws CommonDomainException {
@@ -35,6 +38,7 @@ public class Announcement {
         _seq = seq;
         _hash = generateHash();
         _identifier = generateIdentifier();
+        _broadcastProof = new HashMap<>();
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
@@ -117,6 +121,10 @@ public class Announcement {
         return _seq;
     }
 
+    public void addProof(String serverId, String sign) {
+        _broadcastProof.put(serverId, sign);
+    }
+
     public Contract.Announcement toContract() {
 
         var references = getReferenceStrings(_references);
@@ -128,6 +136,7 @@ public class Announcement {
                 .setSignature(ByteString.copyFrom(_signature))
                 .setSeq(_seq)
                 .setIdentifier(_identifier)
+                .putAllReadyProof(_broadcastProof)
                 .build();
     }
 

@@ -47,6 +47,7 @@ message Announcement {
     bytes signature = 4;
     int64 seq = 5;
     string identifier = 6;
+    map<string, string> readyProof = 7;
 }
 
 message EchoRegister {

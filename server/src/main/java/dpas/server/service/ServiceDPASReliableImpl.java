@@ -51,6 +51,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
      */
     private final Map<String, Boolean> _sentReadies = new ConcurrentHashMap<>();
     private final Map<String, Set<String>> _readyCount = new ConcurrentHashMap<>();
+    private final Map<String, Set<Contract.ReadyAnnouncement>> _announcementProofs = new ConcurrentHashMap<>();
 
     /**
      * Map of messages delivered
@@ -302,6 +303,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             synchronized (countSet) {
                 var notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
+                    //New Proof
+                    _announcementProofs.putIfAbsent(id, new HashSet<>());
+                    var proofs = _announcementProofs.get(id);
+                    synchronized (proofs) {
+                        proofs.add(request);
+                    }
                     if (countSet.size() == _numFaults + 1) {
                         //Amplification Step
                         broadcastReadyAnnouncement(request.getRequest(), announcement);
@@ -368,6 +375,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             synchronized (countSet) {
                 var notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
+                    //New Proof
+                    _announcementProofs.putIfAbsent(id, new HashSet<>());
+                    var proofs = _announcementProofs.get(id);
+                    synchronized (proofs) {
+                        proofs.add(request);
+                    }
                     if (countSet.size() == _numFaults + 1) {
                         //Amplification Step
                         broadcastReadyAnnouncementGeneral(request.getRequest(), announcement);
@@ -596,6 +609,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     private void deliverAnnouncement(Contract.Announcement request) throws CommonDomainException, GeneralSecurityException, IOException {
         //Is called only one time
         var announcement = generateAnnouncement(request, _privateKey);
+        var proofs = _announcementProofs.get(request.getSignature().toStringUtf8());
+        synchronized (proofs) {
+            for (var proof : proofs) {
+                announcement.addProof(proof.getServerKey(), new String(proof.getMac().toByteArray()));
+            }
+        }
         _announcements.putIfAbsent(request.getIdentifier(), announcement);
         save(announcement.toJson("Post"));
         announcement.getUser().getUserBoard().post(announcement);
@@ -607,6 +626,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     private void deliverAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException, CommonDomainException, IOException {
         //Is called only one time
         var announcement = generateAnnouncement(request, _generalBoard, _privateKey);
+        var proofs = _announcementProofs.get(request.getSignature().toStringUtf8());
+        synchronized (proofs) {
+            for (var proof : proofs) {
+                announcement.addProof(proof.getServerKey(), new String(proof.getMac().toByteArray()));
+            }
+        }
         _announcements.putIfAbsent(request.getIdentifier(), announcement);
         save(announcement.toJson("PostGeneral"));
         _generalBoard.post(announcement);
