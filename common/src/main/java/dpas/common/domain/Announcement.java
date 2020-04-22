@@ -41,6 +41,22 @@ public class Announcement {
         _broadcastProof = new HashMap<>();
     }
 
+    public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
+                        AnnouncementBoard board, long seq, Map<String, String> broadcast) throws CommonDomainException {
+
+        checkArguments(signature, user, message, references, board, seq);
+        checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
+        _message = message;
+        _signature = signature;
+        _user = user;
+        _references = references;
+        _board = board;
+        _seq = seq;
+        _hash = generateHash();
+        _identifier = generateIdentifier();
+        _broadcastProof = broadcast;
+    }
+
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq) throws CommonDomainException {
 
@@ -149,12 +165,19 @@ public class Announcement {
         final var arrayBuilder = Json.createArrayBuilder();
         getReferenceStrings(_references).forEach(arrayBuilder::add);
 
+        var mapBuilder = Json.createObjectBuilder();
+        for (Map.Entry<String, String> entry : _broadcastProof.entrySet()) {
+            mapBuilder.add(entry.getKey(), entry.getValue());
+        }
+
+        //final var mapBuilder = Json.createArrayBuilder()
         jsonBuilder.add("Type", type);
         jsonBuilder.add("Public Key", pubKey);
         jsonBuilder.add("Message", _message);
         jsonBuilder.add("Signature", sign);
         jsonBuilder.add("Sequencer", _seq);
         jsonBuilder.add("References", arrayBuilder.build());
+        jsonBuilder.add("BroadCastProof", mapBuilder);
 
         return jsonBuilder.build();
     }
