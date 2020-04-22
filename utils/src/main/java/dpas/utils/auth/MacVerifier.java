@@ -70,6 +70,10 @@ public class MacVerifier {
         return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), READY), reply.getMac().toByteArray());
     }
 
+    public static boolean verifyMac(Contract.ReadyAnnouncement request, Contract.MacReply reply, PublicKey serverKey) {
+        return verifyMac(serverKey, ArrayUtils.addAll(request.getMac().toByteArray(), READY), reply.getMac().toByteArray());
+    }
+
     public static boolean verifyMac(PublicKey key, StatusRuntimeException e) {
         Metadata data = e.getTrailers();
         byte[] content = ArrayUtils.addAll(data.get(ErrorGenerator.contentKey), e.getMessage().getBytes());

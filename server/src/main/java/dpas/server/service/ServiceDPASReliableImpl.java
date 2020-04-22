@@ -439,7 +439,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         if (curr == null) {
             //First time broadcasting
             //TODO
-            var ready = ContractGenerator.generateReadyRegister(request, _privateKey, _serverId);
+            var ready = ContractGenerator.generateReadyAnnouncement(request, _privateKey, _serverId);
             //If we don't do this we get an error because we can't send RPCs from an RPC
             Context ctx = Context.current().fork();
             ctx.run(() -> {
