@@ -445,4 +445,57 @@ public class ReliableServerPostTest {
         latch.await();
     }
 
+    @Test
+    public void weirdBizantineBehaviour() throws InterruptedException {
+        for (int i = 0; i < 4; i++) {
+            for(int j = i; j < 4; j++) {
+                _stubs[i].post(_requests[j], new StreamObserver<>() {
+                    @Override
+                    public void onNext(Contract.MacReply value) {
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+
+                    }
+
+                    @Override
+                    public void onCompleted() {
+
+                    }
+                });
+            }
+        }
+
+        Thread.sleep(2000);
+
+        CountDownLatch latch = new CountDownLatch(4);
+
+
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        for (var stub : _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    assertEquals(0, value.getAnnouncementsCount()); //Since client is bizantine, he tried to write diferent values in each server but could not
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+        }
+        latch.await();
+    }
+
 }
