@@ -302,8 +302,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void readyAnnouncement(Contract.ReadyAnnouncement request, StreamObserver<MacReply> responseObserver) {
         try {
-            //TODO
-            _securityManager.validateRequest(request, _serverKeys);
+            _securityManager.validateAnnouncement(request, _serverKeys);
 
             var id = request.getRequest().getSignature().toStringUtf8();
 
@@ -324,16 +323,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
             responseObserver.onCompleted();
         } catch (IllegalMacException e) {
-            //TODO
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
-            //TODO
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (GeneralSecurityException e) {
-            //TODO
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+           responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (CommonDomainException e) {
-            //TODO
             //This never happens by the security manager
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
         }

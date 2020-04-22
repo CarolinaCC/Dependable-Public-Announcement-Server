@@ -29,6 +29,13 @@ public class SecurityManager {
         validateRequest(mac, content, publicKey);
     }
 
+    public void validateAnnouncement(Contract.Announcement request ) throws GeneralSecurityException, IllegalMacException {
+        PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        byte[] content = ByteUtils.toByteArray(request);
+        byte[] mac = request.getSignature().toByteArray();
+        validateRequest(mac, content, publicKey);
+    }
+
 
 
 
@@ -51,8 +58,7 @@ public class SecurityManager {
         }
     }
 
-
-    public void validateAnnouncement(Contract.EchoAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+    public void validateRequest(Contract.ReadyRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
         validateRequest(request.getRequest());
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
@@ -60,6 +66,32 @@ public class SecurityManager {
         }
         var mac = request.getMac().toByteArray();
         var content = ArrayUtils.addAll(request.getRequest().getMac().toByteArray(), READY);
+        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+            throw new IllegalMacException("Invalid Mac For Request");
+        }
+    }
+
+    public void validateAnnouncement(Contract.ReadyAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+        validateAnnouncement(request.getRequest());
+        var pubKey = serverKeys.get(request.getServerKey());
+        if (pubKey == null) {
+            throw new IllegalMacException("Ilegal Server Key");
+        }
+        var mac = request.getMac().toByteArray();
+        var content = ArrayUtils.addAll(request.getRequest().getSignature().toByteArray(), READY);
+        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+            throw new IllegalMacException("Invalid Mac For Request");
+        }
+    }
+
+    public void validateAnnouncement(Contract.EchoAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+        validateAnnouncement(request.getRequest());
+        var pubKey = serverKeys.get(request.getServerKey());
+        if (pubKey == null) {
+            throw new IllegalMacException("Ilegal Server Key");
+        }
+        var mac = request.getMac().toByteArray();
+        var content = ArrayUtils.addAll(request.getRequest().getSignature().toByteArray(), ECHO);
         if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
             throw new IllegalMacException("Invalid Mac For Request");
         }
