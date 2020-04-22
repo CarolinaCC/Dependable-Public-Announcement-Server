@@ -329,7 +329,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                     });
                 }
             });
-
         }
     }
 
@@ -345,7 +344,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void brbRegister(Contract.RegisterRequest request) throws GeneralSecurityException, InterruptedException {
-        broadcastEchoRegister(request);
+        broadcastEchoRegister(request); //Received Message start RBR Echo
         _deliveredMessages.putIfAbsent(request.getMac().toStringUtf8(), new CountDownLatch(1));
         _deliveredMessages.get(request.getMac().toStringUtf8()).await();
     }
