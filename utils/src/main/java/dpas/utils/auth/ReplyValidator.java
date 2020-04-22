@@ -2,15 +2,98 @@ package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
 import io.grpc.StatusRuntimeException;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class ReplyValidator {
+
+    public static final byte[] READY = "READY".getBytes();
+
+    public static boolean validateReadReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey,
+                                            PublicKey authorKey, Map<String, PublicKey> serverKeys) {
+        try {
+            Set<String> seen = new HashSet<>();
+            if (!MacVerifier.verifyMac(serverKey, ByteUtils.toByteArray(request, reply.getAnnouncementsCount()), reply.getMac().toByteArray())) {
+                return false;
+            }
+
+            if (request.getNumber() != 0) {
+                if (reply.getAnnouncementsCount() > request.getNumber()) {
+                    return false;
+                }
+            }
+
+            for (Contract.Announcement announcement : reply.getAnnouncementsList()) {
+                if (!MacVerifier.verifySignature(announcement, authorKey, Base64.getEncoder().encodeToString(authorKey.getEncoded()))) {
+                    return false;
+                }
+                if (seen.contains(announcement.getIdentifier())) {
+                    return false;
+                }
+                seen.add(announcement.getIdentifier());
+                if (!validateProofs(announcement, serverKeys)) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public static boolean validateReadGeneralReply(Contract.ReadRequest request, Contract.ReadReply reply,
+                                                   PublicKey serverKey, Map<String, PublicKey> serverKeys) {
+        try {
+            Set<String> seen = new HashSet<>();
+            if (!MacVerifier.verifyMac(request, reply, serverKey)) {
+                return false;
+            }
+
+            if (request.getNumber() != 0) {
+                if (reply.getAnnouncementsCount() > request.getNumber()) {
+                    return false;
+                }
+            }
+
+            for (Contract.Announcement announcement : reply.getAnnouncementsList()) {
+                if (!MacVerifier.verifySignature(announcement)) {
+                    return false;
+                }
+                if (seen.contains(announcement.getIdentifier())) {
+                    return false;
+                }
+                seen.add(announcement.getIdentifier());
+                if (!validateProofs(announcement, serverKeys)) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean validateProofs(Contract.Announcement announcement, Map<String, PublicKey> serverKeys) {
+        var proofs = announcement.getReadyProofMap();
+
+        for(var entry : proofs.entrySet()) {
+            var serverId = entry.getKey();
+            PublicKey pubKey = serverKeys.get(serverId);
+            if (pubKey == null) {
+                return false;
+            }
+            var content = ArrayUtils.addAll(announcement.getSignature().toByteArray(), READY);
+            var mac = Base64.getDecoder().decode(entry.getValue());
+            if (!MacVerifier.verifyMac(pubKey, content, mac)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     public static boolean validateReadReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey, PublicKey authorKey) {
         try {

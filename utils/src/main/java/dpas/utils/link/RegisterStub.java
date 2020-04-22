@@ -33,7 +33,7 @@ public class RegisterStub {
                 .setNumber(number)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var reply = _stub.read(request);
+        var reply = _stub.readReliable(request);
         if (reply.getAnnouncementsCount() != 0) {
             var announcement = reply.getAnnouncements(reply.getAnnouncementsCount() - 1);
             _stub.post(announcement);
@@ -53,7 +53,7 @@ public class RegisterStub {
                 .setNumber(number)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var reply = _stub.readGeneral(request);
+        var reply = _stub.readGeneralReliable(request);
 
         Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
         int i = 0;
@@ -79,7 +79,7 @@ public class RegisterStub {
                 .setNumber(1)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var seq = _stub.getSeq(_stub.readGeneral(req).getAnnouncementsList());
+        var seq = _stub.getSeq(_stub.readGeneralReliable(req).getAnnouncementsList());
         var request = ContractGenerator.generateAnnouncement(pub, priv,
                 message, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, references);
         _stub.postGeneral(request);
@@ -104,7 +104,7 @@ public class RegisterStub {
                     .setPublicKey(ByteString.copyFrom(userKey.getEncoded()))
                     .setNonce(UUID.randomUUID().toString())
                     .build();
-            var seq = _stub.getSeq(_stub.read(req).getAnnouncementsList());
+            var seq = _stub.getSeq(_stub.readReliable(req).getAnnouncementsList());
             _seqs.put(userId, seq + 1);
             return seq;
         }
