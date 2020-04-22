@@ -7,11 +7,14 @@ import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ReplyValidator {
 
     public static boolean validateReadReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey, PublicKey authorKey) {
         try {
+            Set<String> seen = new HashSet<>();
             if (!MacVerifier.verifyMac(serverKey, ByteUtils.toByteArray(request, reply.getAnnouncementsCount()), reply.getMac().toByteArray())) {
                 return false;
             }
@@ -26,6 +29,10 @@ public class ReplyValidator {
                 if (!MacVerifier.verifySignature(announcement, authorKey, Base64.getEncoder().encodeToString(authorKey.getEncoded()))) {
                     return false;
                 }
+                if (seen.contains(announcement.getIdentifier())) {
+                    return false;
+                }
+                seen.add(announcement.getIdentifier());
             }
             return true;
         } catch (IOException e) {
@@ -35,6 +42,7 @@ public class ReplyValidator {
 
     public static boolean validateReadGeneralReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey) {
         try {
+            Set<String> seen = new HashSet<>();
             if (!MacVerifier.verifyMac(request, reply, serverKey)) {
                 return false;
             }
@@ -49,6 +57,10 @@ public class ReplyValidator {
                 if (!MacVerifier.verifySignature(announcement)) {
                     return false;
                 }
+                if (seen.contains(announcement.getIdentifier())) {
+                    return false;
+                }
+                seen.add(announcement.getIdentifier());
             }
             return true;
         } catch (Exception e) {
