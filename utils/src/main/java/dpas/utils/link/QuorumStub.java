@@ -138,6 +138,7 @@ public class QuorumStub {
 
         return replies
                 .stream()
+                .sorted(Comparator.comparing(a -> - a.getAnnouncementsCount()))
                 .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
                 .get();
     }
@@ -173,6 +174,7 @@ public class QuorumStub {
         latch.await();
         return replies
                 .stream()
+                .sorted(Comparator.comparing(a -> - a.getAnnouncementsCount()))
                 .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
                 .get();
 

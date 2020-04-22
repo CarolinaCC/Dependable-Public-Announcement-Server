@@ -14,6 +14,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RegisterStub {
 
@@ -23,7 +24,7 @@ public class RegisterStub {
 
     public RegisterStub(QuorumStub stub) {
         _stub = stub;
-        _seqs = new HashMap<>();
+        _seqs = new ConcurrentHashMap<>();
     }
 
     public Contract.Announcement[] read(PublicKey key, int number) throws InterruptedException, GeneralSecurityException {
@@ -104,7 +105,7 @@ public class RegisterStub {
                     .setNonce(UUID.randomUUID().toString())
                     .build();
             var seq = _stub.getSeq(_stub.read(req).getAnnouncementsList());
-            _seqs.put(userId, seq);
+            _seqs.put(userId, seq + 1);
             return seq;
         }
     }
