@@ -604,14 +604,18 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void brbAnnouncement(Contract.Announcement request) throws GeneralSecurityException, InterruptedException {
-        broadcastEchoAnnouncement(request); //Received Message start RBR Echo
-        _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        var curr = _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        if (curr == null) {
+            broadcastEchoAnnouncement(request); //Received Message start RBR Echo
+        }
         _deliveredMessages.get(request.getIdentifier()).await();
     }
 
     private void brbAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException, InterruptedException {
-        broadcastEchoAnnouncementGeneral(request); //Received Message start RBR Echo
-        _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        var curr = _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
+        if (curr == null) {
+            broadcastEchoAnnouncementGeneral(request); //Received Message start RBR Echo
+        }
         _deliveredMessages.get(request.getIdentifier()).await();
     }
 
