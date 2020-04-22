@@ -1,6 +1,7 @@
 package dpas.server.service;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -35,7 +36,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-public class ReliableServerPostTest {
+public class ReliableServerPostGeneralTest {
     private PerfectStub[] _stubs;
 
     private Server[] _servers;
@@ -79,7 +80,7 @@ public class ReliableServerPostTest {
         return new Object[5][0];
     }
 
-    public ReliableServerPostTest() {
+    public ReliableServerPostGeneralTest() {
     }
 
     @BeforeClass
@@ -98,19 +99,19 @@ public class ReliableServerPostTest {
         _pubKey = keyPair.getPublic();
         _privKey = keyPair.getPrivate();
         _request = ContractGenerator.generateAnnouncement(_pubKey, _privKey,
-                MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request1 = ContractGenerator.generateAnnouncement(_serverPubKey[0], _privKey,
-                MESSAGE1, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE1, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request2 = ContractGenerator.generateAnnouncement(_serverPubKey[1], _pubKey, _privKey,
-                MESSAGE2, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE2, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request3 = ContractGenerator.generateAnnouncement(_serverPubKey[2], _pubKey, _privKey,
-                MESSAGE3, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE3, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
 
         _request4 = ContractGenerator.generateAnnouncement(_serverPubKey[3], _pubKey, _privKey,
-                MESSAGE4, _seq, CipherUtils.keyToString(_pubKey), null);
+                MESSAGE4, _seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, null);
         _requests = new Contract.Announcement[4];
         _requests[0] = _request1;
         _requests[1] = _request2;
@@ -168,11 +169,10 @@ public class ReliableServerPostTest {
     }
 
     @Test
-    public void validPost() throws GeneralSecurityException, InterruptedException {
-        _stub.post(_request);
+    public void validPostGeneral() throws GeneralSecurityException, InterruptedException {
+        _stub.postGeneral(_request);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
@@ -183,7 +183,7 @@ public class ReliableServerPostTest {
 
         CountDownLatch latch = new CountDownLatch(4);
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(1, value.getAnnouncementsCount());
@@ -205,11 +205,10 @@ public class ReliableServerPostTest {
     }
 
     @Test
-    public void validRepeatedPost() throws GeneralSecurityException, InterruptedException {
-        _stub.post(_request);
-        _stub.post(_request);
+    public void validRepeatedPostGeneral() throws GeneralSecurityException, InterruptedException {
+        _stub.postGeneral(_request);
+        _stub.postGeneral(_request);
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
@@ -220,7 +219,7 @@ public class ReliableServerPostTest {
 
         CountDownLatch latch = new CountDownLatch(4);
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(1, value.getAnnouncementsCount());
@@ -242,9 +241,9 @@ public class ReliableServerPostTest {
     }
 
     @Test
-    public void oneServerPost() throws InterruptedException, GeneralSecurityException {
+    public void oneServerPostGeneral() throws InterruptedException, GeneralSecurityException {
         var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[1].getServerKey())).build();
-        _stubs[1].post(req, new StreamObserver<>() {
+        _stubs[1].postGeneral(req, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
             }
@@ -264,13 +263,12 @@ public class ReliableServerPostTest {
         CountDownLatch latch = new CountDownLatch(4);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(0, value.getAnnouncementsCount());
@@ -290,10 +288,10 @@ public class ReliableServerPostTest {
     }
 
     @Test
-    public void twoServerPost() throws InterruptedException, GeneralSecurityException {
+    public void twoServerPostGeneral() throws InterruptedException, GeneralSecurityException {
         for (int i = 0; i < 2; i++) {
             var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[i].getServerKey())).build();
-            _stubs[i].post(req, new StreamObserver<>() {
+            _stubs[i].postGeneral(req, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.MacReply value) {
                 }
@@ -314,13 +312,12 @@ public class ReliableServerPostTest {
         CountDownLatch latch = new CountDownLatch(4);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(0, value.getAnnouncementsCount());
@@ -340,11 +337,11 @@ public class ReliableServerPostTest {
     }
 
     @Test
-    public void quorumServerPost() throws InterruptedException, GeneralSecurityException {
+    public void quorumServerPostGeneral() throws InterruptedException, GeneralSecurityException {
         final CountDownLatch latch = new CountDownLatch(3);
         for (int i = 0; i < 3; i++) {
             var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[i].getServerKey())).build();
-            _stubs[i].post(req, new StreamObserver<>() {
+            _stubs[i].postGeneral(req, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.MacReply value) {
                     latch.countDown();
@@ -366,13 +363,12 @@ public class ReliableServerPostTest {
         Thread.sleep(1000);
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(1, value.getAnnouncementsCount());
@@ -397,7 +393,7 @@ public class ReliableServerPostTest {
     public void allDiferentPosts() throws InterruptedException {
         for (int i = 0; i < 4; i++) {
 
-            _stubs[i].post(_requests[i], new StreamObserver<>() {
+            _stubs[i].postGeneral(_requests[i], new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.MacReply value) {
                 }
@@ -420,13 +416,12 @@ public class ReliableServerPostTest {
 
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(0, value.getAnnouncementsCount()); //Since client is bizantine, he tried to write diferent values in each server but could not
@@ -449,7 +444,7 @@ public class ReliableServerPostTest {
     public void weirdBizantineBehaviour() throws InterruptedException {
         for (int i = 0; i < 4; i++) {
             for(int j = i; j < 4; j++) {
-                _stubs[i].post(_requests[j], new StreamObserver<>() {
+                _stubs[i].postGeneral(_requests[j], new StreamObserver<>() {
                     @Override
                     public void onNext(Contract.MacReply value) {
                     }
@@ -473,13 +468,12 @@ public class ReliableServerPostTest {
 
 
         var request = Contract.ReadRequest.newBuilder()
-                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(0)
                 .setNonce("Nonce1")
                 .build();
 
         for (var stub : _stubs) {
-            stub.read(request, new StreamObserver<>() {
+            stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(0, value.getAnnouncementsCount()); //Since client is bizantine, he tried to write diferent values in each server but could not
