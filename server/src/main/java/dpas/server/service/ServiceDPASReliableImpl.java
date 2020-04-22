@@ -368,9 +368,64 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         }
     }
 
+    private void broadcastEchoAnnouncement(Contract.Announcement request) throws GeneralSecurityException {
+        var curr = _sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
+        if (curr == null) {
+            //First time broadcasting
+            var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
+
+            //If we don't do this we get an error because we can't send RPCs from an RPC
+            Context ctx = Context.current().fork();
+            ctx.run(() -> {
+                for (var stub : _servers) {
+                    stub.echoRegister(echo, new StreamObserver<>() {
+                        @Override
+                        public void onNext(MacReply value) {
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                        }
+                    });
+                }
+            });
+        }
+    }
+
 
     private void broadcastReadyRegister(Contract.RegisterRequest request) throws GeneralSecurityException {
         var curr = _sentReadies.putIfAbsent(request.getMac().toStringUtf8(), true);
+        if (curr == null) {
+            //First time broadcasting
+            var ready = ContractGenerator.generateReadyRegister(request, _privateKey, _serverId);
+            //If we don't do this we get an error because we can't send RPCs from an RPC
+            Context ctx = Context.current().fork();
+            ctx.run(() -> {
+                for (var stub : _servers) {
+                    stub.readyRegister(ready, new StreamObserver<>() {
+                        @Override
+                        public void onNext(MacReply value) {
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private void broadcastReadyAnnouncement(Contract.Announcement request) throws GeneralSecurityException {
+        var curr = _sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
             var ready = ContractGenerator.generateReadyRegister(request, _privateKey, _serverId);
