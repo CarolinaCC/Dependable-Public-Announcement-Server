@@ -25,7 +25,6 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
@@ -33,7 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 public class ReliableServerPostTest {
@@ -54,10 +53,22 @@ public class ReliableServerPostTest {
     private ExecutorService[] _executors;
 
     private static Contract.Announcement _request;
+    private static Contract.Announcement _request1;
+    private static Contract.Announcement _request2;
+    private static Contract.Announcement _request3;
+    private static Contract.Announcement _request4;
+
+    private static Contract.Announcement _requests[];
+    private static String _messages[];
 
     private static long _seq = 0;
 
     private static final String MESSAGE = "MESSAGE";
+
+    private static final String MESSAGE1 = "MESSAGE1";
+    private static final String MESSAGE2 = "MESSAGE2";
+    private static final String MESSAGE3 = "MESSAGE3";
+    private static final String MESSAGE4 = "MESSAGE4";
 
     private static final String host = "localhost";
     private static final int port = 9000;
@@ -72,7 +83,7 @@ public class ReliableServerPostTest {
     }
 
     @BeforeClass
-    public static void oneTimeSetup() throws NoSuchAlgorithmException, CommonDomainException {
+    public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
@@ -88,6 +99,24 @@ public class ReliableServerPostTest {
         _privKey = keyPair.getPrivate();
         _request = ContractGenerator.generateAnnouncement(_pubKey, _privKey,
                 MESSAGE, _seq, CipherUtils.keyToString(_pubKey), null);
+
+        _request1 = ContractGenerator.generateAnnouncement(_serverPubKey[0], _privKey,
+                MESSAGE1, _seq, CipherUtils.keyToString(_pubKey), null);
+
+        _request2 = ContractGenerator.generateAnnouncement(_serverPubKey[1], _pubKey, _privKey,
+                MESSAGE2, _seq, CipherUtils.keyToString(_pubKey), null);
+
+        _request3 = ContractGenerator.generateAnnouncement(_serverPubKey[2], _pubKey, _privKey,
+                MESSAGE3, _seq, CipherUtils.keyToString(_pubKey), null);
+
+        _request4 = ContractGenerator.generateAnnouncement(_serverPubKey[3], _pubKey, _privKey,
+                MESSAGE4, _seq, CipherUtils.keyToString(_pubKey), null);
+        _requests = new Contract.Announcement[4];
+        _requests[0] = _request1;
+        _requests[1] = _request2;
+        _requests[2] = _request3;
+        _requests[3] = _request4;
+
     }
 
     @Before
@@ -158,6 +187,249 @@ public class ReliableServerPostTest {
                 @Override
                 public void onNext(Contract.ReadReply value) {
                     assertEquals(1, value.getAnnouncementsCount());
+                    assertEquals(value.getAnnouncements(0).getMessage(), MESSAGE);
+                    assertEquals(value.getAnnouncements(0).getSeq(), 0);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+        }
+        latch.await();
+    }
+
+    @Test
+    public void validRepeatedPost() throws GeneralSecurityException, InterruptedException {
+        _stub.post(_request);
+        _stub.post(_request);
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        //Perform a read and wait for all servers to respond to garantee that all servers see the register
+
+        Thread.sleep(2000);
+
+        CountDownLatch latch = new CountDownLatch(4);
+        for (var stub : _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    assertEquals(1, value.getAnnouncementsCount());
+                    assertEquals(value.getAnnouncements(0).getMessage(), MESSAGE);
+                    assertEquals(value.getAnnouncements(0).getSeq(), 0);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+        }
+        latch.await();
+    }
+
+    @Test
+    public void oneServerPost() throws InterruptedException, GeneralSecurityException {
+        var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[1].getServerKey())).build();
+        _stubs[1].post(req, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.MacReply value) {
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        });
+
+        Thread.sleep(2000);
+        CountDownLatch latch = new CountDownLatch(4);
+
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        for (var stub : _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    assertEquals(0, value.getAnnouncementsCount());
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+        }
+        latch.await();
+    }
+
+    @Test
+    public void twoServerPost() throws InterruptedException, GeneralSecurityException {
+        for (int i = 0; i < 2; i++) {
+            var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[i].getServerKey())).build();
+            _stubs[i].post(req, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.MacReply value) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+
+                }
+
+                @Override
+                public void onCompleted() {
+
+                }
+            });
+        }
+
+        Thread.sleep(2000);
+        CountDownLatch latch = new CountDownLatch(4);
+
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        for (var stub : _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    assertEquals(0, value.getAnnouncementsCount());
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+        }
+        latch.await();
+    }
+
+    @Test
+    public void quorumServerPost() throws InterruptedException, GeneralSecurityException {
+        final CountDownLatch latch = new CountDownLatch(3);
+        for (int i = 0; i < 3; i++) {
+            var req = _request.toBuilder().setMessage(CipherUtils.cipherAndEncode(MESSAGE.getBytes(), _stubs[i].getServerKey())).build();
+            _stubs[i].post(req, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.MacReply value) {
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+
+                }
+
+                @Override
+                public void onCompleted() {
+
+                }
+            });
+        }
+        latch.await();
+        CountDownLatch latch2 = new CountDownLatch(4);
+        Thread.sleep(1000);
+
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        for (var stub : _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    assertEquals(1, value.getAnnouncementsCount());
+                    assertEquals(value.getAnnouncements(0).getMessage(), MESSAGE);
+                    assertEquals(value.getAnnouncements(0).getSeq(), 0);
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+        }
+        latch2.await();
+    }
+
+    @Test
+    public void allDiferentPosts() throws InterruptedException {
+        for (int i = 0; i < 4; i++) {
+
+            _stubs[i].post(_requests[i], new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.MacReply value) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+
+                }
+
+                @Override
+                public void onCompleted() {
+
+                }
+            });
+        }
+
+        Thread.sleep(2000);
+
+        CountDownLatch latch = new CountDownLatch(4);
+
+
+        var request = Contract.ReadRequest.newBuilder()
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(0)
+                .setNonce("Nonce1")
+                .build();
+
+        for (var stub : _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    assertEquals(0, value.getAnnouncementsCount()); //Since client is bizantine, he tried to write diferent values in each server but could not
                     latch.countDown();
                 }
 

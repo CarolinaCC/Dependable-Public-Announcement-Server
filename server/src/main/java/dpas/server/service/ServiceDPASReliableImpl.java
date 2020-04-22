@@ -152,9 +152,9 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     public void post(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
 
-            generateAnnouncement(request, _privateKey); //validate request
+            var announcement = generateAnnouncement(request, _privateKey); //validate request
 
-            brbAnnouncement(request);
+            brbAnnouncement(request, announcement);
 
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
             responseObserver.onCompleted();
@@ -175,9 +175,9 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-            generateAnnouncement(request, _generalBoard, _privateKey);
+            var announcement = generateAnnouncement(request, _generalBoard, _privateKey);
 
-            brbAnnouncementGeneral(request);
+            brbAnnouncementGeneral(request, announcement);
 
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
             responseObserver.onCompleted();
@@ -264,7 +264,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             _securityManager.validateAnnouncement(request, _serverKeys);
 
-            generateAnnouncement(request.getRequest(), _privateKey);
+            var announcement = generateAnnouncement(request.getRequest(), _privateKey);
 
             var id = request.getRequest().getSignature().toStringUtf8();
 
@@ -275,7 +275,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 if (notExisted) {
                     //First time seeing this echo
                     if (echos.size() == _quorumSize) {
-                        broadcastReadyAnnouncement(request.getRequest());
+                        broadcastReadyAnnouncement(request.getRequest(), announcement);
                     }
                 }
             }
@@ -293,7 +293,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             _securityManager.validateAnnouncement(request, _serverKeys);
 
-            generateAnnouncement(request.getRequest(), _privateKey);
+            var announcement = generateAnnouncement(request.getRequest(), _privateKey);
 
             var id = request.getRequest().getSignature().toStringUtf8();
 
@@ -304,7 +304,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 if (notExisted) {
                     if (countSet.size() == _numFaults + 1) {
                         //Amplification Step
-                        broadcastReadyAnnouncement(request.getRequest());
+                        broadcastReadyAnnouncement(request.getRequest(), announcement);
                     }
                     if (countSet.size() == _quorumSize) {
                         deliverAnnouncement(request.getRequest());
@@ -330,7 +330,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             _securityManager.validateAnnouncement(request, _serverKeys);
 
-            generateAnnouncement(request.getRequest(), _generalBoard, _privateKey);
+            var announcement = generateAnnouncement(request.getRequest(), _generalBoard, _privateKey);
 
             var id = request.getRequest().getSignature().toStringUtf8();
 
@@ -341,7 +341,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 if (notExisted) {
                     //First time seeing this echo
                     if (echos.size() == _quorumSize) {
-                        broadcastReadyAnnouncementGeneral(request.getRequest());
+                        broadcastReadyAnnouncementGeneral(request.getRequest(), announcement);
                     }
                 }
             }
@@ -359,7 +359,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             _securityManager.validateAnnouncement(request, _serverKeys);
 
-            generateAnnouncement(request.getRequest(), _generalBoard, _privateKey);
+            var announcement = generateAnnouncement(request.getRequest(), _generalBoard, _privateKey);
 
             var id = request.getRequest().getSignature().toStringUtf8();
 
@@ -370,7 +370,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 if (notExisted) {
                     if (countSet.size() == _numFaults + 1) {
                         //Amplification Step
-                        broadcastReadyAnnouncementGeneral(request.getRequest());
+                        broadcastReadyAnnouncementGeneral(request.getRequest(), announcement);
                     }
                     if (countSet.size() == _quorumSize) {
                         deliverAnnouncementGeneral(request.getRequest());
@@ -427,16 +427,20 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         }
     }
 
-    private void broadcastEchoAnnouncement(Contract.Announcement request) throws GeneralSecurityException {
+    private void broadcastEchoAnnouncement(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
         var curr = _sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
 
-            //If we don't do this we get an error because we can't send RPCs from an RPC
-            Context ctx = Context.current().fork();
-            ctx.run(() -> {
                 for (var stub : _servers) {
+                    //Server always send the message ciphered with the receiver's public key
+                    var message = CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey());
+                    request = request.toBuilder().setMessage(message).build();
+                    var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
+                    //If we don't do this we get an error because we can't send RPCs from an RPC
+                    Context ctx = Context.current().fork();
+                    ctx.run(() -> {
+
                     stub.echoAnnouncement(echo, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
@@ -450,21 +454,24 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                         public void onCompleted() {
                         }
                     });
-                }
-            });
+                });
+            }
         }
     }
 
-    private void broadcastEchoAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException {
+    private void broadcastEchoAnnouncementGeneral(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
         var curr = _sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
 
-            //If we don't do this we get an error because we can't send RPCs from an RPC
-            Context ctx = Context.current().fork();
-            ctx.run(() -> {
-                for (var stub : _servers) {
+            for (var stub : _servers) {
+                var message = CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey());
+                request = request.toBuilder().setMessage(message).build();
+                var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
+                //If we don't do this we get an error because we can't send RPCs from an RPC
+                Context ctx = Context.current().fork();
+                ctx.run(() -> {
+
                     stub.echoAnnouncementGeneral(echo, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
@@ -478,8 +485,8 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                         public void onCompleted() {
                         }
                     });
-                }
-            });
+                });
+            }
         }
     }
 
@@ -511,16 +518,21 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         }
     }
 
-    private void broadcastReadyAnnouncement(Contract.Announcement request) throws GeneralSecurityException {
+    private void broadcastReadyAnnouncement(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
         var curr = _sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            var ready = ContractGenerator.generateReadyAnnouncement(request, _privateKey, _serverId);
-            //If we don't do this we get an error because we can't send RPCs from an RPC
-            Context ctx = Context.current().fork();
-            ctx.run(() -> {
-                for (var stub : _servers) {
-                    stub.readyAnnouncement(ready, new StreamObserver<>() {
+
+            for (var stub : _servers) {
+                //Server always send the message ciphered with the receiver's public key
+                var message = CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey());
+                request = request.toBuilder().setMessage(message).build();
+                var echo = ContractGenerator.generateReadyAnnouncement(request, _privateKey, _serverId);
+                //If we don't do this we get an error because we can't send RPCs from an RPC
+                Context ctx = Context.current().fork();
+                ctx.run(() -> {
+
+                    stub.readyAnnouncement(echo, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
                         }
@@ -533,21 +545,26 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                         public void onCompleted() {
                         }
                     });
-                }
-            });
+                });
+            }
         }
     }
 
-    private void broadcastReadyAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException {
+    private void broadcastReadyAnnouncementGeneral(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
         var curr = _sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
-            var ready = ContractGenerator.generateReadyAnnouncement(request, _privateKey, _serverId);
-            //If we don't do this we get an error because we can't send RPCs from an RPC
-            Context ctx = Context.current().fork();
-            ctx.run(() -> {
-                for (var stub : _servers) {
-                    stub.readyAnnouncementGeneral(ready, new StreamObserver<>() {
+
+            for (var stub : _servers) {
+                //Server always send the message ciphered with the receiver's public key
+                var message = CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey());
+                request = request.toBuilder().setMessage(message).build();
+                var echo = ContractGenerator.generateReadyAnnouncement(request, _privateKey, _serverId);
+                //If we don't do this we get an error because we can't send RPCs from an RPC
+                Context ctx = Context.current().fork();
+                ctx.run(() -> {
+
+                    stub.readyAnnouncementGeneral(echo, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
                         }
@@ -560,8 +577,8 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                         public void onCompleted() {
                         }
                     });
-                }
-            });
+                });
+            }
         }
     }
 
@@ -578,7 +595,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
     private void deliverAnnouncement(Contract.Announcement request) throws CommonDomainException, GeneralSecurityException, IOException {
         //Is called only one time
-        var announcement = generateAnnouncement(request);
+        var announcement = generateAnnouncement(request, _privateKey);
         _announcements.putIfAbsent(request.getIdentifier(), announcement);
         save(announcement.toJson("Post"));
         announcement.getUser().getUserBoard().post(announcement);
@@ -604,19 +621,19 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         _deliveredMessages.get(request.getMac().toStringUtf8()).await();
     }
 
-    private void brbAnnouncement(Contract.Announcement request) throws GeneralSecurityException, InterruptedException {
+    private void brbAnnouncement(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException, InterruptedException {
         var curr = _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
         if (curr == null) {
-            broadcastEchoAnnouncement(request); //Received Message start RBR Echo
+            broadcastEchoAnnouncement(request, announcement); //Received Message start RBR Echo
         }
         _deliveredMessages.get(request.getIdentifier()).await();
 
     }
 
-    private void brbAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException, InterruptedException {
+    private void brbAnnouncementGeneral(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException, InterruptedException {
         var curr = _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
         if (curr == null) {
-            broadcastEchoAnnouncementGeneral(request); //Received Message start RBR Echo
+            broadcastEchoAnnouncementGeneral(request, announcement); //Received Message start RBR Echo
         }
         _deliveredMessages.get(request.getIdentifier()).await();
     }
