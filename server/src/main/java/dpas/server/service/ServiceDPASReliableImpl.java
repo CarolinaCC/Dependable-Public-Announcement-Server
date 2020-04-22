@@ -271,6 +271,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void echoAnnouncement(Contract.EchoAnnouncement request, StreamObserver<MacReply> responseObserver) {
         try {
+            //TODO
             _securityManager.validateRequest(request, _serverKeys);
 
             var id = request.getRequest().getSignature().toStringUtf8();
@@ -291,8 +292,10 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
             responseObserver.onCompleted();
         } catch (IllegalMacException e) {
+            //TODO
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (GeneralSecurityException e) {
+            //TODO
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         }
     }
@@ -300,6 +303,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void readyAnnouncement(Contract.ReadyAnnouncement request, StreamObserver<MacReply> responseObserver) {
         try {
+            //TODO
             _securityManager.validateRequest(request, _serverKeys);
 
             var id = request.getRequest().getSignature().toStringUtf8();
@@ -321,12 +325,16 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
             responseObserver.onCompleted();
         } catch (IllegalMacException e) {
+            //TODO
             responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
+            //TODO
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (GeneralSecurityException e) {
+            //TODO
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (CommonDomainException e) {
+            //TODO
             //This never happens by the security manager
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
         }
@@ -372,13 +380,15 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         var curr = _sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
+            //TODO
             var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
 
             //If we don't do this we get an error because we can't send RPCs from an RPC
             Context ctx = Context.current().fork();
             ctx.run(() -> {
                 for (var stub : _servers) {
-                    stub.echoRegister(echo, new StreamObserver<>() {
+                    //TODO
+                    stub.echoAnnouncement(echo, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
                         }
@@ -428,12 +438,14 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         var curr = _sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
+            //TODO
             var ready = ContractGenerator.generateReadyRegister(request, _privateKey, _serverId);
             //If we don't do this we get an error because we can't send RPCs from an RPC
             Context ctx = Context.current().fork();
             ctx.run(() -> {
                 for (var stub : _servers) {
-                    stub.readyRegister(ready, new StreamObserver<>() {
+                    //TODO
+                    stub.readyAnnouncement(ready, new StreamObserver<>() {
                         @Override
                         public void onNext(MacReply value) {
                         }
