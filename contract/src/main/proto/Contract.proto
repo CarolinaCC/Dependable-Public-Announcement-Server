@@ -9,6 +9,8 @@ service ServiceDPAS {
     rpc readGeneral (ReadRequest) returns (ReadReply);
     rpc echoRegister(EchoRegister) returns (MacReply);
     rpc readyRegister(ReadyRegister) returns (MacReply);
+    rpc echoAnnouncement(EchoAnnouncement) returns (MacReply);
+    rpc readyAnnouncement(ReadyAnnouncement) returns (MacReply);
 }
 //
 message RegisterRequest {
@@ -53,6 +55,18 @@ message EchoRegister {
 
 message ReadyRegister {
     RegisterRequest request = 1;
+    bytes mac = 2;
+    string serverKey = 3;
+}
+
+message EchoAnnouncement {
+    Announcement request = 1;
+    bytes mac = 2;
+    string serverKey = 3;
+}
+
+message ReadyAnnouncement {
+    Announcement request = 1;
     bytes mac = 2;
     string serverKey = 3;
 }

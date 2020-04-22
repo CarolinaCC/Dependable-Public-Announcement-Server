@@ -268,6 +268,70 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         }
     }
 
+    @Override
+    public void echoAnnouncement(Contract.EchoAnnouncement request, StreamObserver<MacReply> responseObserver) {
+        try {
+            _securityManager.validateRequest(request, _serverKeys);
+
+            var id = request.getRequest().getSignature().toStringUtf8();
+
+            //broadcastEchoRegister(request.getRequest());
+
+            _echosCount.putIfAbsent(id, new HashSet<>());
+            var echos = _echosCount.get(id);
+            synchronized (echos) {
+                var notExisted = echos.add(request.getMac().toStringUtf8());
+                if (notExisted) {
+                    //First time seeing this echo
+                    if (echos.size() == _quorumSize) {
+                        broadcastReadyAnnouncement(request.getRequest());
+                    }
+                }
+            }
+            responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
+            responseObserver.onCompleted();
+        } catch (IllegalMacException e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+        }
+    }
+
+    @Override
+    public void readyAnnouncement(Contract.ReadyAnnouncement request, StreamObserver<MacReply> responseObserver) {
+        try {
+            _securityManager.validateRequest(request, _serverKeys);
+
+            var id = request.getRequest().getSignature().toStringUtf8();
+
+            _readyCount.putIfAbsent(id, new HashSet<>());
+            var countSet = _readyCount.get(id);
+            synchronized (countSet) {
+                var notExisted = countSet.add(request.getMac().toStringUtf8());
+                if (notExisted) {
+                    if (countSet.size() == _numFaults + 1) {
+                        //Amplification Step
+                        broadcastReadyAnnouncement(request.getRequest());
+                    }
+                    if (countSet.size() == _quorumSize) {
+                        deliverAnnouncement(request.getRequest());
+                    }
+                }
+            }
+            responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
+            responseObserver.onCompleted();
+        } catch (IllegalMacException e) {
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+        } catch (IOException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+        } catch (GeneralSecurityException e) {
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+        } catch (CommonDomainException e) {
+            //This never happens by the security manager
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
+        }
+    }
+
 
     //Don't want to save when testing
     private void save(JsonObject object) throws IOException {
