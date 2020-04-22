@@ -6,6 +6,7 @@ import dpas.utils.auth.CipherUtils;
 import io.grpc.stub.StreamObserver;
 
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -14,11 +15,16 @@ public class QuorumStub {
     private final List<PerfectStub> _stubs;
     private final int _numFaults;
     private final int _quorumSize;
+    private final Map<String, PublicKey> _serverKeys;
 
     public QuorumStub(List<PerfectStub> stubs, int numFaults) {
         _stubs = stubs;
         _numFaults = numFaults;
         _quorumSize = 2 * _numFaults + 1;
+        _serverKeys = new HashMap<>();
+        for (var stub : stubs) {
+            _serverKeys.put(stub.getServerId(), stub.getServerKey());
+        }
     }
 
 
@@ -37,10 +43,12 @@ public class QuorumStub {
                 }
 
                 @Override
-                public void onError(Throwable t) {}
+                public void onError(Throwable t) {
+                }
 
                 @Override
-                public void onCompleted() {}
+                public void onCompleted() {
+                }
             });
         }
         latch.await();
@@ -138,10 +146,48 @@ public class QuorumStub {
 
         return replies
                 .stream()
-                .sorted(Comparator.comparing(a -> - a.getAnnouncementsCount()))
+                .sorted(Comparator.comparing(a -> -a.getAnnouncementsCount()))
                 .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
                 .get();
     }
+
+    public Contract.ReadReply readReliable(Contract.ReadRequest request) throws InterruptedException {
+
+        final CountDownLatch latch = new CountDownLatch(_quorumSize);
+
+        final List<Contract.ReadReply> replies = new ArrayList<>();
+
+        for (PerfectStub stub : _stubs) {
+            stub.read(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    //Perfect Stub already guarantees the reply is valid
+                    synchronized (latch) {
+                        if (latch.getCount() != 0) {
+                            replies.add(value);
+                            latch.countDown();
+                        }
+                    }
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            }, _serverKeys);
+        }
+        latch.await();
+
+        return replies
+                .stream()
+                .sorted(Comparator.comparing(a -> -a.getAnnouncementsCount()))
+                .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
+                .get();
+    }
+
 
     public Contract.ReadReply readGeneral(Contract.ReadRequest request) throws InterruptedException {
 
@@ -174,7 +220,44 @@ public class QuorumStub {
         latch.await();
         return replies
                 .stream()
-                .sorted(Comparator.comparing(a -> - a.getAnnouncementsCount()))
+                .sorted(Comparator.comparing(a -> -a.getAnnouncementsCount()))
+                .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
+                .get();
+
+    }
+
+    public Contract.ReadReply readGeneralReliable(Contract.ReadRequest request) throws InterruptedException {
+
+        final CountDownLatch latch = new CountDownLatch(_quorumSize);
+
+        final List<Contract.ReadReply> replies = new ArrayList<>();
+
+        for (PerfectStub stub : _stubs) {
+            stub.readGeneral(request, new StreamObserver<>() {
+                @Override
+                public void onNext(Contract.ReadReply value) {
+                    //Perfect Stub already guarantees the reply is valid
+                    synchronized (latch) {
+                        if (latch.getCount() != 0) {
+                            replies.add(value);
+                            latch.countDown();
+                        }
+                    }
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            }, _serverKeys);
+        }
+        latch.await();
+        return replies
+                .stream()
+                .sorted(Comparator.comparing(a -> -a.getAnnouncementsCount()))
                 .max(Comparator.comparing(a -> getSeq(a.getAnnouncementsList())))
                 .get();
 
