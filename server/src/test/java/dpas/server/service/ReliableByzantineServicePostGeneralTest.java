@@ -1,5 +1,6 @@
 package dpas.server.service;
 
+import com.google.protobuf.ByteString;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -8,6 +9,7 @@ import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
+import dpas.utils.auth.MacGenerator;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
 import io.grpc.ManagedChannel;
@@ -26,8 +28,10 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.security.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -140,7 +144,20 @@ public class ReliableByzantineServicePostGeneralTest {
 
             @Override
             public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
+                List<Contract.Announcement> announcementsGRPC = new ArrayList<>();
+                announcementsGRPC.add(_request);
+                announcementsGRPC.add(_request1);
+                announcementsGRPC.add(_request2);
+                announcementsGRPC.add(_request3);
+                announcementsGRPC.add(_request4);
+                try {
+                    responseObserver.onNext(Contract.ReadReply.newBuilder()
+                            .addAllAnnouncements(announcementsGRPC)
+                            .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC.size(), _serverPrivKey[0])))
+                            .build());
+                } catch (Exception e) {
+                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
+                }
             }
 
             @Override
@@ -150,7 +167,20 @@ public class ReliableByzantineServicePostGeneralTest {
 
             @Override
             public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
+                List<Contract.Announcement> announcementsGRPC = new ArrayList<>();
+                announcementsGRPC.add(_request);
+                announcementsGRPC.add(_request1);
+                announcementsGRPC.add(_request2);
+                announcementsGRPC.add(_request3);
+                announcementsGRPC.add(_request4);
+                try {
+                    responseObserver.onNext(Contract.ReadReply.newBuilder()
+                            .addAllAnnouncements(announcementsGRPC)
+                            .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC.size(), _serverPrivKey[0])))
+                            .build());
+                } catch (Exception e) {
+                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
+                }
             }
 
             @Override
