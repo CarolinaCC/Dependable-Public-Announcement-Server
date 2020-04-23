@@ -30,8 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class QuorumConcurrencyTest {
@@ -43,6 +42,8 @@ public class QuorumConcurrencyTest {
     private static PrivateKey[] _serverPrivKey;
 
     private static KeyPair[] _users;
+
+    private Throwable assertThrowable = null;
 
     private ManagedChannel[] _channels;
 
@@ -143,7 +144,7 @@ public class QuorumConcurrencyTest {
             try {
                 _stub.postGeneral(request);
             } catch (RuntimeException e) {
-                fail();
+                assertThrowable = e;
             }
         }
     }
@@ -157,7 +158,7 @@ public class QuorumConcurrencyTest {
                 try {
                     postGeneralRun(id);
                 } catch (CommonDomainException | GeneralSecurityException | InterruptedException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             });
         }
@@ -173,6 +174,7 @@ public class QuorumConcurrencyTest {
                         .setNumber(0)
                         .build());
         //Check that each announcement was posted correctly
+        assertNull(assertThrowable);
         assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS);
 
     }
@@ -194,7 +196,7 @@ public class QuorumConcurrencyTest {
             try {
                 _stub.post(request);
             } catch (RuntimeException e) {
-                fail();
+                assertThrowable = e;
             }
         }
     }
@@ -208,7 +210,7 @@ public class QuorumConcurrencyTest {
                 try {
                     postRun(id);
                 } catch (CommonDomainException | GeneralSecurityException | InterruptedException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             });
         }
@@ -226,6 +228,7 @@ public class QuorumConcurrencyTest {
                     .build());
             //Check that each announcement was posted correctly
             assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS / NUMBER_THREADS);
+            assertNull(assertThrowable);
             _stub.post(reply.getAnnouncements(reply.getAnnouncementsCount() - 1)); //Write Back like a atomic register
         }
     }

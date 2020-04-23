@@ -4,7 +4,6 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.link.PerfectStub;
 import io.grpc.Status;
@@ -25,8 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.grpc.Status.CANCELLED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class PerfectStubRegisterTest {
 
@@ -35,6 +33,8 @@ public class PerfectStubRegisterTest {
 
     private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
 
+    private static Throwable assertThrowable = null;
+
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
@@ -42,15 +42,13 @@ public class PerfectStubRegisterTest {
     private static PublicKey _serverPKey;
 
 
-    private static final String MESSAGE = "Message";
-
     private static Contract.RegisterRequest _request;
 
     private ServiceDPASGrpc.ServiceDPASStub client;
 
 
     @BeforeClass
-    public static void oneTimeSetup() throws GeneralSecurityException, CommonDomainException {
+    public static void oneTimeSetup() throws GeneralSecurityException {
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
 
@@ -97,7 +95,7 @@ public class PerfectStubRegisterTest {
                     responseObserver.onError(Status.UNKNOWN.asRuntimeException());
 
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -111,7 +109,7 @@ public class PerfectStubRegisterTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -125,6 +123,8 @@ public class PerfectStubRegisterTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
@@ -162,7 +162,7 @@ public class PerfectStubRegisterTest {
                     responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
 
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -177,7 +177,7 @@ public class PerfectStubRegisterTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -191,6 +191,7 @@ public class PerfectStubRegisterTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
@@ -221,7 +222,7 @@ public class PerfectStubRegisterTest {
                     responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _serverPrivKey));
                     responseObserver.onCompleted();
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -236,7 +237,7 @@ public class PerfectStubRegisterTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -250,6 +251,7 @@ public class PerfectStubRegisterTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
@@ -288,7 +290,7 @@ public class PerfectStubRegisterTest {
                     }
                     responseObserver.onCompleted();
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -302,7 +304,7 @@ public class PerfectStubRegisterTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -316,6 +318,7 @@ public class PerfectStubRegisterTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 4);
         } catch (InterruptedException e) {

@@ -31,11 +31,12 @@ import java.util.Base64;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class QuorumConcurrencyWithFaultTest {
+
+    private Throwable assertThrowable = null;
 
     private Server[] _servers;
     private QuorumStub _stub;
@@ -145,7 +146,7 @@ public class QuorumConcurrencyWithFaultTest {
             try {
                 _stub.postGeneral(request);
             } catch (RuntimeException e) {
-                fail();
+                assertThrowable = e;
             }
         }
     }
@@ -159,7 +160,7 @@ public class QuorumConcurrencyWithFaultTest {
                 try {
                     postGeneralRun(id);
                 } catch (CommonDomainException | GeneralSecurityException | InterruptedException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             });
         }
@@ -178,6 +179,7 @@ public class QuorumConcurrencyWithFaultTest {
                         .build());
         //Check that each announcement was posted correctly
         assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS);
+        assertNull(assertThrowable);
     }
 
 
@@ -198,7 +200,7 @@ public class QuorumConcurrencyWithFaultTest {
             try {
                 _stub.post(request);
             } catch (RuntimeException e) {
-                fail();
+                assertThrowable = e;
             }
         }
     }
@@ -212,7 +214,7 @@ public class QuorumConcurrencyWithFaultTest {
                 try {
                     postRun(id);
                 } catch (CommonDomainException | GeneralSecurityException | InterruptedException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             });
         }
@@ -234,6 +236,7 @@ public class QuorumConcurrencyWithFaultTest {
                     .build());
             //Check that each announcement was posted correctly
             assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS / NUMBER_THREADS);
+            assertNull(assertThrowable);
             _stub.post(reply.getAnnouncements(reply.getAnnouncementsCount() - 1)); //Write Back like a atomic register
         }
     }

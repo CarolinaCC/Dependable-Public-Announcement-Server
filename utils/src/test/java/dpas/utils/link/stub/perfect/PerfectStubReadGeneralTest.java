@@ -26,8 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.grpc.Status.CANCELLED;
 import static io.grpc.Status.INVALID_ARGUMENT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class PerfectStubReadGeneralTest {
     @Rule
@@ -39,6 +38,8 @@ public class PerfectStubReadGeneralTest {
     private static PrivateKey _privKey;
     private static PrivateKey _serverPrivKey;
     private static PublicKey _serverPKey;
+
+    private static Throwable assertThrowable = null;
 
 
     private ServiceDPASGrpc.ServiceDPASStub client;
@@ -89,7 +90,7 @@ public class PerfectStubReadGeneralTest {
                     responseObserver.onError(Status.UNKNOWN.asRuntimeException());
 
                 } catch (GeneralSecurityException | IOException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -106,7 +107,7 @@ public class PerfectStubReadGeneralTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -120,6 +121,7 @@ public class PerfectStubReadGeneralTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
@@ -156,7 +158,7 @@ public class PerfectStubReadGeneralTest {
                     responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
 
                 } catch (GeneralSecurityException | IOException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -173,7 +175,7 @@ public class PerfectStubReadGeneralTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -187,6 +189,9 @@ public class PerfectStubReadGeneralTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
+            assertEquals(countSuccess.get(), 1);
+            assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
             fail();
         }
@@ -215,7 +220,7 @@ public class PerfectStubReadGeneralTest {
                     responseObserver.onCompleted();
 
                 } catch (GeneralSecurityException | IOException e) {
-                    responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privKey));
+                    assertThrowable = e;
                 }
             }
         };
@@ -232,7 +237,7 @@ public class PerfectStubReadGeneralTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -241,6 +246,17 @@ public class PerfectStubReadGeneralTest {
                 latch.countDown();
             }
         });
+
+        try {
+            if (!latch.await(4000, TimeUnit.SECONDS)) {
+                fail();
+            }
+            assertNull(assertThrowable);
+            assertEquals(countSuccess.get(), 1);
+            assertEquals(countCompleted.get(), 1);
+        } catch (InterruptedException e) {
+            fail();
+        }
     }
 
     @Test
@@ -277,7 +293,7 @@ public class PerfectStubReadGeneralTest {
                     }
                     responseObserver.onCompleted();
                 } catch (GeneralSecurityException | IOException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -294,7 +310,7 @@ public class PerfectStubReadGeneralTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -308,6 +324,7 @@ public class PerfectStubReadGeneralTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 4);
         } catch (InterruptedException e) {

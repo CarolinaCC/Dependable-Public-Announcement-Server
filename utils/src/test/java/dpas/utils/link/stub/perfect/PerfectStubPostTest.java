@@ -25,8 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.grpc.Status.CANCELLED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 
 public class PerfectStubPostTest {
@@ -35,6 +34,9 @@ public class PerfectStubPostTest {
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
     private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
+
+
+    private static Throwable assertThrowable = null;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -99,7 +101,7 @@ public class PerfectStubPostTest {
                     responseObserver.onError(Status.UNKNOWN.asRuntimeException());
 
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -113,7 +115,7 @@ public class PerfectStubPostTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -127,6 +129,7 @@ public class PerfectStubPostTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
@@ -164,7 +167,7 @@ public class PerfectStubPostTest {
                     responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
 
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -179,7 +182,7 @@ public class PerfectStubPostTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -193,6 +196,7 @@ public class PerfectStubPostTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
@@ -223,7 +227,7 @@ public class PerfectStubPostTest {
                     responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _serverPrivKey));
                     responseObserver.onCompleted();
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -238,7 +242,7 @@ public class PerfectStubPostTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -252,6 +256,7 @@ public class PerfectStubPostTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 1);
         } catch (InterruptedException e) {
@@ -290,7 +295,7 @@ public class PerfectStubPostTest {
                     }
                     responseObserver.onCompleted();
                 } catch (GeneralSecurityException e) {
-                    fail();
+                    assertThrowable = e;
                 }
             }
         };
@@ -304,7 +309,7 @@ public class PerfectStubPostTest {
 
             @Override
             public void onError(Throwable t) {
-                fail();
+                assertThrowable = t;
             }
 
             @Override
@@ -318,6 +323,7 @@ public class PerfectStubPostTest {
             if (!latch.await(4000, TimeUnit.SECONDS)) {
                 fail();
             }
+            assertNull(assertThrowable);
             assertEquals(countSuccess.get(), 1);
             assertEquals(countCompleted.get(), 4);
         } catch (InterruptedException e) {

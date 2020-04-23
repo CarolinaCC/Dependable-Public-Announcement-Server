@@ -1,12 +1,10 @@
 package dpas.utils.link.stub.quorum;
 
-import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
-import dpas.utils.auth.MacGenerator;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -20,11 +18,9 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -96,7 +92,7 @@ public class QuorumStubPostTest {
                 .build();
 
         qstub.post(_request);
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 4);
