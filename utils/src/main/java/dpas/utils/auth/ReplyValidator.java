@@ -13,7 +13,7 @@ public class ReplyValidator {
     public static final byte[] READY = "READY".getBytes();
 
     public static boolean validateReadReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey,
-                                            PublicKey authorKey, Map<String, PublicKey> serverKeys) {
+                                            PublicKey authorKey, Map<String, PublicKey> serverKeys, int quorumSize) {
         try {
             Set<String> seen = new HashSet<>();
             if (!MacVerifier.verifyMac(serverKey, ByteUtils.toByteArray(request, reply.getAnnouncementsCount()), reply.getMac().toByteArray())) {
@@ -34,7 +34,7 @@ public class ReplyValidator {
                     return false;
                 }
                 seen.add(announcement.getIdentifier());
-                if (!validateProofs(announcement, serverKeys)) {
+                if (!validateProofs(announcement, serverKeys, quorumSize)) {
                     return false;
                 }
             }
@@ -45,7 +45,7 @@ public class ReplyValidator {
     }
 
     public static boolean validateReadGeneralReply(Contract.ReadRequest request, Contract.ReadReply reply,
-                                                   PublicKey serverKey, Map<String, PublicKey> serverKeys) {
+                                                   PublicKey serverKey, Map<String, PublicKey> serverKeys, int quorumSize) {
         try {
             Set<String> seen = new HashSet<>();
             if (!MacVerifier.verifyMac(request, reply, serverKey)) {
@@ -66,7 +66,7 @@ public class ReplyValidator {
                     return false;
                 }
                 seen.add(announcement.getIdentifier());
-                if (!validateProofs(announcement, serverKeys)) {
+                if (!validateProofs(announcement, serverKeys, quorumSize)) {
                     return false;
                 }
             }
@@ -76,8 +76,12 @@ public class ReplyValidator {
         }
     }
 
-    public static boolean validateProofs(Contract.Announcement announcement, Map<String, PublicKey> serverKeys) {
+    public static boolean validateProofs(Contract.Announcement announcement, Map<String, PublicKey> serverKeys, int quorumSize) {
         var proofs = announcement.getReadyProofMap();
+
+        if (proofs.size() < quorumSize) {
+            return false;
+        }
 
         for(var entry : proofs.entrySet()) {
             var serverId = entry.getKey();

@@ -612,7 +612,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         var proofs = _announcementProofs.get(request.getSignature().toStringUtf8());
         synchronized (proofs) {
             for (var proof : proofs) {
-                announcement.addProof(proof.getServerKey(), new String(proof.getMac().toByteArray()));
+                announcement.addProof(proof.getServerKey(), Base64.getEncoder().encodeToString(proof.getMac().toByteArray()));
             }
         }
         _announcements.putIfAbsent(request.getIdentifier(), announcement);
@@ -629,7 +629,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         var proofs = _announcementProofs.get(request.getSignature().toStringUtf8());
         synchronized (proofs) {
             for (var proof : proofs) {
-                announcement.addProof(proof.getServerKey(), new String(proof.getMac().toByteArray()));
+                announcement.addProof(proof.getServerKey(), Base64.getEncoder().encodeToString(proof.getMac().toByteArray()));
             }
         }
         _announcements.putIfAbsent(request.getIdentifier(), announcement);

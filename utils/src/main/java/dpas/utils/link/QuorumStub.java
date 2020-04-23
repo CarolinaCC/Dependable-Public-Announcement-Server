@@ -177,7 +177,7 @@ public class QuorumStub {
                 @Override
                 public void onCompleted() {
                 }
-            }, _serverKeys);
+            }, _serverKeys, _quorumSize);
         }
         latch.await();
 
@@ -252,7 +252,7 @@ public class QuorumStub {
                 @Override
                 public void onCompleted() {
                 }
-            }, _serverKeys);
+            }, _serverKeys, _quorumSize);
         }
         latch.await();
         return replies
