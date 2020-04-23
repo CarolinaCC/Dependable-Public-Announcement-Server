@@ -3,18 +3,14 @@ package dpas.server.security;
 import dpas.grpc.contract.Contract;
 import dpas.server.security.exception.IllegalMacException;
 import dpas.utils.auth.ByteUtils;
-import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacVerifier;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Map;
-
-import static io.grpc.Status.UNAUTHENTICATED;
 
 public class SecurityManager {
 
@@ -29,7 +25,7 @@ public class SecurityManager {
         validateRequest(mac, content, publicKey);
     }
 
-    public void validateAnnouncement(Contract.Announcement request ) throws GeneralSecurityException, IllegalMacException {
+    public void validateAnnouncement(Contract.Announcement request) throws GeneralSecurityException, IllegalMacException {
         PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] content = ByteUtils.toByteArray(request);
         byte[] mac = request.getSignature().toByteArray();
@@ -50,7 +46,7 @@ public class SecurityManager {
         }
         var mac = request.getMac().toByteArray();
         var content = ArrayUtils.addAll(request.getRequest().getMac().toByteArray(), ECHO);
-        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+        if (!MacVerifier.verifyMac(pubKey, content, mac)) {
             throw new IllegalMacException("Invalid Mac For Request");
         }
     }
@@ -63,7 +59,7 @@ public class SecurityManager {
         }
         var mac = request.getMac().toByteArray();
         var content = ArrayUtils.addAll(request.getRequest().getMac().toByteArray(), READY);
-        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+        if (!MacVerifier.verifyMac(pubKey, content, mac)) {
             throw new IllegalMacException("Invalid Mac For Request");
         }
     }
@@ -75,7 +71,7 @@ public class SecurityManager {
         }
         var mac = request.getMac().toByteArray();
         var content = ArrayUtils.addAll(request.getRequest().getSignature().toByteArray(), READY);
-        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+        if (!MacVerifier.verifyMac(pubKey, content, mac)) {
             throw new IllegalMacException("Invalid Mac For Request");
         }
     }
@@ -87,7 +83,7 @@ public class SecurityManager {
         }
         var mac = request.getMac().toByteArray();
         var content = ArrayUtils.addAll(request.getRequest().getSignature().toByteArray(), ECHO);
-        if (!MacVerifier.verifyMac(pubKey,  content, mac)) {
+        if (!MacVerifier.verifyMac(pubKey, content, mac)) {
             throw new IllegalMacException("Invalid Mac For Request");
         }
     }

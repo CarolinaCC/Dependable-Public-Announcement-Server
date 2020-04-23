@@ -1,10 +1,8 @@
 package dpas.utils.link.stub.perfect;
 
-import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.link.PerfectStub;
 import io.grpc.Status;
@@ -206,7 +204,7 @@ public class PerfectStubRegisterWithExceptionTest {
 
             @Override
             public void register(Contract.RegisterRequest request, StreamObserver<Contract.MacReply> responseObserver) {
-                    responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
+                responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey));
             }
         };
         serviceRegistry.addService(impl);

@@ -7,7 +7,6 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.security.SecurityManager;
-import dpas.utils.auth.ByteUtils;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacVerifier;

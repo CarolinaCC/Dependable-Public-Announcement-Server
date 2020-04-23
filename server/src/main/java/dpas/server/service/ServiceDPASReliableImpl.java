@@ -13,15 +13,20 @@ import dpas.server.persistence.PersistenceManager;
 import dpas.server.security.SecurityManager;
 import dpas.server.security.exception.IllegalMacException;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.*;
+import dpas.utils.auth.CipherUtils;
+import dpas.utils.auth.ErrorGenerator;
+import dpas.utils.auth.MacGenerator;
+import dpas.utils.auth.MacVerifier;
 import dpas.utils.link.PerfectStub;
 import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
 import java.io.IOException;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -321,11 +326,11 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
             responseObserver.onCompleted();
         } catch (IllegalMacException e) {
-                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
         } catch (IOException e) {
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
         } catch (GeneralSecurityException e) {
-           responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
         } catch (CommonDomainException e) {
             //This never happens by the security manager
             responseObserver.onError(ErrorGenerator.generate(CANCELLED, e.getMessage(), request, _privateKey));
@@ -445,14 +450,14 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         if (curr == null) {
             //First time broadcasting
 
-                for (var stub : _servers) {
-                    //Server always send the message ciphered with the receiver's public key
-                    var message = CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey());
-                    request = request.toBuilder().setMessage(message).build();
-                    var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
-                    //If we don't do this we get an error because we can't send RPCs from an RPC
-                    Context ctx = Context.current().fork();
-                    ctx.run(() -> {
+            for (var stub : _servers) {
+                //Server always send the message ciphered with the receiver's public key
+                var message = CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey());
+                request = request.toBuilder().setMessage(message).build();
+                var echo = ContractGenerator.generateEchoAnnouncement(request, _privateKey, _serverId);
+                //If we don't do this we get an error because we can't send RPCs from an RPC
+                Context ctx = Context.current().fork();
+                ctx.run(() -> {
 
                     stub.echoAnnouncement(echo, new StreamObserver<>() {
                         @Override

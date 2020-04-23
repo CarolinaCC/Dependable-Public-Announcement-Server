@@ -12,8 +12,8 @@ import dpas.grpc.contract.Contract.MacReply;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.security.SecurityManager;
 import dpas.server.security.exception.IllegalMacException;
-import dpas.utils.auth.CipherUtils;
 import dpas.utils.ContractGenerator;
+import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
 import dpas.utils.auth.MacVerifier;
@@ -21,7 +21,6 @@ import io.grpc.stub.StreamObserver;
 
 import javax.json.JsonObject;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;

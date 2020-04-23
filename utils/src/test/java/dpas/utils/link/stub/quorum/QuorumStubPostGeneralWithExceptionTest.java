@@ -1,6 +1,5 @@
 package dpas.utils.link.stub.quorum;
 
-import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
@@ -20,7 +19,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +84,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             registry.addService(server);
             ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                     InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
             stubs.add(pstub);
             i++;
         }
@@ -114,7 +112,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             registry.addService(server);
             ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                     InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
             stubs.add(pstub);
             i++;
         }
@@ -142,7 +140,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             registry.addService(server);
             ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                     InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
             stubs.add(pstub);
             i++;
         }
@@ -170,7 +168,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             registry.addService(server);
             ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                     InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
             stubs.add(pstub);
             i++;
         }
@@ -198,7 +196,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             registry.addService(server);
             ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                     InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
             stubs.add(pstub);
             i++;
         }
@@ -225,7 +223,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             registry.addService(server);
             ServiceDPASGrpc.ServiceDPASStub client = ServiceDPASGrpc.newStub(grpcCleanup.register(
                     InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-            PerfectStub pstub = new PerfectStub(client,  _serverPKey[i]);
+            PerfectStub pstub = new PerfectStub(client, _serverPKey[i]);
             stubs.add(pstub);
             i++;
         }
@@ -313,6 +311,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
                         AtomicInteger t = new AtomicInteger(1);
+
                         @Override
                         public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                             if (j == 3) {
@@ -394,6 +393,7 @@ public class QuorumStubPostGeneralWithExceptionTest {
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
                         AtomicInteger t = new AtomicInteger(1);
+
                         @Override
                         public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                             if (j == 3) {

@@ -17,7 +17,6 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 

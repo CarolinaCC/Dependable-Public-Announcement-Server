@@ -8,7 +8,10 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidReferenceException;
 import dpas.common.domain.exception.InvalidUserException;
 import dpas.grpc.contract.Contract;
-import dpas.grpc.contract.Contract.*;
+import dpas.grpc.contract.Contract.MacReply;
+import dpas.grpc.contract.Contract.ReadReply;
+import dpas.grpc.contract.Contract.ReadRequest;
+import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import io.grpc.stub.StreamObserver;
 

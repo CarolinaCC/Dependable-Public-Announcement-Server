@@ -8,7 +8,6 @@ import dpas.grpc.contract.Contract.MacReply;
 import dpas.grpc.contract.Contract.RegisterRequest;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.MacGenerator;
-import io.grpc.StatusRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.security.GeneralSecurityException;
@@ -82,7 +81,7 @@ public class ContractGenerator {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(content.getBytes());
             return Base64.getEncoder().encodeToString(hash);
-        }catch (GeneralSecurityException e) {
+        } catch (GeneralSecurityException e) {
             //never happens
             return "";
         }

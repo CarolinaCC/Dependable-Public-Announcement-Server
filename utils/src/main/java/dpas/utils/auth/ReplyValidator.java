@@ -5,7 +5,7 @@ import io.grpc.StatusRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
-import java.security.*;
+import java.security.PublicKey;
 import java.util.*;
 
 public class ReplyValidator {
@@ -83,7 +83,7 @@ public class ReplyValidator {
             return false;
         }
 
-        for(var entry : proofs.entrySet()) {
+        for (var entry : proofs.entrySet()) {
             var serverId = entry.getKey();
             PublicKey pubKey = serverKeys.get(serverId);
             if (pubKey == null) {
@@ -177,7 +177,7 @@ public class ReplyValidator {
     }
 
     private static boolean verifyError(Throwable t, byte[] request, PublicKey key) {
-        if (!(t instanceof  StatusRuntimeException)) {
+        if (!(t instanceof StatusRuntimeException)) {
             return false;
         }
         return verifyError((StatusRuntimeException) t, request, key);

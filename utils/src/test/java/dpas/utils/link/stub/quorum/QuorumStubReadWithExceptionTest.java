@@ -21,7 +21,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -107,7 +106,7 @@ public class QuorumStubReadWithExceptionTest {
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(3)
                 .build());
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 4);
@@ -138,7 +137,7 @@ public class QuorumStubReadWithExceptionTest {
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(3)
                 .build());
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 4);
@@ -169,7 +168,7 @@ public class QuorumStubReadWithExceptionTest {
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(3)
                 .build());
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 12);
@@ -199,11 +198,11 @@ public class QuorumStubReadWithExceptionTest {
         var qstub = new QuorumStub(stubs, 1);
         Contract.ReadReply reply = null;
         try {
-             reply = qstub.readWithException(Contract.ReadRequest.newBuilder()
+            reply = qstub.readWithException(Contract.ReadRequest.newBuilder()
                     .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                     .setNumber(3)
                     .build());
-        } catch(RuntimeException e) {
+        } catch (RuntimeException e) {
             for (int number : _assertions) {
                 assertEquals(number, 1);
             }
@@ -272,7 +271,7 @@ public class QuorumStubReadWithExceptionTest {
                     .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                     .setNumber(3)
                     .build());
-        } catch(RuntimeException e) {
+        } catch (RuntimeException e) {
             for (int number : _assertions) {
                 assertEquals(number, 1);
             }
@@ -311,38 +310,38 @@ public class QuorumStubReadWithExceptionTest {
     }
 
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServersOneException() {
-            List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-                final int j = i;
-                servers.add(
-                        new ServiceDPASGrpc.ServiceDPASImplBase() {
-                            @Override
-                            public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                                try {
-                                    _assertions.add(1);
-                                    List<Contract.Announcement> announcements = new ArrayList<>();
-                                    responseObserver.onNext(Contract.ReadReply.newBuilder()
-                                            .addAllAnnouncements(announcements)
-                                            .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey[j])))
-                                            .build());
-                                    responseObserver.onCompleted();
-                                } catch (GeneralSecurityException | IOException e) {
-                                    fail();
-                                }
-                            }
-                        });
-            }
+        List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            final int j = i;
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
                         @Override
                         public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-                            _assertions.add(1);
-                            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[3]));
-
+                            try {
+                                _assertions.add(1);
+                                List<Contract.Announcement> announcements = new ArrayList<>();
+                                responseObserver.onNext(Contract.ReadReply.newBuilder()
+                                        .addAllAnnouncements(announcements)
+                                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcements.size(), _serverPrivKey[j])))
+                                        .build());
+                                responseObserver.onCompleted();
+                            } catch (GeneralSecurityException | IOException e) {
+                                fail();
+                            }
                         }
                     });
-            return servers;
         }
+        servers.add(
+                new ServiceDPASGrpc.ServiceDPASImplBase() {
+                    @Override
+                    public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
+                        _assertions.add(1);
+                        responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[3]));
+
+                    }
+                });
+        return servers;
+    }
 
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> oneAndTwoAndThree() {
         List<ServiceDPASGrpc.ServiceDPASImplBase> servers = new ArrayList<>();
@@ -462,6 +461,7 @@ public class QuorumStubReadWithExceptionTest {
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
                         AtomicInteger t = new AtomicInteger(2);
+
                         @Override
                         public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                             if (j == 3) {

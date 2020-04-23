@@ -8,8 +8,6 @@ import dpas.server.service.ServiceDPASSafeImpl;
 import dpas.utils.link.PerfectStub;
 import org.apache.commons.io.FileUtils;
 
-import java.util.*;
-
 import javax.json.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +19,7 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.*;
 
 
 public class PersistenceManager {
@@ -109,7 +108,7 @@ public class PersistenceManager {
                 JsonObject jsonBroadCastProof = operation.getJsonObject("BroadCastProof");
                 Map<String, String> broadcastproof = new HashMap<>();
                 Set<String> keys = jsonBroadCastProof.keySet();
-                for (String mapKey: keys) {
+                for (String mapKey : keys) {
                     broadcastproof.put(mapKey, jsonBroadCastProof.getString(mapKey));
                 }
 

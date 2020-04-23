@@ -6,7 +6,6 @@ import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;
-import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
 import dpas.utils.link.PerfectStub;
@@ -22,7 +21,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +106,7 @@ public class QuorumStubReadGeneralWithExceptionTest {
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(3)
                 .build());
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 4);
@@ -139,7 +137,7 @@ public class QuorumStubReadGeneralWithExceptionTest {
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(3)
                 .build());
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 4);
@@ -170,7 +168,7 @@ public class QuorumStubReadGeneralWithExceptionTest {
                 .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                 .setNumber(3)
                 .build());
-        for(int number: _assertions) {
+        for (int number : _assertions) {
             assertEquals(number, 1);
         }
         assertEquals(_assertions.size(), 12);
@@ -204,7 +202,7 @@ public class QuorumStubReadGeneralWithExceptionTest {
                     .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                     .setNumber(3)
                     .build());
-        } catch(RuntimeException e) {
+        } catch (RuntimeException e) {
             for (int number : _assertions) {
                 assertEquals(number, 1);
             }
@@ -273,7 +271,7 @@ public class QuorumStubReadGeneralWithExceptionTest {
                     .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
                     .setNumber(3)
                     .build());
-        } catch(RuntimeException e) {
+        } catch (RuntimeException e) {
             for (int number : _assertions) {
                 assertEquals(number, 1);
             }
@@ -463,6 +461,7 @@ public class QuorumStubReadGeneralWithExceptionTest {
             servers.add(
                     new ServiceDPASGrpc.ServiceDPASImplBase() {
                         AtomicInteger t = new AtomicInteger(2);
+
                         @Override
                         public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                             if (j == 3) {

@@ -81,7 +81,7 @@ public class ReliableCrashServerRegisterTest {
         _servers = new Server[4];
         _channels = new ManagedChannel[4];
         _executors = new ExecutorService[4];
-        for(int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             var executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
             var eventGroup = new NioEventLoopGroup(1); //One thread for each channel
             executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
@@ -130,7 +130,7 @@ public class ReliableCrashServerRegisterTest {
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
         CountDownLatch latch = new CountDownLatch(3);
-        for (var stub: _stubs) {
+        for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -138,15 +138,17 @@ public class ReliableCrashServerRegisterTest {
                 }
 
                 @Override
-                public void onError(Throwable t) {}
+                public void onError(Throwable t) {
+                }
 
                 @Override
-                public void onCompleted() {}
+                public void onCompleted() {
+                }
             });
         }
         latch.await();
         int i = 0;
-        for(i = 0; i < 3; i++) {
+        for (i = 0; i < 3; i++) {
             assertEquals(_impls[i].getUsers().size(), 1);
             assertNotNull(_impls[i].getUsers().get(_pubKey));
         }
@@ -157,7 +159,7 @@ public class ReliableCrashServerRegisterTest {
         new Thread(() -> {
             try {
                 var req = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
-                req = req.toBuilder().setMac(ByteString.copyFrom(new byte[] {1, 2, 3})).build();
+                req = req.toBuilder().setMac(ByteString.copyFrom(new byte[]{1, 2, 3})).build();
                 _stub.register(req);
             } catch (InterruptedException | GeneralSecurityException e) {
                 fail();
@@ -165,7 +167,7 @@ public class ReliableCrashServerRegisterTest {
         }).start();
 
         Thread.sleep(1000);
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             assertEquals(_impls[i].getUsers().size(), 0);
         }
     }
@@ -175,7 +177,7 @@ public class ReliableCrashServerRegisterTest {
         new Thread(() -> {
             try {
                 var req = ContractGenerator.generateRegisterRequest(_pubKey, _privKey);
-                req = req.toBuilder().setPublicKey(ByteString.copyFrom(new byte[] {1, 2, 3, 4})).build();
+                req = req.toBuilder().setPublicKey(ByteString.copyFrom(new byte[]{1, 2, 3, 4})).build();
                 _stub.register(req);
             } catch (InterruptedException | GeneralSecurityException e) {
                 fail();
@@ -183,14 +185,14 @@ public class ReliableCrashServerRegisterTest {
         }).start();
 
         Thread.sleep(1000);
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             assertEquals(_impls[i].getUsers().size(), 0);
         }
     }
 
     @Test
     public void validRepeatedRegister() throws GeneralSecurityException, InterruptedException {
-        for(int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             _stub.register(ContractGenerator.generateRegisterRequest(_pubKey, _privKey));
         }
 
@@ -202,7 +204,7 @@ public class ReliableCrashServerRegisterTest {
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
         CountDownLatch latch = new CountDownLatch(3);
-        for (var stub: _stubs) {
+        for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -210,15 +212,17 @@ public class ReliableCrashServerRegisterTest {
                 }
 
                 @Override
-                public void onError(Throwable t) {}
+                public void onError(Throwable t) {
+                }
 
                 @Override
-                public void onCompleted() {}
+                public void onCompleted() {
+                }
             });
         }
         latch.await();
 
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             assertEquals(_impls[i].getUsers().size(), 1);
             assertNotNull(_impls[i].getUsers().get(_pubKey));
         }
@@ -246,8 +250,8 @@ public class ReliableCrashServerRegisterTest {
         Thread.sleep(2000);
 
         for (int i = 0; i < 3; i++) {
-                assertEquals(_impls[i].getUsers().size(), 0);
-                assertNull(_impls[i].getUsers().get(_pubKey));
+            assertEquals(_impls[i].getUsers().size(), 0);
+            assertNull(_impls[i].getUsers().get(_pubKey));
         }
     }
 
@@ -288,9 +292,9 @@ public class ReliableCrashServerRegisterTest {
 
         Thread.sleep(2000);
         for (int i = 0; i < 3; i++) {
-                assertEquals(_impls[i].getUsers().size(), 0);
-                assertNull(_impls[i].getUsers().get(_pubKey));
-            }
+            assertEquals(_impls[i].getUsers().size(), 0);
+            assertNull(_impls[i].getUsers().get(_pubKey));
+        }
     }
 
     @Test
@@ -322,7 +326,7 @@ public class ReliableCrashServerRegisterTest {
 
         //Perform a read and wait for all servers to respond to garantee that all servers see the register
         CountDownLatch latch = new CountDownLatch(3);
-        for (var stub: _stubs) {
+        for (var stub : _stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -330,14 +334,16 @@ public class ReliableCrashServerRegisterTest {
                 }
 
                 @Override
-                public void onError(Throwable t) {}
+                public void onError(Throwable t) {
+                }
 
                 @Override
-                public void onCompleted() {}
+                public void onCompleted() {
+                }
             });
         }
         latch.await();
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             assertEquals(_impls[i].getUsers().size(), 1);
             assertNotNull(_impls[i].getUsers().get(_pubKey));
         }

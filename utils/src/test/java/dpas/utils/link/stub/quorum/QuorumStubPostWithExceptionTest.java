@@ -242,12 +242,12 @@ public class QuorumStubPostWithExceptionTest {
         var qstub = new QuorumStub(stubs, 1);
 
 
-            qstub.postWithException(_request);
+        qstub.postWithException(_request);
 
-            for (int number : _assertions) {
-                assertEquals(number, 1);
-            }
-            assertEquals(_assertions.size(), 12);
+        for (int number : _assertions) {
+            assertEquals(number, 1);
+        }
+        assertEquals(_assertions.size(), 12);
     }
 
     public static List<ServiceDPASGrpc.ServiceDPASImplBase> allEmpyServers() {

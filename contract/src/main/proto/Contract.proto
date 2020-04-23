@@ -2,75 +2,75 @@ syntax = "proto3";
 package dpas.grpc.contract;
 
 service ServiceDPAS {
-    rpc register (RegisterRequest) returns (MacReply);
-    rpc post (Announcement) returns (MacReply);
-    rpc postGeneral (Announcement) returns (MacReply);
-    rpc read (ReadRequest) returns (ReadReply);
-    rpc readGeneral (ReadRequest) returns (ReadReply);
-    rpc echoRegister(EchoRegister) returns (MacReply);
-    rpc readyRegister(ReadyRegister) returns (MacReply);
-    rpc echoAnnouncement(EchoAnnouncement) returns (MacReply);
-    rpc readyAnnouncement(ReadyAnnouncement) returns (MacReply);
-    rpc echoAnnouncementGeneral(EchoAnnouncement) returns (MacReply);
-    rpc readyAnnouncementGeneral(ReadyAnnouncement) returns (MacReply);
+  rpc register (RegisterRequest) returns (MacReply);
+  rpc post (Announcement) returns (MacReply);
+  rpc postGeneral (Announcement) returns (MacReply);
+  rpc read (ReadRequest) returns (ReadReply);
+  rpc readGeneral (ReadRequest) returns (ReadReply);
+  rpc echoRegister(EchoRegister) returns (MacReply);
+  rpc readyRegister(ReadyRegister) returns (MacReply);
+  rpc echoAnnouncement(EchoAnnouncement) returns (MacReply);
+  rpc readyAnnouncement(ReadyAnnouncement) returns (MacReply);
+  rpc echoAnnouncementGeneral(EchoAnnouncement) returns (MacReply);
+  rpc readyAnnouncementGeneral(ReadyAnnouncement) returns (MacReply);
 }
 //
 message RegisterRequest {
-    bytes publicKey = 1;
-    bytes mac = 2; // mac of the public key with the private key
+  bytes publicKey = 1;
+  bytes mac = 2; // mac of the public key with the private key
 }
 
 //
 message MacReply {
-    bytes mac = 1; //Mac of the request mac
+  bytes mac = 1; //Mac of the request mac
 }
 
 
 //
 message ReadRequest {
-    bytes publicKey = 1;
-    int32 number = 2;
-    string nonce = 3; //different from session nonce
+  bytes publicKey = 1;
+  int32 number = 2;
+  string nonce = 3; //different from session nonce
 }
 
 //
 message ReadReply {
-    repeated Announcement announcements = 1;
-    bytes mac = 2; //mac of nonce
+  repeated Announcement announcements = 1;
+  bytes mac = 2; //mac of nonce
 }
 
 //
 message Announcement {
-    string message = 1;
-    repeated string references = 2;
-    bytes publicKey = 3;
-    bytes signature = 4;
-    int64 seq = 5;
-    string identifier = 6;
-    map<string, string> readyProof = 7;
+  string message = 1;
+  repeated string references = 2;
+  bytes publicKey = 3;
+  bytes signature = 4;
+  int64 seq = 5;
+  string identifier = 6;
+  map<string, string> readyProof = 7;
 }
 
 message EchoRegister {
-    RegisterRequest request = 1;
-    bytes mac = 2;
-    string serverKey = 3;
+  RegisterRequest request = 1;
+  bytes mac = 2;
+  string serverKey = 3;
 }
 
 message ReadyRegister {
-    RegisterRequest request = 1;
-    bytes mac = 2;
-    string serverKey = 3;
+  RegisterRequest request = 1;
+  bytes mac = 2;
+  string serverKey = 3;
 }
 
 message EchoAnnouncement {
-    Announcement request = 1;
-    bytes mac = 2;
-    string serverKey = 3;
+  Announcement request = 1;
+  bytes mac = 2;
+  string serverKey = 3;
 }
 
 message ReadyAnnouncement {
-    Announcement request = 1;
-    bytes mac = 2;
-    string serverKey = 3;
+  Announcement request = 1;
+  bytes mac = 2;
+  string serverKey = 3;
 }
 

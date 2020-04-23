@@ -12,7 +12,7 @@ public class UserBoard implements AnnouncementBoard {
     private final User _owner;
     protected PublicKey _publicKey;
 
-    private final SortedSet<Announcement> _posts = Collections.synchronizedSortedSet(new TreeSet<>((a, b) -> (int)(a.getSeq() - b.getSeq())));
+    private final SortedSet<Announcement> _posts = Collections.synchronizedSortedSet(new TreeSet<>((a, b) -> (int) (a.getSeq() - b.getSeq())));
 
     public UserBoard(User user) throws NullUserException {
         if (user == null)

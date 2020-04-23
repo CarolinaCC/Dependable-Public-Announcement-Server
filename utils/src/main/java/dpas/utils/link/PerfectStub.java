@@ -8,7 +8,6 @@ import dpas.utils.auth.ReplyValidator;
 import io.grpc.stub.StreamObserver;
 
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Base64;
 import java.util.Map;

@@ -12,9 +12,6 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup;
 import io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -22,6 +19,9 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 public class ServerDPAS {
@@ -103,7 +103,7 @@ public class ServerDPAS {
     public static List<PerfectStub> loadServerKeys(String host, int maxFaults, KeyStore ks) throws KeyStoreException {
         var stubs = new ArrayList<PerfectStub>();
         int numServers = 3 * maxFaults + 1;
-        for(int i = 1; i <= numServers; ++i) {
+        for (int i = 1; i <= numServers; ++i) {
             var alias = "server-" + i;
             var pubKey = ks.getCertificate(alias).getPublicKey();
             int port = 9000 + i;

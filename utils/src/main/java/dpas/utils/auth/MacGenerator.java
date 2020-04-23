@@ -1,7 +1,6 @@
 package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
-import dpas.utils.auth.ByteUtils;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -9,7 +8,6 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Set;
 
 public class MacGenerator {
 

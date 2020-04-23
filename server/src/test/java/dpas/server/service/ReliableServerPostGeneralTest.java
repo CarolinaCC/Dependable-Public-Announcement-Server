@@ -1,6 +1,5 @@
 package dpas.server.service;
 
-import com.google.protobuf.ByteString;
 import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
@@ -443,7 +442,7 @@ public class ReliableServerPostGeneralTest {
     @Test
     public void weirdBizantineBehaviour() throws InterruptedException {
         for (int i = 0; i < 4; i++) {
-            for(int j = i; j < 4; j++) {
+            for (int j = i; j < 4; j++) {
                 _stubs[i].postGeneral(_requests[j], new StreamObserver<>() {
                     @Override
                     public void onNext(Contract.MacReply value) {

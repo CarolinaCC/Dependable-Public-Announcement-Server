@@ -1,6 +1,5 @@
 package dpas.utils.link.stub.perfect;
 
-import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.utils.ContractGenerator;

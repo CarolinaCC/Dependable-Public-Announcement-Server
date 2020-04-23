@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.security.*;
 import java.util.ArrayList;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -77,7 +76,6 @@ public class GeneralBoardTest {
         assertEquals(_generalBoard.read(0).size(), 3);
         assertEquals(_generalBoard.getSeq(), _seq + 1);
     }
-
 
 
     @Test

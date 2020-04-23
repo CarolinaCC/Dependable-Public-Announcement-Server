@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.grpc.Status.CANCELLED;
-import static io.grpc.Status.INVALID_ARGUMENT;
 import static org.junit.Assert.*;
 
 public class PerfectStubReadGeneralTest {
@@ -71,7 +70,7 @@ public class PerfectStubReadGeneralTest {
         final AtomicInteger countCompleted = new AtomicInteger(0);
         final AtomicInteger countSuccess = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             AtomicInteger i = new AtomicInteger(3);
 
             @Override
@@ -140,8 +139,9 @@ public class PerfectStubReadGeneralTest {
         PerfectStub pstub = new PerfectStub(client, _serverPKey);
         final AtomicInteger countCompleted = new AtomicInteger(0);
         final AtomicInteger countSuccess = new AtomicInteger(0);
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             AtomicInteger i = new AtomicInteger(3);
+
             @Override
             public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                 try {
@@ -208,7 +208,7 @@ public class PerfectStubReadGeneralTest {
         PerfectStub pstub = new PerfectStub(client, _serverPKey);
         final AtomicInteger countCompleted = new AtomicInteger(0);
         final AtomicInteger countSuccess = new AtomicInteger(0);
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
             public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                 try {

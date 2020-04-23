@@ -42,7 +42,7 @@ public class PersistenceManagerTest {
 
 
     private static final String firstIdentifier = "Bt1cXgVRitM/V3xfw1r17GUwJsI5FBocbmnXdmFEtIQ=";
-    private static final String secondIdentifier = "IaEg3rilltMWOBWMMitk0Wv2gF3LIXcHUqXoOQc8tpk=" ;
+    private static final String secondIdentifier = "IaEg3rilltMWOBWMMitk0Wv2gF3LIXcHUqXoOQc8tpk=";
 
     @After
     public void teardown() {

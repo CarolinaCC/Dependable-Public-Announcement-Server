@@ -33,7 +33,7 @@ public class GeneralBoard implements AnnouncementBoard {
         }
         List<Announcement> posts;
         synchronized (_posts) {
-             posts = new ArrayList<>(_posts);
+            posts = new ArrayList<>(_posts);
         }
         if (number == 0 || number >= posts.size()) {
             return posts;

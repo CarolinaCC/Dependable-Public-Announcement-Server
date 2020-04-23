@@ -10,7 +10,6 @@ import dpas.utils.ContractGenerator;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
-import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -29,11 +28,14 @@ import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Stream;
 
 import static io.grpc.Status.CANCELLED;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
 public class QuorumConcurrencyWithByzantineFailTest {
@@ -97,7 +99,7 @@ public class QuorumConcurrencyWithByzantineFailTest {
         _channels = new ManagedChannel[4];
         _executors = new ExecutorService[4];
 
-        var byzImpl  = new ServiceDPASGrpc.ServiceDPASImplBase() {
+        var byzImpl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
             public void postGeneral(Contract.Announcement request, StreamObserver<Contract.MacReply> responseObserver) {
                 responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _serverPrivKey[0]));
@@ -275,7 +277,7 @@ public class QuorumConcurrencyWithByzantineFailTest {
                     .build());
             //Check that each announcement was posted correctly
             assertEquals(reply.getAnnouncementsCount(), NUMBER_POSTS / NUMBER_THREADS);
-            assertNull(assertThrowable) ;
+            assertNull(assertThrowable);
             _stub.post(reply.getAnnouncements(reply.getAnnouncementsCount() - 1)); //Write Back like a atomic register
         }
     }

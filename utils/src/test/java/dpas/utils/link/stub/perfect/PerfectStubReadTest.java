@@ -1,17 +1,11 @@
 package dpas.utils.link.stub.perfect;
 
 import com.google.protobuf.ByteString;
-import dpas.common.domain.Announcement;
-import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.utils.ContractGenerator;
-import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
 import dpas.utils.link.PerfectStub;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
 import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
@@ -19,20 +13,16 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.grpc.util.MutableHandlerRegistry;
 import org.junit.*;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static io.grpc.Status.CANCELLED;
-import static io.grpc.Status.INVALID_ARGUMENT;
 import static org.junit.Assert.*;
 
 public class PerfectStubReadTest {
@@ -87,7 +77,7 @@ public class PerfectStubReadTest {
         final AtomicInteger countCompleted = new AtomicInteger(0);
         final AtomicInteger countSuccess = new AtomicInteger(0);
 
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             AtomicInteger i = new AtomicInteger(3);
 
             @Override
@@ -156,8 +146,9 @@ public class PerfectStubReadTest {
         PerfectStub pstub = new PerfectStub(client, _serverPKey);
         final AtomicInteger countCompleted = new AtomicInteger(0);
         final AtomicInteger countSuccess = new AtomicInteger(0);
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             AtomicInteger i = new AtomicInteger(3);
+
             @Override
             public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                 try {
@@ -224,7 +215,7 @@ public class PerfectStubReadTest {
         PerfectStub pstub = new PerfectStub(client, _serverPKey);
         final AtomicInteger countCompleted = new AtomicInteger(0);
         final AtomicInteger countSuccess = new AtomicInteger(0);
-        ServiceDPASGrpc.ServiceDPASImplBase impl = new  ServiceDPASGrpc.ServiceDPASImplBase() {
+        ServiceDPASGrpc.ServiceDPASImplBase impl = new ServiceDPASGrpc.ServiceDPASImplBase() {
             @Override
             public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
                 try {
@@ -243,9 +234,9 @@ public class PerfectStubReadTest {
         serviceRegistry.addService(impl);
         CountDownLatch latch = new CountDownLatch(1);
         pstub.read(Contract.ReadRequest.newBuilder()
-                        .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
-                        .setNumber(2)
-                        .build(), new StreamObserver<>() {
+                .setPublicKey(ByteString.copyFrom(_pubKey.getEncoded()))
+                .setNumber(2)
+                .build(), new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 countSuccess.getAndIncrement();
