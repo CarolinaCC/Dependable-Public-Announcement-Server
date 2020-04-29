@@ -84,6 +84,7 @@ public class PerfectStub {
         });
     }
 
+    @Deprecated
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
         _stub.read(request, new StreamObserver<>() {
             @Override
@@ -154,6 +155,7 @@ public class PerfectStub {
         });
     }
 
+    @Deprecated
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
         _stub.readGeneral(request, new StreamObserver<>() {
             @Override
@@ -426,6 +428,7 @@ public class PerfectStub {
         });
     }
 
+    @Deprecated
     public void postWithException(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
         _stub.post(announcement, new StreamObserver<>() {
             @Override
@@ -458,6 +461,7 @@ public class PerfectStub {
         });
     }
 
+    @Deprecated
     public void postGeneralWithException(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
         _stub.postGeneral(announcement, new StreamObserver<>() {
             @Override
@@ -490,6 +494,7 @@ public class PerfectStub {
         });
     }
 
+    @Deprecated
     public void readGeneralWithException(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
         _stub.readGeneral(request, new StreamObserver<>() {
             @Override
@@ -522,6 +527,7 @@ public class PerfectStub {
         });
     }
 
+    @Deprecated
     public void readWithException(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
         _stub.read(request, new StreamObserver<>() {
             @Override
@@ -558,6 +564,7 @@ public class PerfectStub {
         });
     }
 
+    @Deprecated
     public void registerWithException(Contract.RegisterRequest request, StreamObserver<Contract.MacReply> replyObserver) {
         _stub.register(request, new StreamObserver<>() {
             @Override

@@ -3,6 +3,7 @@ package dpas.common.domain;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
+import dpas.common.domain.utils.JsonConstants;
 import dpas.grpc.contract.Contract;
 
 import javax.json.Json;
@@ -14,6 +15,9 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+
+import static dpas.common.domain.utils.JsonConstants.OPERATION_TYPE_KEY;
+import static dpas.common.domain.utils.JsonConstants.PUBLIC_KEY;
 
 public class User {
 
@@ -46,8 +50,8 @@ public class User {
         JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
         String pubKey = Base64.getEncoder().encodeToString(_publicKey.getEncoded());
 
-        jsonBuilder.add("Type", "Register");
-        jsonBuilder.add("Public Key", pubKey);
+        jsonBuilder.add(OPERATION_TYPE_KEY, JsonConstants.REGISTER_OP_TYPE);
+        jsonBuilder.add(PUBLIC_KEY, pubKey);
 
         return jsonBuilder.build();
     }

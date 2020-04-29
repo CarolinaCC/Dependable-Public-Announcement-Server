@@ -21,8 +21,14 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.utils.JsonConstants.*;
+
 
 public class PersistenceManager {
+
+    public static final String ROOT_KEY = "Operations";
+
     private final String _path;
     private final File _swapFile;
     private final File _file;
@@ -55,7 +61,7 @@ public class PersistenceManager {
         arrayBuilder.add(operation);
 
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-        objectBuilder.add("Operations", arrayBuilder.build());
+        objectBuilder.add(ROOT_KEY, arrayBuilder.build());
 
         try (JsonWriter jsonWriter = Json.createWriter(new BufferedWriter(new FileWriter(_swapFile, false)))) {
             jsonWriter.writeObject(objectBuilder.build());
@@ -63,6 +69,7 @@ public class PersistenceManager {
         Files.move(Paths.get(_swapFile.getPath()), Paths.get(_path), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    @Deprecated
     public synchronized ServiceDPASPersistentImpl load() throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
         ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
@@ -70,6 +77,7 @@ public class PersistenceManager {
         return service;
     }
 
+    @Deprecated
     public synchronized ServiceDPASSafeImpl load(SecurityManager manager, PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
         ServiceDPASSafeImpl service = new ServiceDPASSafeImpl(this, privateKey, manager);
@@ -89,15 +97,15 @@ public class PersistenceManager {
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
 
-            byte[] keyBytes = Base64.getDecoder().decode(operation.getString("Public Key"));
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
+            byte[] keyBytes = Base64.getDecoder().decode(operation.getString(PUBLIC_KEY));
+            PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(keyBytes));
 
-            if (operation.getString("Type").equals("Register")) {
+            if (operation.getString(OPERATION_TYPE_KEY).equals(REGISTER_OP_TYPE)) {
                 service.addUser(key);
                 userSeqs.put(key, 0L);
             } else {
-                byte[] signature = Base64.getDecoder().decode(operation.getString("Signature"));
-                JsonArray jsonReferences = operation.getJsonArray("References");
+                byte[] signature = Base64.getDecoder().decode(operation.getString(SIGNATURE_KEY));
+                JsonArray jsonReferences = operation.getJsonArray(REFERENCES_KEY);
 
                 // creating new array list of references
                 ArrayList<String> references = new ArrayList<>();
@@ -105,19 +113,19 @@ public class PersistenceManager {
                     references.add(jsonReferences.getString(j));
                 }
 
-                JsonObject jsonBroadCastProof = operation.getJsonObject("BroadCastProof");
+                JsonObject jsonBroadCastProof = operation.getJsonObject(BROADCAST_PROOF_KEY);
                 Map<String, String> broadcastproof = new HashMap<>();
                 Set<String> keys = jsonBroadCastProof.keySet();
                 for (String mapKey : keys) {
                     broadcastproof.put(mapKey, jsonBroadCastProof.getString(mapKey));
                 }
 
-                long seq = operation.getInt("Sequencer");
+                long seq = operation.getInt(SEQUENCER_KEY);
 
-                if (operation.getString("Type").equals("Post"))
-                    service.addAnnouncement(operation.getString("Message"), key, signature, references, seq, broadcastproof);
+                if (operation.getString(OPERATION_TYPE_KEY).equals(POST_OP_TYPE))
+                    service.addAnnouncement(operation.getString(MESSAGE_KEY), key, signature, references, seq, broadcastproof);
                 else
-                    service.addGeneralAnnouncement(operation.getString("Message"), key, signature, references, seq, broadcastproof);
+                    service.addGeneralAnnouncement(operation.getString(MESSAGE_KEY), key, signature, references, seq, broadcastproof);
                 userSeqs.put(key, userSeqs.get(key) + 1);
             }
         }
@@ -125,11 +133,11 @@ public class PersistenceManager {
 
     public JsonArray readSaveFile() throws FileNotFoundException {
         try (JsonReader reader = Json.createReader(new BufferedInputStream(new FileInputStream(_file)))) {
-            return reader.readObject().getJsonArray("Operations");
+            return reader.readObject().getJsonArray(ROOT_KEY);
         }
     }
 
     public void clearSaveFile() throws IOException {
-        FileUtils.write(_file, "{ \"Operations\" : [] }", StandardCharsets.UTF_8, false);
+        FileUtils.write(_file, "{ \"" + ROOT_KEY +"\" : [] }", StandardCharsets.UTF_8, false);
     }
 }

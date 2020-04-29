@@ -1,6 +1,7 @@
 package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
+import dpas.utils.Constants;
 import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -9,9 +10,12 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 
-public class ErrorGenerator {
-    public static final Metadata.Key<byte[]> contentKey = Metadata.Key.of("REQ-bin", Metadata.BINARY_BYTE_MARSHALLER);
-    public static final Metadata.Key<byte[]> macKey = Metadata.Key.of("MAC-bin", Metadata.BINARY_BYTE_MARSHALLER);
+public final class ErrorGenerator {
+
+    public static final Metadata.Key<byte[]> contentKey = Metadata.Key.of(Constants.REQ_KEY, Metadata.BINARY_BYTE_MARSHALLER);
+    public static final Metadata.Key<byte[]> macKey = Metadata.Key.of(Constants.MAC_KEY, Metadata.BINARY_BYTE_MARSHALLER);
+
+    private ErrorGenerator() {}
 
     public static StatusRuntimeException generate(Status status, String message, Contract.RegisterRequest request, PrivateKey privKey) {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());

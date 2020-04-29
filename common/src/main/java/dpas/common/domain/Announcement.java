@@ -2,6 +2,8 @@ package dpas.common.domain;
 
 import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.*;
+import dpas.common.domain.utils.CryptographicConstants;
+import dpas.common.domain.utils.JsonConstants;
 import dpas.grpc.contract.Contract;
 
 import javax.json.Json;
@@ -15,20 +17,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Announcement {
+
     private final byte[] _signature;
     private final User _user;
     private final String _message;
     private final Set<Announcement> _references; // Can be null
     private final AnnouncementBoard _board;
     private final long _seq;
-    private final String _hash;
     private final String _identifier;
     private final Map<String, String> _broadcastProof;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq) throws CommonDomainException {
 
-        checkArguments(signature, user, message, references, board, seq);
+        checkArguments(signature, user, message, references, board);
         checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
         _message = message;
         _signature = signature;
@@ -36,7 +38,6 @@ public class Announcement {
         _references = references;
         _board = board;
         _seq = seq;
-        _hash = generateHash();
         _identifier = generateIdentifier();
         _broadcastProof = new HashMap<>();
     }
@@ -44,7 +45,7 @@ public class Announcement {
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq, Map<String, String> broadcast) throws CommonDomainException {
 
-        checkArguments(signature, user, message, references, board, seq);
+        checkArguments(signature, user, message, references, board);
         checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
         _message = message;
         _signature = signature;
@@ -52,7 +53,6 @@ public class Announcement {
         _references = references;
         _board = board;
         _seq = seq;
-        _hash = generateHash();
         _identifier = generateIdentifier();
         _broadcastProof = broadcast;
     }
@@ -66,7 +66,7 @@ public class Announcement {
 
 
     public void checkArguments(byte[] signature, User user, String message,
-                               Set<Announcement> references, AnnouncementBoard board, long seq) throws CommonDomainException {
+                               Set<Announcement> references, AnnouncementBoard board) throws CommonDomainException {
 
         if (signature == null) {
             throw new NullSignatureException("Invalid Signature provided: null");
@@ -97,7 +97,7 @@ public class Announcement {
             byte[] messageBytes = generateMessageBytes(message, references, boardIdentifier, seq);
             PublicKey publicKey = user.getPublicKey();
 
-            Signature sign = Signature.getInstance("SHA256withRSA");
+            Signature sign = Signature.getInstance(CryptographicConstants.SIGNATURE_ALGORITHM);
             sign.initVerify(publicKey);
             sign.update(messageBytes);
 
@@ -171,34 +171,15 @@ public class Announcement {
         }
 
         //final var mapBuilder = Json.createArrayBuilder()
-        jsonBuilder.add("Type", type);
-        jsonBuilder.add("Public Key", pubKey);
-        jsonBuilder.add("Message", _message);
-        jsonBuilder.add("Signature", sign);
-        jsonBuilder.add("Sequencer", _seq);
-        jsonBuilder.add("References", arrayBuilder.build());
-        jsonBuilder.add("BroadCastProof", mapBuilder);
+        jsonBuilder.add(JsonConstants.OPERATION_TYPE_KEY, type);
+        jsonBuilder.add(JsonConstants.PUBLIC_KEY, pubKey);
+        jsonBuilder.add(JsonConstants.MESSAGE_KEY, _message);
+        jsonBuilder.add(JsonConstants.SIGNATURE_KEY, sign);
+        jsonBuilder.add(JsonConstants.SEQUENCER_KEY, _seq);
+        jsonBuilder.add(JsonConstants.REFERENCES_KEY, arrayBuilder.build());
+        jsonBuilder.add(JsonConstants.BROADCAST_PROOF_KEY, mapBuilder);
 
         return jsonBuilder.build();
-    }
-
-    private String generateHash() throws CommonDomainException {
-        try {
-            var builder = new StringBuilder();
-            builder.append(_message)
-                    .append(_seq)
-                    .append(Base64.getEncoder().encodeToString(_signature))
-                    .append(_board.getIdentifier())
-                    .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
-            getReferenceStrings(_references).forEach(builder::append);
-
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(builder.toString().getBytes());
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            //Should never happen
-            throw new InvalidHashException("Error: Could not get SHA-256 Hash");
-        }
     }
 
     private String generateIdentifier() throws CommonDomainException {
@@ -208,7 +189,7 @@ public class Announcement {
                     .append(_board.getIdentifier())
                     .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
 
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(CryptographicConstants.DIGEST_ALGORITHM);
             byte[] hash = digest.digest(builder.toString().getBytes());
             return Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
@@ -222,7 +203,7 @@ public class Announcement {
                                            Set<String> references, String boadIdentifier, long seq) throws CommonDomainException {
         try {
             var messageBytes = generateMessageBytes(message, references, boadIdentifier, seq);
-            var sign = Signature.getInstance("SHA256withRSA");
+            var sign = Signature.getInstance(CryptographicConstants.SIGNATURE_ALGORITHM);
             sign.initSign(privKey);
             sign.update(messageBytes);
             return sign.sign();

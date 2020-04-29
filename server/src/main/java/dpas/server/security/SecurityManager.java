@@ -12,23 +12,16 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Map;
 
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.utils.Constants.ECHO;
+import static dpas.utils.Constants.READY;
+
 public class SecurityManager {
 
-    public static final byte[] ECHO = "ECHO".getBytes();
-
-    public static final byte[] READY = "READY".getBytes();
-
     public void validateRequest(Contract.RegisterRequest request) throws GeneralSecurityException, IllegalMacException {
-        PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey publicKey = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] content = ByteUtils.toByteArray(request);
         byte[] mac = request.getMac().toByteArray();
-        validateRequest(mac, content, publicKey);
-    }
-
-    public void validateAnnouncement(Contract.Announcement request) throws GeneralSecurityException, IllegalMacException {
-        PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
-        byte[] content = ByteUtils.toByteArray(request);
-        byte[] mac = request.getSignature().toByteArray();
         validateRequest(mac, content, publicKey);
     }
 

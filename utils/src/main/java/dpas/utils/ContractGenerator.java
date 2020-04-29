@@ -20,11 +20,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ContractGenerator {
+import static dpas.common.domain.utils.CryptographicConstants.DIGEST_ALGORITHM;
+import static dpas.utils.Constants.*;
 
-    public static final byte[] ECHO = "ECHO".getBytes();
+public final class ContractGenerator {
 
-    public static final byte[] READY = "READY".getBytes();
+    private ContractGenerator() {}
 
     public static Contract.Announcement generateAnnouncement(PublicKey pubKey, PrivateKey privKey, String message, long seq,
                                                              String boardIdentifier, Announcement[] a)
@@ -78,7 +79,7 @@ public class ContractGenerator {
                     .append(Base64.getEncoder().encodeToString(authorKey.getEncoded()))
                     .toString();
 
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
             byte[] hash = digest.digest(content.getBytes());
             return Base64.getEncoder().encodeToString(hash);
         } catch (GeneralSecurityException e) {

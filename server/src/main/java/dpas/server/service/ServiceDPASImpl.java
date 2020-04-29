@@ -26,9 +26,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
 import static io.grpc.Status.INVALID_ARGUMENT;
 
 
+@Deprecated
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     protected ConcurrentHashMap<String, Announcement> _announcements;
@@ -103,7 +105,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     @Override
     public void read(ReadRequest request, StreamObserver<ReadReply> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(_users.containsKey(key))) {
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User with public key does not exist")
@@ -153,7 +155,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     protected Announcement generateAnnouncement(Contract.Announcement request, AnnouncementBoard board) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
@@ -161,7 +163,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     }
 
     protected Announcement generateAnnouncement(Contract.Announcement request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 

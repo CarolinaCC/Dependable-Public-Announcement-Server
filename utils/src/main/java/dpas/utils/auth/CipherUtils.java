@@ -5,10 +5,15 @@ import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
-public class CipherUtils {
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.utils.CryptographicConstants.CIPHER_ALGORITHM;
+
+public final class CipherUtils {
+
+    private CipherUtils() {}
 
     public static byte[] decipher(byte[] content, PrivateKey key) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, key);
         return cipher.doFinal(content);
     }
@@ -19,7 +24,7 @@ public class CipherUtils {
 
 
     public static byte[] cipher(byte[] content, PublicKey key) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(content);
     }
@@ -34,10 +39,7 @@ public class CipherUtils {
     }
 
     public static PublicKey keyFromBytes(byte[] key) throws GeneralSecurityException {
-        return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(key));
+        return KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(key));
     }
 
-    public static PrivateKey privKeyFromBytes(byte[] key) throws GeneralSecurityException {
-        return KeyFactory.getInstance("RSA").generatePrivate(new X509EncodedKeySpec(key));
-    }
 }

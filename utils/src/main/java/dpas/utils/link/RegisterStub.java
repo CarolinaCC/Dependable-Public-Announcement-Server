@@ -47,7 +47,7 @@ public class RegisterStub {
         return announcements;
     }
 
-    public Contract.Announcement[] readGeneral(int number) throws InterruptedException, GeneralSecurityException {
+    public Contract.Announcement[] readGeneral(int number) throws InterruptedException {
         var request = Contract.ReadRequest.newBuilder()
                 .setNumber(number)
                 .setNonce(UUID.randomUUID().toString())

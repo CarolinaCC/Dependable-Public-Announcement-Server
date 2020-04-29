@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.util.Set;
 
-public class ByteUtils {
+public final class ByteUtils {
+
+    private ByteUtils() {}
 
     public static byte[] toByteArray(Contract.Announcement request) {
         byte[] seq = NumberUtils.longToBytes(request.getSeq());

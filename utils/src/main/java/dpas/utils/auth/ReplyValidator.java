@@ -1,6 +1,7 @@
 package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
+import dpas.utils.Constants;
 import io.grpc.StatusRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -8,9 +9,9 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.util.*;
 
-public class ReplyValidator {
+public final class ReplyValidator {
 
-    public static final byte[] READY = "READY".getBytes();
+    private ReplyValidator() {}
 
     public static boolean validateReadReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey,
                                             PublicKey authorKey, Map<String, PublicKey> serverKeys, int quorumSize) {
@@ -89,7 +90,7 @@ public class ReplyValidator {
             if (pubKey == null) {
                 return false;
             }
-            var content = ArrayUtils.addAll(announcement.getSignature().toByteArray(), READY);
+            var content = ArrayUtils.addAll(announcement.getSignature().toByteArray(), Constants.READY);
             var mac = Base64.getDecoder().decode(entry.getValue());
             if (!MacVerifier.verifyMac(pubKey, content, mac)) {
                 return false;

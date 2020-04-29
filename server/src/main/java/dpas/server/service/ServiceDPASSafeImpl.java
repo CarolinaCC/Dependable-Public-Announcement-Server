@@ -29,8 +29,12 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.stream.Collectors;
 
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.utils.JsonConstants.POST_GENERAL_OP_TYPE;
+import static dpas.common.domain.utils.JsonConstants.POST_OP_TYPE;
 import static io.grpc.Status.*;
 
+@Deprecated
 public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     private final PrivateKey _privateKey;
     private final SecurityManager _securityManager;
@@ -51,7 +55,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     @Override
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(_users.containsKey(key))) {
                 responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with public key does not exist", request, _privateKey));
@@ -94,7 +98,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         try {
             _securityManager.validateRequest(request);
 
-            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            PublicKey pubKey = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = new User(pubKey);
             var curr = _users.putIfAbsent(pubKey, user);
             if (curr == null) {
@@ -121,7 +125,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr == null) {
                 //Announcement with that identifier does not exist yet
-                save(announcement.toJson("Post"));
+                save(announcement.toJson(POST_OP_TYPE));
                 announcement.getUser().getUserBoard().post(announcement);
             }
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
@@ -147,7 +151,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr == null) {
                 //Announcement with that identifier does not exist yet
-                save(announcement.toJson("PostGeneral"));
+                save(announcement.toJson(POST_GENERAL_OP_TYPE));
                 _generalBoard.post(announcement);
             }
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
@@ -165,7 +169,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     }
 
     protected Announcement generateAnnouncement(Contract.Announcement request, AnnouncementBoard board, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey));
         if (request.getSeq() > board.getSeq() + 1) {
@@ -182,7 +186,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     }
 
     protected Announcement generateAnnouncement(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey));
 

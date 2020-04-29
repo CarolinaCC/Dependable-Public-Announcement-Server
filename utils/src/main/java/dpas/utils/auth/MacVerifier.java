@@ -16,22 +16,22 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static dpas.common.domain.utils.CryptographicConstants.*;
 import static dpas.utils.auth.CipherUtils.keyFromBytes;
 
-public class MacVerifier {
+public final class MacVerifier {
 
-    public static final byte[] ECHO = "ECHO".getBytes();
-
-    public static final byte[] READY = "READY".getBytes();
+    private MacVerifier() {
+    }
 
     public static boolean verifyMac(Contract.RegisterRequest request, Contract.MacReply reply, PublicKey serverKey) {
         try {
             byte[] mac = reply.getMac().toByteArray();
-            Cipher cipher = Cipher.getInstance("RSA");
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, serverKey);
             byte[] hash = cipher.doFinal(mac);
 
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
             byte[] content = digest.digest(request.getMac().toByteArray());
 
             return Arrays.equals(content, hash);
@@ -43,11 +43,11 @@ public class MacVerifier {
 
     public static boolean verifyMac(PublicKey pubKey, byte[] content, byte[] mac) {
         try {
-            Cipher cipher = Cipher.getInstance("RSA");
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, pubKey);
             byte[] hash = cipher.doFinal(mac);
 
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
             return Arrays.equals(digest.digest(content), hash);
         } catch (GeneralSecurityException e) {
             return false;
@@ -98,7 +98,7 @@ public class MacVerifier {
                     .collect(Collectors.toSet());
             byte[] messageBytes = Announcement.generateMessageBytes(announcement.getMessage(), references, boardIdentifier, announcement.getSeq());
 
-            Signature sign = Signature.getInstance("SHA256withRSA");
+            Signature sign = Signature.getInstance(SIGNATURE_ALGORITHM);
             sign.initVerify(authorKey);
             sign.update(messageBytes);
 
@@ -132,7 +132,7 @@ public class MacVerifier {
                     .append(Base64.getEncoder().encodeToString(authorKey))
                     .toString();
 
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
             byte[] hash = digest.digest(content.getBytes());
             var realId = Base64.getEncoder().encodeToString(hash);
             return realId.equals(identifier);

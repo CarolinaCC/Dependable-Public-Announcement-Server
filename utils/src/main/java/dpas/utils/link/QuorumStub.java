@@ -114,6 +114,7 @@ public class QuorumStub {
         latch.await();
     }
 
+    @Deprecated
     public Contract.ReadReply read(Contract.ReadRequest request) throws InterruptedException {
 
         final CountDownLatch latch = new CountDownLatch(_quorumSize);
@@ -189,6 +190,7 @@ public class QuorumStub {
     }
 
 
+    @Deprecated
     public Contract.ReadReply readGeneral(Contract.ReadRequest request) throws InterruptedException {
 
         final CountDownLatch latch = new CountDownLatch(_quorumSize);
@@ -263,6 +265,7 @@ public class QuorumStub {
 
     }
 
+    @Deprecated
     public void postGeneralWithException(Announcement announcement) throws GeneralSecurityException, InterruptedException {
         Map<String, String> replies = new ConcurrentHashMap<>();
         Map<String, Integer> replyCount = new ConcurrentHashMap<>();
@@ -312,7 +315,7 @@ public class QuorumStub {
         }
     }
 
-
+    @Deprecated
     public void postWithException(Announcement announcement) throws GeneralSecurityException, InterruptedException {
         Map<String, String> replies = new ConcurrentHashMap<>();
         Map<String, Integer> replyCount = new ConcurrentHashMap<>();
@@ -362,6 +365,7 @@ public class QuorumStub {
         }
     }
 
+    @Deprecated
     public Contract.ReadReply readWithException(Contract.ReadRequest request) throws GeneralSecurityException, InterruptedException {
         Map<String, String> replies = new ConcurrentHashMap<>();
         Map<String, Integer> replyCount = new ConcurrentHashMap<>();
@@ -419,6 +423,7 @@ public class QuorumStub {
         }
     }
 
+    @Deprecated
     public Contract.ReadReply readGeneralWithException(Contract.ReadRequest request) throws InterruptedException {
         Map<String, String> replies = new ConcurrentHashMap<>();
         Map<String, Integer> replyCount = new ConcurrentHashMap<>();
@@ -476,6 +481,7 @@ public class QuorumStub {
         }
     }
 
+    @Deprecated
     public void serverReply(String serverKey, String reply, Map<String, String> replies, Map<String, Integer> replyCount) {
         var prevReply = replies.put(serverKey, reply);
         if (prevReply != null) {

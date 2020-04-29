@@ -33,6 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.utils.JsonConstants.POST_GENERAL_OP_TYPE;
+import static dpas.common.domain.utils.JsonConstants.POST_OP_TYPE;
 import static io.grpc.Status.*;
 
 public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
@@ -52,7 +55,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
 
     /**
-     * Map of echoes sent by current server
+     * Map of readies sent by current server
      */
     private final Map<String, Boolean> _sentReadies = new ConcurrentHashMap<>();
     private final Map<String, Set<String>> _readyCount = new ConcurrentHashMap<>();
@@ -96,7 +99,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+            PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(_users.containsKey(key))) {
                 responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with public key does not exist", request, _privateKey));
@@ -207,8 +210,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             _securityManager.validateRequest(request, _serverKeys);
 
             var id = request.getRequest().getMac().toStringUtf8();
-
-            //broadcastEchoRegister(request.getRequest());
 
             _echosCount.putIfAbsent(id, new HashSet<>());
             var echos = _echosCount.get(id);
@@ -601,7 +602,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void deliverRegister(Contract.RegisterRequest request) throws GeneralSecurityException, CommonDomainException, IOException {
-        PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey pubKey = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         User user = new User(pubKey);
         var curr = _users.putIfAbsent(pubKey, user);
         if (curr == null) {
@@ -621,7 +622,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             }
         }
         _announcements.putIfAbsent(request.getIdentifier(), announcement);
-        save(announcement.toJson("Post"));
+        save(announcement.toJson(POST_OP_TYPE));
         announcement.getUser().getUserBoard().post(announcement);
         _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
         _deliveredMessages.get(request.getIdentifier()).countDown();
@@ -638,7 +639,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             }
         }
         _announcements.putIfAbsent(request.getIdentifier(), announcement);
-        save(announcement.toJson("PostGeneral"));
+        save(announcement.toJson(POST_GENERAL_OP_TYPE));
         _generalBoard.post(announcement);
         _deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
         _deliveredMessages.get(request.getIdentifier()).countDown();
@@ -670,7 +671,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
 
     protected Announcement generateAnnouncement(Contract.Announcement request, AnnouncementBoard board, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey));
         if (request.getSeq() > board.getSeq() + 1) {
@@ -687,7 +688,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     protected Announcement generateAnnouncement(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
-        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
+        PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey));
 

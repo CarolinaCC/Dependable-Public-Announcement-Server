@@ -24,6 +24,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+
 public class ServerDPAS {
 
     public static void main(String[] args) throws Exception {
@@ -66,11 +68,11 @@ public class ServerDPAS {
             System.out.println("Error: Could not get server key pair from KeyStore! (Are the password and alias correct?)");
             System.exit(-1);
         }
-        if (!privKey.getAlgorithm().equals("RSA")) {
+        if (!privKey.getAlgorithm().equals(ASYMMETRIC_KEY_ALGORITHM)) {
             System.out.println("Error: Server private key must be an RSA key");
             System.exit(-1);
         }
-        if (!pubKey.getAlgorithm().equals("RSA")) {
+        if (!pubKey.getAlgorithm().equals(ASYMMETRIC_KEY_ALGORITHM)) {
             System.out.println("Error: Server public key must be an RSA key");
             System.exit(-1);
         }

@@ -22,6 +22,11 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.utils.JsonConstants.POST_GENERAL_OP_TYPE;
+import static dpas.common.domain.utils.JsonConstants.POST_OP_TYPE;
+
+@Deprecated
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     protected PersistenceManager _manager;
 
@@ -33,7 +38,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     @Override
     public void register(RegisterRequest request, StreamObserver<MacReply> responseObserver) {
         try {
-            PublicKey key = KeyFactory.getInstance("RSA")
+            PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM)
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = new User(key);
 
@@ -65,7 +70,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-                _manager.save(announcement.toJson("Post"));
+                _manager.save(announcement.toJson(POST_OP_TYPE));
                 announcement.getUser().getUserBoard().post(announcement);
                 responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
@@ -90,7 +95,7 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-                _manager.save(announcement.toJson("PostGeneral"));
+                _manager.save(announcement.toJson(POST_GENERAL_OP_TYPE));
                 _generalBoard.post(announcement);
                 responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
