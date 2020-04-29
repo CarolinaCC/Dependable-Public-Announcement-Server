@@ -46,13 +46,7 @@ public class Library {
         }
         stub = new RegisterStub(new QuorumStub(stubs, numFaults));
     }
-
-    public void finish() {
-        channels.forEach(ManagedChannel::shutdownNow);
-        executors.forEach(ExecutorService::shutdownNow);
-    }
-
-
+    
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
             stub.register(publicKey, privkey);

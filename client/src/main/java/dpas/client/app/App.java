@@ -81,9 +81,6 @@ public class App {
                     parsePostLine(line, lib);
                     printHelp();
                     break;
-                case "quit":
-                    lib.finish();
-                    return;
                 default:
                     printHelp();
             }
@@ -180,7 +177,6 @@ public class App {
         System.out.println("\tpostGeneral <message> <numReferences> <references...>");
         System.out.println("\tread <number>");
         System.out.println("\treadGeneral <number>");
-        System.out.println("\tquit");
         System.out.println();
     }
 
