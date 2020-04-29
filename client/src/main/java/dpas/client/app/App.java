@@ -65,7 +65,7 @@ public class App {
             }
             switch (split[0]) {
                 case "register":
-                    parseRegisterLine(line, lib);
+                    parseRegisterLine(lib);
                     printHelp();
                     break;
                 case "read":
@@ -91,7 +91,7 @@ public class App {
     }
 
 
-    public static void parseRegisterLine(String line, Library lib) {
+    public static void parseRegisterLine(Library lib) {
         try {
 
             KeyPair keyPair = loadKeyPair();
