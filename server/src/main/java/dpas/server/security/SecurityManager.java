@@ -60,7 +60,7 @@ public final class SecurityManager {
         }
     }
 
-    public static void validateAnnouncement(Contract.ReadyAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+    public static void validateAnnouncement(Contract.ReadyAnnouncement request, Map<String, PublicKey> serverKeys) throws IllegalMacException {
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
             throw new IllegalMacException("Ilegal Server Key");
@@ -72,7 +72,7 @@ public final class SecurityManager {
         }
     }
 
-    public static void validateAnnouncement(Contract.EchoAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+    public static void validateAnnouncement(Contract.EchoAnnouncement request, Map<String, PublicKey> serverKeys) throws IllegalMacException {
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
             throw new IllegalMacException("Ilegal Server Key");

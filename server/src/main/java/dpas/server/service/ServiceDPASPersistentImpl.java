@@ -114,17 +114,6 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         users.put(key, user);
     }
 
-    public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
-            throws CommonDomainException {
-
-        var refs = getReferences(references);
-        var user = users.get(key);
-        var board = user.getUserBoard();
-
-        var announcement = new Announcement(signature, user, message, refs, board, seq);
-        board.post(announcement);
-        announcements.put(announcement.getIdentifier(), announcement);
-    }
 
     public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
             throws CommonDomainException {
@@ -138,36 +127,24 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         announcements.put(announcement.getIdentifier(), announcement);
     }
 
-    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
+    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
             throws CommonDomainException {
 
         var refs = getReferences(references);
         var user = users.get(key);
         var board = generalBoard;
 
-        var announcement = new Announcement(signature, user, message, refs, board, seq);
-        generalBoard.post(announcement);
-        announcements.put(announcement.getIdentifier(), announcement);
-    }
-
-    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastproof)
-            throws CommonDomainException {
-
-        var refs = getReferences(references);
-        var user = users.get(key);
-        var board = generalBoard;
-
-        var announcement = new Announcement(signature, user, message, refs, board, seq, broadcastproof);
+        var announcement = new Announcement(signature, user, message, refs, board, seq, broadcastProof);
         generalBoard.post(announcement);
         announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public ConcurrentHashMap<PublicKey, User> getUsers() {
-        return users;
+        return this.users;
     }
 
     public ConcurrentHashMap<String, Announcement> getAnnouncements() {
-        return announcements;
+        return this.announcements;
     }
 
 }

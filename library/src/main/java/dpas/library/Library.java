@@ -19,15 +19,13 @@ import java.util.concurrent.Executors;
 
 public class Library {
 
-    private final RegisterStub _stub;
-    private final List<PerfectStub> _pstubs;
-    private final List<ExecutorService> _executors;
-    private final List<ManagedChannel> _channels;
-    private final int _numFaults;
+    private final RegisterStub stub;
+    private final List<ExecutorService> executors;
+    private final List<ManagedChannel> channels;
 
     public Library(String host, int port, PublicKey[] serverKey, int numFaults) {
-        _channels = new ArrayList<>();
-        _executors = new ArrayList<>();
+        channels = new ArrayList<>();
+        executors = new ArrayList<>();
         List<PerfectStub> stubs = new ArrayList<>();
         for (int i = 0; i < 3 * numFaults + 1; i++) {
             //One thread for each channel
@@ -40,26 +38,24 @@ public class Library {
                     .eventLoopGroup(eventGroup)
                     .executor(executor)
                     .build();
-            _channels.add(channel);
-            _executors.add(executor);
+            channels.add(channel);
+            executors.add(executor);
             var stub = ServiceDPASGrpc.newStub(channel);
             PerfectStub pStub = new PerfectStub(stub, serverKey[i]);
             stubs.add(pStub);
         }
-        _pstubs = stubs;
-        _stub = new RegisterStub(new QuorumStub(stubs, numFaults));
-        _numFaults = numFaults;
+        stub = new RegisterStub(new QuorumStub(stubs, numFaults));
     }
 
     public void finish() {
-        _executors.forEach(ExecutorService::shutdownNow);
-        _channels.forEach(ManagedChannel::shutdownNow);
+        channels.forEach(ManagedChannel::shutdownNow);
+        executors.forEach(ExecutorService::shutdownNow);
     }
 
 
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
-            _stub.register(publicKey, privkey);
+            stub.register(publicKey, privkey);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -67,7 +63,7 @@ public class Library {
 
     public void post(PublicKey key, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            _stub.post(key, privateKey, String.valueOf(message), a);
+            stub.post(key, privateKey, String.valueOf(message), a);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -75,7 +71,7 @@ public class Library {
 
     public void postGeneral(PublicKey pubKey, char[] message, Announcement[] a, PrivateKey privateKey) {
         try {
-            _stub.postGeneral(pubKey, privateKey, String.valueOf(message), a);
+            stub.postGeneral(pubKey, privateKey, String.valueOf(message), a);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -83,7 +79,7 @@ public class Library {
 
     public Announcement[] read(PublicKey publicKey, int number) {
         try {
-            return _stub.read(publicKey, number);
+            return stub.read(publicKey, number);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return new Announcement[0];
@@ -92,7 +88,7 @@ public class Library {
 
     public Announcement[] readGeneral(int number) {
         try {
-            return _stub.readGeneral(number);
+            return stub.readGeneral(number);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return new Announcement[0];

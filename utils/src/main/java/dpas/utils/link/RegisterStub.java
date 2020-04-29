@@ -23,7 +23,7 @@ public class RegisterStub {
 
     public RegisterStub(QuorumStub stub) {
         this.stub = stub;
-        seqs = new ConcurrentHashMap<>();
+        this.seqs = new ConcurrentHashMap<>();
     }
 
     public Contract.Announcement[] read(PublicKey key, int number) throws InterruptedException, GeneralSecurityException {
@@ -33,18 +33,19 @@ public class RegisterStub {
                 .setNonce(UUID.randomUUID().toString())
                 .build();
         var reply = stub.readReliable(request);
+
+        //Write-Back
+        writeBack(reply);
+
+        seqs.put(Base64.getEncoder().encodeToString(key.getEncoded()), QuorumStub.getSeq(reply.getAnnouncementsList()));
+        return reply.getAnnouncementsList().toArray(new Contract.Announcement[0]);
+    }
+
+    public void writeBack(Contract.ReadReply reply) throws GeneralSecurityException, InterruptedException {
         if (reply.getAnnouncementsCount() != 0) {
             var announcement = reply.getAnnouncements(reply.getAnnouncementsCount() - 1);
             stub.post(announcement);
         }
-        Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
-        int i = 0;
-        for (var a : reply.getAnnouncementsList()) {
-            announcements[i] = a;
-            i++;
-        }
-        seqs.put(Base64.getEncoder().encodeToString(key.getEncoded()), stub.getSeq(reply.getAnnouncementsList()));
-        return announcements;
     }
 
     public Contract.Announcement[] readGeneral(int number) throws InterruptedException {
@@ -54,20 +55,13 @@ public class RegisterStub {
                 .build();
         var reply = stub.readGeneralReliable(request);
 
-        Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
-        int i = 0;
-        for (var a : reply.getAnnouncementsList()) {
-            announcements[i] = a;
-            i++;
-        }
-        return announcements;
+        return reply.getAnnouncementsList().toArray(new Contract.Announcement[0]);
     }
 
     public void post(PublicKey pub, PrivateKey priv, String message, Contract.Announcement[] references)
             throws InterruptedException, GeneralSecurityException, CommonDomainException {
         var seq = getSeq(pub);
-        var request = ContractGenerator.generateAnnouncement(pub, priv,
-                message, seq, CipherUtils.keyToString(pub), references);
+        var request = ContractGenerator.generateAnnouncement(pub, priv, message, seq, CipherUtils.keyToString(pub), references);
         stub.post(request);
     }
 
@@ -78,9 +72,8 @@ public class RegisterStub {
                 .setNumber(1)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var seq = stub.getSeq(stub.readGeneralReliable(req).getAnnouncementsList());
-        var request = ContractGenerator.generateAnnouncement(pub, priv,
-                message, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, references);
+        var seq = QuorumStub.getSeq(stub.readGeneralReliable(req).getAnnouncementsList());
+        var request = ContractGenerator.generateAnnouncement(pub, priv, message, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, references);
         stub.postGeneral(request);
     }
 
@@ -93,9 +86,7 @@ public class RegisterStub {
         var userId = Base64.getEncoder().encodeToString(userKey.getEncoded());
         if (seqs.containsKey(userId)) {
             //Don't need read, already know seq from previous read
-            var seq = seqs.get(userId);
-            seqs.put(userId, seq + 1);
-            return seq;
+            return seqs.put(userId, seqs.get(userId) + 1);
         } else {
             //need read, don't know seq from previous read
             var req = Contract.ReadRequest.newBuilder()
@@ -103,7 +94,7 @@ public class RegisterStub {
                     .setPublicKey(ByteString.copyFrom(userKey.getEncoded()))
                     .setNonce(UUID.randomUUID().toString())
                     .build();
-            var seq = stub.getSeq(stub.readReliable(req).getAnnouncementsList());
+            var seq = QuorumStub.getSeq(stub.readReliable(req).getAnnouncementsList());
             seqs.put(userId, seq + 1);
             return seq;
         }

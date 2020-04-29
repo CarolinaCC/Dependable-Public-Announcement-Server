@@ -84,41 +84,6 @@ public class PerfectStub {
         });
     }
 
-    @Deprecated
-    public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        stub.read(request, new StreamObserver<>() {
-            @Override
-            public void onNext(Contract.ReadReply value) {
-                //If we can't verify the response then either the attacker changed it (must retry until he stops)
-                //Or the server is byzantine (since we can't know must keep trying)
-                //Since the operation is idempotent resending to a correct server has no impact
-                try {
-                    if (!ReplyValidator.validateReadReply(request, value, serverKey, CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()))) {
-                        read(request, replyObserver);
-                    } else {
-                        replyObserver.onNext(value);
-                    }
-                } catch (GeneralSecurityException e) {
-                    read(request, replyObserver);
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                //If an error occurred it is either a byzantine client (we don't care about him)
-                //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
-                //A byzantine server (since we can't know, we must retry still)
-                //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                read(request, replyObserver);
-            }
-
-            @Override
-            public void onCompleted() {
-                replyObserver.onCompleted();
-            }
-        });
-    }
-
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver,
                      Map<String, PublicKey> serverKeys, int quorumSize) {
         stub.read(request, new StreamObserver<>() {
@@ -146,37 +111,6 @@ public class PerfectStub {
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
                 read(request, replyObserver, serverKeys, quorumSize);
-            }
-
-            @Override
-            public void onCompleted() {
-                replyObserver.onCompleted();
-            }
-        });
-    }
-
-    @Deprecated
-    public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        stub.readGeneral(request, new StreamObserver<>() {
-            @Override
-            public void onNext(Contract.ReadReply value) {
-                //If we can't verify the response then either the attacker changed it (must retry until he stops)
-                //Or the server is byzantine (since we can't know must keep trying)
-                //Since the operation is idempotent resending to a correct server has no impact
-                if (!ReplyValidator.validateReadGeneralReply(request, value, serverKey)) {
-                    readGeneral(request, replyObserver);
-                } else {
-                    replyObserver.onNext(value);
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                //If an error occurred it is either a byzantine client (we don't care about him)
-                //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
-                //A byzantine server (since we can't know, we must retry still)
-                //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                readGeneral(request, replyObserver);
             }
 
             @Override
@@ -428,6 +362,80 @@ public class PerfectStub {
         });
     }
 
+    public PublicKey getServerKey() {
+        return serverKey;
+    }
+
+    public String getServerId() {
+        return Base64.getEncoder().encodeToString(serverKey.getEncoded());
+    }
+
+    @Deprecated
+    public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
+        stub.read(request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.ReadReply value) {
+                //If we can't verify the response then either the attacker changed it (must retry until he stops)
+                //Or the server is byzantine (since we can't know must keep trying)
+                //Since the operation is idempotent resending to a correct server has no impact
+                try {
+                    if (!ReplyValidator.validateReadReply(request, value, serverKey, CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()))) {
+                        read(request, replyObserver);
+                    } else {
+                        replyObserver.onNext(value);
+                    }
+                } catch (GeneralSecurityException e) {
+                    read(request, replyObserver);
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                //If an error occurred it is either a byzantine client (we don't care about him)
+                //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
+                //A byzantine server (since we can't know, we must retry still)
+                //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
+                read(request, replyObserver);
+            }
+
+            @Override
+            public void onCompleted() {
+                replyObserver.onCompleted();
+            }
+        });
+    }
+
+    @Deprecated
+    public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
+        stub.readGeneral(request, new StreamObserver<>() {
+            @Override
+            public void onNext(Contract.ReadReply value) {
+                //If we can't verify the response then either the attacker changed it (must retry until he stops)
+                //Or the server is byzantine (since we can't know must keep trying)
+                //Since the operation is idempotent resending to a correct server has no impact
+                if (!ReplyValidator.validateReadGeneralReply(request, value, serverKey)) {
+                    readGeneral(request, replyObserver);
+                } else {
+                    replyObserver.onNext(value);
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                //If an error occurred it is either a byzantine client (we don't care about him)
+                //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
+                //A byzantine server (since we can't know, we must retry still)
+                //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
+                readGeneral(request, replyObserver);
+            }
+
+            @Override
+            public void onCompleted() {
+                replyObserver.onCompleted();
+            }
+        });
+    }
+
     @Deprecated
     public void postWithException(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
         stub.post(announcement, new StreamObserver<>() {
@@ -599,13 +607,5 @@ public class PerfectStub {
                 replyObserver.onCompleted();
             }
         });
-    }
-
-    public PublicKey getServerKey() {
-        return serverKey;
-    }
-
-    public String getServerId() {
-        return Base64.getEncoder().encodeToString(serverKey.getEncoded());
     }
 }
