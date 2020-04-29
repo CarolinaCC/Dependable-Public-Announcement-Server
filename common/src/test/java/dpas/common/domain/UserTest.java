@@ -11,11 +11,12 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 
 public class UserTest {
 
     private PublicKey _publicKey;
+    private PublicKey _secondPublicKey;
 
     @Before
     public void setup() throws NoSuchAlgorithmException {
@@ -23,6 +24,9 @@ public class UserTest {
         keygen.initialize(1024);
         KeyPair keyPair = keygen.generateKeyPair();
         _publicKey = keyPair.getPublic();
+
+        keyPair = keygen.generateKeyPair();
+        _secondPublicKey = keyPair.getPublic();
     }
 
     @After
@@ -39,6 +43,30 @@ public class UserTest {
     @Test(expected = NullPublicKeyException.class)
     public void nullPublicKeyUser() throws NullPublicKeyException, NullUserException {
         new User(null);
+    }
+
+
+    @Test
+    public void userEqualityTest() throws NullPublicKeyException, NullUserException {
+        User user = new User(_publicKey);
+        User user2 = new User(_publicKey);
+
+        assertEquals(user, user2);
+    }
+
+    @Test
+    public void userInequalityTest() throws NullPublicKeyException, NullUserException {
+        User user = new User(_publicKey);
+        User user2 = new User(_secondPublicKey);
+
+        assertNotEquals(user, user2);
+    }
+
+    @Test
+    public void userInequalityToObjectTest() throws NullPublicKeyException, NullUserException {
+        User user = new User(_publicKey);
+
+        assertNotEquals(user, new Object());
     }
 
 }

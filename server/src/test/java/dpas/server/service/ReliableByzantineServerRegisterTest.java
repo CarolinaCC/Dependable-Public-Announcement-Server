@@ -3,7 +3,6 @@ package dpas.server.service;
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.link.PerfectStub;
@@ -84,8 +83,6 @@ public class ReliableByzantineServerRegisterTest {
     @Before
     public void setup() throws IOException {
 
-        SecurityManager manager = new SecurityManager();
-
         _stubs = new PerfectStub[4];
         _servers = new Server[4];
         _channels = new ManagedChannel[4];
@@ -151,7 +148,7 @@ public class ReliableByzantineServerRegisterTest {
 
         for (int i = 1; i < 4; i++) {
 
-            var impl = new ServiceDPASReliableImpl(_serverPrivKey[i], manager, Arrays.asList(_stubs),
+            var impl = new ServiceDPASReliableImpl(_serverPrivKey[i], Arrays.asList(_stubs),
                     Base64.getEncoder().encodeToString(_serverPubKey[i].getEncoded()), 1);
 
             _servers[i] = NettyServerBuilder.forPort(port + i).addService(impl).build();

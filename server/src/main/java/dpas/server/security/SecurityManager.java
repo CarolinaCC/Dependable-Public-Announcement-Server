@@ -16,22 +16,25 @@ import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALG
 import static dpas.utils.Constants.ECHO;
 import static dpas.utils.Constants.READY;
 
-public class SecurityManager {
+public final class SecurityManager {
 
-    public void validateRequest(Contract.RegisterRequest request) throws GeneralSecurityException, IllegalMacException {
+    private SecurityManager() {
+    }
+
+    public static void validateRequest(Contract.RegisterRequest request) throws GeneralSecurityException, IllegalMacException {
         PublicKey publicKey = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
         byte[] content = ByteUtils.toByteArray(request);
         byte[] mac = request.getMac().toByteArray();
         validateRequest(mac, content, publicKey);
     }
 
-    private void validateRequest(byte[] mac, byte[] content, PublicKey key) throws IllegalMacException {
+    private static void validateRequest(byte[] mac, byte[] content, PublicKey key) throws IllegalMacException {
         if (!MacVerifier.verifyMac(key, content, mac))
             throw new IllegalMacException("Could not validate request");
 
     }
 
-    public void validateRequest(Contract.EchoRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+    public static void validateRequest(Contract.EchoRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
         validateRequest(request.getRequest());
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
@@ -44,7 +47,7 @@ public class SecurityManager {
         }
     }
 
-    public void validateRequest(Contract.ReadyRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+    public static void validateRequest(Contract.ReadyRegister request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
         validateRequest(request.getRequest());
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
@@ -57,7 +60,7 @@ public class SecurityManager {
         }
     }
 
-    public void validateAnnouncement(Contract.ReadyAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+    public static void validateAnnouncement(Contract.ReadyAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
             throw new IllegalMacException("Ilegal Server Key");
@@ -69,7 +72,7 @@ public class SecurityManager {
         }
     }
 
-    public void validateAnnouncement(Contract.EchoAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
+    public static void validateAnnouncement(Contract.EchoAnnouncement request, Map<String, PublicKey> serverKeys) throws GeneralSecurityException, IllegalMacException {
         var pubKey = serverKeys.get(request.getServerKey());
         if (pubKey == null) {
             throw new IllegalMacException("Ilegal Server Key");

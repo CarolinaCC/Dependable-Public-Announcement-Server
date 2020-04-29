@@ -33,15 +33,15 @@ import static io.grpc.Status.INVALID_ARGUMENT;
 @Deprecated
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
-    protected ConcurrentHashMap<String, Announcement> _announcements;
-    protected ConcurrentHashMap<PublicKey, User> _users;
-    protected GeneralBoard _generalBoard;
+    protected ConcurrentHashMap<String, Announcement> announcements;
+    protected ConcurrentHashMap<PublicKey, User> users;
+    protected GeneralBoard generalBoard;
 
     public ServiceDPASImpl() {
         super();
-        _announcements = new ConcurrentHashMap<>();
-        _users = new ConcurrentHashMap<>();
-        _generalBoard = new GeneralBoard();
+        this.announcements = new ConcurrentHashMap<>();
+        this.users = new ConcurrentHashMap<>();
+        this.generalBoard = new GeneralBoard();
     }
 
     @Override
@@ -49,7 +49,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         try {
             var user = User.fromRequest(request);
 
-            var curr = _users.putIfAbsent(user.getPublicKey(), user);
+            var curr = this.users.putIfAbsent(user.getPublicKey(), user);
             if (curr != null) {
                 //User with public key already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
@@ -68,7 +68,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
             var announcement = generateAnnouncement(request);
 
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            var curr = this.announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 //Announcement with that identifier already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
@@ -85,14 +85,14 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     @Override
     public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-            var announcement = generateAnnouncement(request, _generalBoard);
+            var announcement = generateAnnouncement(request, this.generalBoard);
 
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            var curr = this.announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 //Announcement with that identifier already exists
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-                _generalBoard.post(announcement);
+                this.generalBoard.post(announcement);
                 responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
@@ -107,12 +107,12 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         try {
             PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
-            if (!(_users.containsKey(key))) {
+            if (!(this.users.containsKey(key))) {
                 responseObserver.onError(INVALID_ARGUMENT.withDescription("User with public key does not exist")
                         .asRuntimeException());
             } else {
 
-                var announcements = _users.get(key).getUserBoard().read(request.getNumber());
+                var announcements = users.get(key).getUserBoard().read(request.getNumber());
                 var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
                 responseObserver.onNext(ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
@@ -127,7 +127,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     public void readGeneral(ReadRequest request, StreamObserver<ReadReply> responseObserver) {
 
         try {
-            var announcements = _generalBoard.read(request.getNumber());
+            var announcements = this.generalBoard.read(request.getNumber());
             var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
             responseObserver.onNext(ReadReply.newBuilder().addAllAnnouncements(announcementsGRPC).build());
@@ -142,7 +142,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         // add all references to lists of references
         var references = new HashSet<Announcement>();
         for (var reference : referenceIDs) {
-            var announcement = _announcements.get(reference);
+            var announcement = this.announcements.get(reference);
             if (announcement == null) {
                 throw new InvalidReferenceException("Invalid Reference: reference provided does not exist");
             }
@@ -159,7 +159,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
-        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
+        return new Announcement(signature, this.users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
     protected Announcement generateAnnouncement(Contract.Announcement request) throws NoSuchAlgorithmException, InvalidKeySpecException, CommonDomainException {
@@ -167,7 +167,7 @@ public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
         byte[] signature = request.getSignature().toByteArray();
         String message = request.getMessage();
 
-        User user = _users.get(key);
+        User user = this.users.get(key);
         if (user == null) {
             throw new InvalidUserException("User does not exist");
         }

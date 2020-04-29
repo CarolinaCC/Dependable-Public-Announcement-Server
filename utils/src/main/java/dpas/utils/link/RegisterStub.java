@@ -17,13 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RegisterStub {
 
-    private final QuorumStub _stub;
+    private final QuorumStub stub;
 
-    private final Map<String, Long> _seqs;
+    private final Map<String, Long> seqs;
 
     public RegisterStub(QuorumStub stub) {
-        _stub = stub;
-        _seqs = new ConcurrentHashMap<>();
+        this.stub = stub;
+        seqs = new ConcurrentHashMap<>();
     }
 
     public Contract.Announcement[] read(PublicKey key, int number) throws InterruptedException, GeneralSecurityException {
@@ -32,10 +32,10 @@ public class RegisterStub {
                 .setNumber(number)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var reply = _stub.readReliable(request);
+        var reply = stub.readReliable(request);
         if (reply.getAnnouncementsCount() != 0) {
             var announcement = reply.getAnnouncements(reply.getAnnouncementsCount() - 1);
-            _stub.post(announcement);
+            stub.post(announcement);
         }
         Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
         int i = 0;
@@ -43,7 +43,7 @@ public class RegisterStub {
             announcements[i] = a;
             i++;
         }
-        _seqs.put(Base64.getEncoder().encodeToString(key.getEncoded()), _stub.getSeq(reply.getAnnouncementsList()));
+        seqs.put(Base64.getEncoder().encodeToString(key.getEncoded()), stub.getSeq(reply.getAnnouncementsList()));
         return announcements;
     }
 
@@ -52,7 +52,7 @@ public class RegisterStub {
                 .setNumber(number)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var reply = _stub.readGeneralReliable(request);
+        var reply = stub.readGeneralReliable(request);
 
         Contract.Announcement[] announcements = new Contract.Announcement[reply.getAnnouncementsCount()];
         int i = 0;
@@ -68,7 +68,7 @@ public class RegisterStub {
         var seq = getSeq(pub);
         var request = ContractGenerator.generateAnnouncement(pub, priv,
                 message, seq, CipherUtils.keyToString(pub), references);
-        _stub.post(request);
+        stub.post(request);
     }
 
 
@@ -78,23 +78,23 @@ public class RegisterStub {
                 .setNumber(1)
                 .setNonce(UUID.randomUUID().toString())
                 .build();
-        var seq = _stub.getSeq(_stub.readGeneralReliable(req).getAnnouncementsList());
+        var seq = stub.getSeq(stub.readGeneralReliable(req).getAnnouncementsList());
         var request = ContractGenerator.generateAnnouncement(pub, priv,
                 message, seq, GeneralBoard.GENERAL_BOARD_IDENTIFIER, references);
-        _stub.postGeneral(request);
+        stub.postGeneral(request);
     }
 
     public void register(PublicKey pub, PrivateKey priv) throws InterruptedException, GeneralSecurityException {
         var req = ContractGenerator.generateRegisterRequest(pub, priv);
-        _stub.register(req);
+        stub.register(req);
     }
 
     public long getSeq(PublicKey userKey) throws InterruptedException {
         var userId = Base64.getEncoder().encodeToString(userKey.getEncoded());
-        if (_seqs.containsKey(userId)) {
+        if (seqs.containsKey(userId)) {
             //Don't need read, already know seq from previous read
-            var seq = _seqs.get(userId);
-            _seqs.put(userId, seq + 1);
+            var seq = seqs.get(userId);
+            seqs.put(userId, seq + 1);
             return seq;
         } else {
             //need read, don't know seq from previous read
@@ -103,8 +103,8 @@ public class RegisterStub {
                     .setPublicKey(ByteString.copyFrom(userKey.getEncoded()))
                     .setNonce(UUID.randomUUID().toString())
                     .build();
-            var seq = _stub.getSeq(_stub.readReliable(req).getAnnouncementsList());
-            _seqs.put(userId, seq + 1);
+            var seq = stub.getSeq(stub.readReliable(req).getAnnouncementsList());
+            seqs.put(userId, seq + 1);
             return seq;
         }
     }

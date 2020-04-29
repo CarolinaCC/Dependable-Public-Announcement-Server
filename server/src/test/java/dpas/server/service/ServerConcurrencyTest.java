@@ -5,7 +5,6 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
 import io.grpc.BindableService;
@@ -74,8 +73,6 @@ public class ServerConcurrencyTest {
 
     @Before
     public void setup() throws GeneralSecurityException, IOException {
-
-        SecurityManager manager = new SecurityManager();
 
         final BindableService impl = new ServiceDPASImpl();
         _server = NettyServerBuilder.forPort(port).addService(impl).build();

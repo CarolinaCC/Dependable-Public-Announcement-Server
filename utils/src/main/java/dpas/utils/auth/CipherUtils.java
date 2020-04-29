@@ -10,7 +10,8 @@ import static dpas.common.domain.utils.CryptographicConstants.CIPHER_ALGORITHM;
 
 public final class CipherUtils {
 
-    private CipherUtils() {}
+    private CipherUtils() {
+    }
 
     public static byte[] decipher(byte[] content, PrivateKey key) throws GeneralSecurityException {
         Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);

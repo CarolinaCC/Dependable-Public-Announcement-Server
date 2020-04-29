@@ -484,8 +484,8 @@ public class PersistenceManagerTest {
 
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
-        assertEquals(impl._announcements.size(), 0);
-        assertEquals(impl._users.size(), 0);
+        assertEquals(impl.announcements.size(), 0);
+        assertEquals(impl.users.size(), 0);
     }
 
     @Test
@@ -498,8 +498,8 @@ public class PersistenceManagerTest {
 
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
-        assertEquals(impl._announcements.size(), 2);
-        assertEquals(impl._users.size(), 2);
+        assertEquals(impl.announcements.size(), 2);
+        assertEquals(impl.users.size(), 2);
     }
 
     @Test
@@ -512,8 +512,8 @@ public class PersistenceManagerTest {
 
         PersistenceManager manager = new PersistenceManager(path);
         ServiceDPASPersistentImpl impl = manager.load();
-        assertEquals(impl._announcements.size(), 2);
-        assertEquals(impl._users.size(), 2);
+        assertEquals(impl.announcements.size(), 2);
+        assertEquals(impl.users.size(), 2);
     }
 
 }

@@ -5,7 +5,6 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
@@ -55,7 +54,6 @@ public class SafeServicePostGeneralTest {
     private ManagedChannel _channel;
     private static PublicKey _serverPKey;
     private static PrivateKey _serverPrivKey;
-    private SecurityManager _securityManager;
 
     @BeforeClass
     public static void onTimeSetup() throws GeneralSecurityException, IOException, CommonDomainException {
@@ -101,9 +99,8 @@ public class SafeServicePostGeneralTest {
     @Before
     public void setup() throws GeneralSecurityException,
             IOException {
-        _securityManager = new SecurityManager();
 
-        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
         //Connect to Server
@@ -123,20 +120,20 @@ public class SafeServicePostGeneralTest {
     public void validPost() throws GeneralSecurityException {
         var reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
     }
 
     @Test
     public void validVariousPost() throws GeneralSecurityException {
         var reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
         reply = _stub.postGeneral(_request2);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request2));
-        assertEquals(_impl._announcements.size(), 2);
+        assertEquals(_impl.announcements.size(), 2);
         reply = _stub.postGeneral(_secondUserRequest);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _secondUserRequest));
-        assertEquals(_impl._announcements.size(), 3);
+        assertEquals(_impl.announcements.size(), 3);
     }
 
 
@@ -144,10 +141,10 @@ public class SafeServicePostGeneralTest {
     public void repeatedPost() throws GeneralSecurityException {
         var reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
         reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
     }
 
     @Test
@@ -170,12 +167,12 @@ public class SafeServicePostGeneralTest {
     public void stealSeqPost() throws GeneralSecurityException, IOException {
         var reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
         _stub.postGeneral(_request);
 
         reply = _stub.postGeneral(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
         _stub.postGeneral(_request);
     }
 

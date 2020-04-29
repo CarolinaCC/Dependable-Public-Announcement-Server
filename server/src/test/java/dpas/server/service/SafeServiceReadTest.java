@@ -5,7 +5,6 @@ import dpas.common.domain.Announcement;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
@@ -91,8 +90,7 @@ public class SafeServiceReadTest {
     @Before
     public void setup() throws IOException, GeneralSecurityException, CommonDomainException {
 
-        SecurityManager _securityManager = new SecurityManager();
-        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

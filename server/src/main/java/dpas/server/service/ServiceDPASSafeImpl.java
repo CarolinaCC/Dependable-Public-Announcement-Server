@@ -36,20 +36,18 @@ import static io.grpc.Status.*;
 
 @Deprecated
 public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
-    private final PrivateKey _privateKey;
-    private final SecurityManager _securityManager;
+    private final PrivateKey privateKey;
 
-    public ServiceDPASSafeImpl(PersistenceManager manager, PrivateKey privKey, SecurityManager securityManager) {
+    public ServiceDPASSafeImpl(PersistenceManager manager, PrivateKey privKey) {
         super(manager);
-        _privateKey = privKey;
-        _securityManager = securityManager;
+        this.privateKey = privKey;
+
     }
 
     //Use with tests only
-    public ServiceDPASSafeImpl(PrivateKey privKey, SecurityManager securityManager) {
+    public ServiceDPASSafeImpl(PrivateKey privKey) {
         super(null);
-        _privateKey = privKey;
-        _securityManager = securityManager;
+        this.privateKey = privKey;
     }
 
     @Override
@@ -57,21 +55,21 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         try {
             PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
-            if (!(_users.containsKey(key))) {
-                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with public key does not exist", request, _privateKey));
+            if (!(users.containsKey(key))) {
+                responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, "User with public key does not exist", request, privateKey));
             } else {
 
-                var announcements = _users.get(key).getUserBoard().read(request.getNumber());
+                var announcements = users.get(key).getUserBoard().read(request.getNumber());
                 var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
                 responseObserver.onNext(Contract.ReadReply.newBuilder()
                         .addAllAnnouncements(announcementsGRPC)
-                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC.size(), _privateKey)))
+                        .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC.size(), privateKey)))
                         .build());
                 responseObserver.onCompleted();
             }
         } catch (Exception e) {
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, privateKey));
         }
     }
 
@@ -79,40 +77,40 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
 
         try {
-            var announcements = _generalBoard.read(request.getNumber());
+            var announcements = generalBoard.read(request.getNumber());
             var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
             responseObserver.onNext(Contract.ReadReply.newBuilder()
                     .addAllAnnouncements(announcementsGRPC)
-                    .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC.size(), _privateKey)))
+                    .setMac(ByteString.copyFrom(MacGenerator.generateMac(request, announcementsGRPC.size(), privateKey)))
                     .build());
             responseObserver.onCompleted();
 
         } catch (Exception e) {
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, privateKey));
         }
     }
 
     @Override
     public void register(Contract.RegisterRequest request, StreamObserver<MacReply> responseObserver) {
         try {
-            _securityManager.validateRequest(request);
+            SecurityManager.validateRequest(request);
 
             PublicKey pubKey = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = new User(pubKey);
-            var curr = _users.putIfAbsent(pubKey, user);
+            var curr = users.putIfAbsent(pubKey, user);
             if (curr == null) {
                 save(user.toJson());
             }
-            responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), _privateKey));
+            responseObserver.onNext(ContractGenerator.generateMacReply(request.getMac().toByteArray(), privateKey));
             responseObserver.onCompleted();
 
         } catch (CommonDomainException | IllegalMacException e) {
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, privateKey));
         } catch (IOException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, privateKey));
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, privateKey));
         }
     }
 
@@ -120,25 +118,25 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     @Override
     public void post(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-            var announcement = generateAnnouncement(request, _privateKey);
+            var announcement = generateAnnouncement(request, privateKey);
 
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            var curr = announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr == null) {
                 //Announcement with that identifier does not exist yet
                 save(announcement.toJson(POST_OP_TYPE));
                 announcement.getUser().getUserBoard().post(announcement);
             }
-            responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
+            responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), privateKey));
             responseObserver.onCompleted();
 
         } catch (InvalidSeqException | InvalidUserException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, privateKey));
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, privateKey));
         } catch (IOException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, privateKey));
         } catch (CommonDomainException | IllegalArgumentException e) {
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, privateKey));
         }
 
     }
@@ -146,25 +144,25 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     @Override
     public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-            var announcement = generateAnnouncement(request, _generalBoard, _privateKey);
+            var announcement = generateAnnouncement(request, generalBoard, privateKey);
 
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            var curr = announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr == null) {
                 //Announcement with that identifier does not exist yet
                 save(announcement.toJson(POST_GENERAL_OP_TYPE));
-                _generalBoard.post(announcement);
+                generalBoard.post(announcement);
             }
-            responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), _privateKey));
+            responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), privateKey));
             responseObserver.onCompleted();
 
         } catch (InvalidSeqException | InvalidUserException e) {
-            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, e.getMessage(), request, privateKey));
         } catch (GeneralSecurityException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "Invalid security values provided", request, privateKey));
         } catch (IOException e) {
-            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(CANCELLED, "An Error occurred in the server", request, privateKey));
         } catch (CommonDomainException | IllegalArgumentException e) {
-            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, _privateKey));
+            responseObserver.onError(ErrorGenerator.generate(INVALID_ARGUMENT, e.getMessage(), request, privateKey));
         }
     }
 
@@ -182,7 +180,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
             throw new InvalidSeqException("Invalid identifier");
         }
 
-        return new Announcement(signature, _users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
+        return new Announcement(signature, users.get(key), message, getReferences(request.getReferencesList()), board, request.getSeq());
     }
 
     protected Announcement generateAnnouncement(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException, CommonDomainException {
@@ -190,7 +188,7 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
         byte[] signature = request.getSignature().toByteArray();
         String message = new String(CipherUtils.decodeAndDecipher(request.getMessage(), privKey));
 
-        User user = _users.get(key);
+        User user = users.get(key);
         if (user == null) {
             throw new InvalidUserException("User does not exist");
         }
@@ -210,8 +208,8 @@ public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
 
     //Don't want to save when testing
     private void save(JsonObject object) throws IOException {
-        if (_manager != null) {
-            _manager.save(object);
+        if (manager != null) {
+            manager.save(object);
         }
     }
 }

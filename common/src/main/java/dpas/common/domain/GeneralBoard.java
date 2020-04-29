@@ -7,7 +7,7 @@ import java.util.*;
 
 public class GeneralBoard implements AnnouncementBoard {
 
-    private final SortedSet<Announcement> _posts = Collections.synchronizedSortedSet(new TreeSet<>((a, b) -> {
+    private final SortedSet<Announcement> posts = Collections.synchronizedSortedSet(new TreeSet<>((a, b) -> {
         if (a.getSeq() != b.getSeq())
             return (int) (a.getSeq() - b.getSeq());
         else {
@@ -23,7 +23,7 @@ public class GeneralBoard implements AnnouncementBoard {
         if (announcement == null) {
             throw new NullAnnouncementException("Invalid Announcement: Cannot be null");
         }
-        _posts.add(announcement);
+        this.posts.add(announcement);
     }
 
     @Override
@@ -32,8 +32,8 @@ public class GeneralBoard implements AnnouncementBoard {
             throw new InvalidNumberOfPostsException("Invalid number of posts to read: number cannot be negative");
         }
         List<Announcement> posts;
-        synchronized (_posts) {
-            posts = new ArrayList<>(_posts);
+        synchronized (this.posts) {
+            posts = new ArrayList<>(this.posts);
         }
         if (number == 0 || number >= posts.size()) {
             return posts;
@@ -43,10 +43,10 @@ public class GeneralBoard implements AnnouncementBoard {
 
     @Override
     public long getSeq() {
-        if (_posts.size() == 0) {
+        if (this.posts.size() == 0) {
             return 0;
         }
-        return _posts.last().getSeq();
+        return this.posts.last().getSeq();
     }
 
     @Override

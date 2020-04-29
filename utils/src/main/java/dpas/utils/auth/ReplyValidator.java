@@ -11,7 +11,8 @@ import java.util.*;
 
 public final class ReplyValidator {
 
-    private ReplyValidator() {}
+    private ReplyValidator() {
+    }
 
     public static boolean validateReadReply(Contract.ReadRequest request, Contract.ReadReply reply, PublicKey serverKey,
                                             PublicKey authorKey, Map<String, PublicKey> serverKeys, int quorumSize) {

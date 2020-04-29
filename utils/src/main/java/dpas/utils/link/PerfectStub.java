@@ -16,22 +16,22 @@ import java.util.Map;
  * Implementation of authenticated perfect point to point link
  */
 public class PerfectStub {
-    private final ServiceDPASGrpc.ServiceDPASStub _stub;
-    private final PublicKey _serverKey;
+    private final ServiceDPASGrpc.ServiceDPASStub stub;
+    private final PublicKey serverKey;
 
     public PerfectStub(ServiceDPASGrpc.ServiceDPASStub stub, PublicKey serverKey) {
-        _stub = stub;
-        _serverKey = serverKey;
+        this.stub = stub;
+        this.serverKey = serverKey;
     }
 
     public void register(Contract.RegisterRequest request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.register(request, new StreamObserver<>() {
+        stub.register(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     register(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -55,13 +55,13 @@ public class PerfectStub {
     }
 
     public void post(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.post(announcement, new StreamObserver<>() {
+        stub.post(announcement, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(_serverKey, value, announcement)) {
+                if (!MacVerifier.verifyMac(serverKey, value, announcement)) {
                     post(announcement, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -86,14 +86,14 @@ public class PerfectStub {
 
     @Deprecated
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        _stub.read(request, new StreamObserver<>() {
+        stub.read(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
                 try {
-                    if (!ReplyValidator.validateReadReply(request, value, _serverKey, CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()))) {
+                    if (!ReplyValidator.validateReadReply(request, value, serverKey, CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()))) {
                         read(request, replyObserver);
                     } else {
                         replyObserver.onNext(value);
@@ -121,14 +121,14 @@ public class PerfectStub {
 
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver,
                      Map<String, PublicKey> serverKeys, int quorumSize) {
-        _stub.read(request, new StreamObserver<>() {
+        stub.read(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
                 try {
-                    if (!ReplyValidator.validateReadReply(request, value, _serverKey,
+                    if (!ReplyValidator.validateReadReply(request, value, serverKey,
                             CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()), serverKeys, quorumSize)) {
                         read(request, replyObserver, serverKeys, quorumSize);
                     } else {
@@ -157,13 +157,13 @@ public class PerfectStub {
 
     @Deprecated
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        _stub.readGeneral(request, new StreamObserver<>() {
+        stub.readGeneral(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!ReplyValidator.validateReadGeneralReply(request, value, _serverKey)) {
+                if (!ReplyValidator.validateReadGeneralReply(request, value, serverKey)) {
                     readGeneral(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -188,13 +188,13 @@ public class PerfectStub {
 
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver,
                             Map<String, PublicKey> serverKeys, int quorumSize) {
-        _stub.readGeneral(request, new StreamObserver<>() {
+        stub.readGeneral(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!ReplyValidator.validateReadGeneralReply(request, value, _serverKey, serverKeys, quorumSize)) {
+                if (!ReplyValidator.validateReadGeneralReply(request, value, serverKey, serverKeys, quorumSize)) {
                     readGeneral(request, replyObserver, serverKeys, quorumSize);
                 } else {
                     replyObserver.onNext(value);
@@ -219,13 +219,13 @@ public class PerfectStub {
 
     public void postGeneral(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
 
-        _stub.postGeneral(announcement, new StreamObserver<>() {
+        stub.postGeneral(announcement, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(_serverKey, value, announcement)) {
+                if (!MacVerifier.verifyMac(serverKey, value, announcement)) {
                     postGeneral(announcement, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -249,13 +249,13 @@ public class PerfectStub {
     }
 
     public void echoRegister(Contract.EchoRegister request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.echoRegister(request, new StreamObserver<>() {
+        stub.echoRegister(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     echoRegister(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -279,13 +279,13 @@ public class PerfectStub {
     }
 
     public void echoAnnouncement(Contract.EchoAnnouncement request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.echoAnnouncement(request, new StreamObserver<>() {
+        stub.echoAnnouncement(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     echoAnnouncement(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -309,13 +309,13 @@ public class PerfectStub {
     }
 
     public void echoAnnouncementGeneral(Contract.EchoAnnouncement request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.echoAnnouncementGeneral(request, new StreamObserver<>() {
+        stub.echoAnnouncementGeneral(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     echoAnnouncementGeneral(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -339,13 +339,13 @@ public class PerfectStub {
     }
 
     public void readyRegister(Contract.ReadyRegister request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.readyRegister(request, new StreamObserver<>() {
+        stub.readyRegister(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     readyRegister(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -369,13 +369,13 @@ public class PerfectStub {
     }
 
     public void readyAnnouncement(Contract.ReadyAnnouncement request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.readyAnnouncement(request, new StreamObserver<>() {
+        stub.readyAnnouncement(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     readyAnnouncement(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -399,13 +399,13 @@ public class PerfectStub {
     }
 
     public void readyAnnouncementGeneral(Contract.ReadyAnnouncement request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.readyAnnouncementGeneral(request, new StreamObserver<>() {
+        stub.readyAnnouncementGeneral(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     readyAnnouncementGeneral(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -430,13 +430,13 @@ public class PerfectStub {
 
     @Deprecated
     public void postWithException(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.post(announcement, new StreamObserver<>() {
+        stub.post(announcement, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(_serverKey, value, announcement)) {
+                if (!MacVerifier.verifyMac(serverKey, value, announcement)) {
                     postWithException(announcement, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -445,7 +445,7 @@ public class PerfectStub {
 
             @Override
             public void onError(Throwable t) {
-                if (!ReplyValidator.verifyError(t, announcement, _serverKey)) {
+                if (!ReplyValidator.verifyError(t, announcement, serverKey)) {
                     //Response was not authenticated, so It must be the attacker or a byzantine server
                     //Either way retry until obtaining a valid answer
                     postWithException(announcement, replyObserver);
@@ -463,13 +463,13 @@ public class PerfectStub {
 
     @Deprecated
     public void postGeneralWithException(Contract.Announcement announcement, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.postGeneral(announcement, new StreamObserver<>() {
+        stub.postGeneral(announcement, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(_serverKey, value, announcement)) {
+                if (!MacVerifier.verifyMac(serverKey, value, announcement)) {
                     postGeneralWithException(announcement, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -478,7 +478,7 @@ public class PerfectStub {
 
             @Override
             public void onError(Throwable t) {
-                if (!ReplyValidator.verifyError(t, announcement, _serverKey)) {
+                if (!ReplyValidator.verifyError(t, announcement, serverKey)) {
                     //Response was not authenticated, so It must be the attacker or a byzantine server
                     //Either way retry until obtaining a valid answer
                     postGeneralWithException(announcement, replyObserver);
@@ -496,13 +496,13 @@ public class PerfectStub {
 
     @Deprecated
     public void readGeneralWithException(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        _stub.readGeneral(request, new StreamObserver<>() {
+        stub.readGeneral(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!ReplyValidator.validateReadGeneralReply(request, value, _serverKey)) {
+                if (!ReplyValidator.validateReadGeneralReply(request, value, serverKey)) {
                     readGeneralWithException(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -511,7 +511,7 @@ public class PerfectStub {
 
             @Override
             public void onError(Throwable t) {
-                if (!ReplyValidator.verifyError(t, request, _serverKey)) {
+                if (!ReplyValidator.verifyError(t, request, serverKey)) {
                     //Response was not authenticated, so It must be the attacker or a byzantine server
                     //Either way retry until obtaining a valid answer
                     readGeneralWithException(request, replyObserver);
@@ -529,14 +529,14 @@ public class PerfectStub {
 
     @Deprecated
     public void readWithException(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        _stub.read(request, new StreamObserver<>() {
+        stub.read(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
                 try {
-                    if (!ReplyValidator.validateReadReply(request, value, _serverKey, CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()))) {
+                    if (!ReplyValidator.validateReadReply(request, value, serverKey, CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()))) {
                         readWithException(request, replyObserver);
                     } else {
                         replyObserver.onNext(value);
@@ -548,7 +548,7 @@ public class PerfectStub {
 
             @Override
             public void onError(Throwable t) {
-                if (!ReplyValidator.verifyError(t, request, _serverKey)) {
+                if (!ReplyValidator.verifyError(t, request, serverKey)) {
                     //Response was not authenticated, so It must be the attacker or a byzantine server
                     //Either way retry until obtaining a valid answer
                     readWithException(request, replyObserver);
@@ -566,13 +566,13 @@ public class PerfectStub {
 
     @Deprecated
     public void registerWithException(Contract.RegisterRequest request, StreamObserver<Contract.MacReply> replyObserver) {
-        _stub.register(request, new StreamObserver<>() {
+        stub.register(request, new StreamObserver<>() {
             @Override
             public void onNext(Contract.MacReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!MacVerifier.verifyMac(request, value, _serverKey)) {
+                if (!MacVerifier.verifyMac(request, value, serverKey)) {
                     registerWithException(request, replyObserver);
                 } else {
                     replyObserver.onNext(value);
@@ -585,7 +585,7 @@ public class PerfectStub {
                 //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                if (!ReplyValidator.verifyError(t, request, _serverKey)) {
+                if (!ReplyValidator.verifyError(t, request, serverKey)) {
                     //Response was not authenticated, so It must be the attacker or a byzantine server
                     //Either way retry until obtaining a valid answer
                     registerWithException(request, replyObserver);
@@ -602,10 +602,10 @@ public class PerfectStub {
     }
 
     public PublicKey getServerKey() {
-        return _serverKey;
+        return serverKey;
     }
 
     public String getServerId() {
-        return Base64.getEncoder().encodeToString(_serverKey.getEncoded());
+        return Base64.getEncoder().encodeToString(serverKey.getEncoded());
     }
 }

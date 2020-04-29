@@ -26,13 +26,12 @@ import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALG
 import static dpas.common.domain.utils.JsonConstants.POST_GENERAL_OP_TYPE;
 import static dpas.common.domain.utils.JsonConstants.POST_OP_TYPE;
 
-@Deprecated
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
-    protected PersistenceManager _manager;
+    protected PersistenceManager manager;
 
     public ServiceDPASPersistentImpl(PersistenceManager manager) {
         super();
-        _manager = manager;
+        this.manager = manager;
     }
 
     @Override
@@ -42,11 +41,11 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
                     .generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
             User user = new User(key);
 
-            User curr = _users.putIfAbsent(key, user);
+            User curr = users.putIfAbsent(key, user);
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("User Already Exists").asRuntimeException());
             } else {
-                _manager.save(user.toJson());
+                manager.save(user.toJson());
                 responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
@@ -66,11 +65,11 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
         try {
             var announcement = generateAnnouncement(request);
 
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            var curr = announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-                _manager.save(announcement.toJson(POST_OP_TYPE));
+                manager.save(announcement.toJson(POST_OP_TYPE));
                 announcement.getUser().getUserBoard().post(announcement);
                 responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
@@ -89,14 +88,14 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     @Override
     public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-            Announcement announcement = generateAnnouncement(request, _generalBoard);
+            Announcement announcement = generateAnnouncement(request, generalBoard);
 
-            var curr = _announcements.putIfAbsent(announcement.getIdentifier(), announcement);
+            var curr = announcements.putIfAbsent(announcement.getIdentifier(), announcement);
             if (curr != null) {
                 responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Post Identifier Already Exists").asRuntimeException());
             } else {
-                _manager.save(announcement.toJson(POST_GENERAL_OP_TYPE));
-                _generalBoard.post(announcement);
+                manager.save(announcement.toJson(POST_GENERAL_OP_TYPE));
+                generalBoard.post(announcement);
                 responseObserver.onNext(MacReply.newBuilder().build());
                 responseObserver.onCompleted();
             }
@@ -112,63 +111,63 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
     public void addUser(PublicKey key) throws NullUserException, NullPublicKeyException {
         User user = new User(key);
-        _users.put(key, user);
+        users.put(key, user);
     }
 
     public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
             throws CommonDomainException {
 
         var refs = getReferences(references);
-        var user = _users.get(key);
+        var user = users.get(key);
         var board = user.getUserBoard();
 
         var announcement = new Announcement(signature, user, message, refs, board, seq);
         board.post(announcement);
-        _announcements.put(announcement.getIdentifier(), announcement);
+        announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
             throws CommonDomainException {
 
         var refs = getReferences(references);
-        var user = _users.get(key);
+        var user = users.get(key);
         var board = user.getUserBoard();
 
         var announcement = new Announcement(signature, user, message, refs, board, seq, broadcastProof);
         board.post(announcement);
-        _announcements.put(announcement.getIdentifier(), announcement);
+        announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq)
             throws CommonDomainException {
 
         var refs = getReferences(references);
-        var user = _users.get(key);
-        var board = _generalBoard;
+        var user = users.get(key);
+        var board = generalBoard;
 
         var announcement = new Announcement(signature, user, message, refs, board, seq);
-        _generalBoard.post(announcement);
-        _announcements.put(announcement.getIdentifier(), announcement);
+        generalBoard.post(announcement);
+        announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastproof)
             throws CommonDomainException {
 
         var refs = getReferences(references);
-        var user = _users.get(key);
-        var board = _generalBoard;
+        var user = users.get(key);
+        var board = generalBoard;
 
         var announcement = new Announcement(signature, user, message, refs, board, seq, broadcastproof);
-        _generalBoard.post(announcement);
-        _announcements.put(announcement.getIdentifier(), announcement);
+        generalBoard.post(announcement);
+        announcements.put(announcement.getIdentifier(), announcement);
     }
 
     public ConcurrentHashMap<PublicKey, User> getUsers() {
-        return _users;
+        return users;
     }
 
     public ConcurrentHashMap<String, Announcement> getAnnouncements() {
-        return _announcements;
+        return announcements;
     }
 
 }

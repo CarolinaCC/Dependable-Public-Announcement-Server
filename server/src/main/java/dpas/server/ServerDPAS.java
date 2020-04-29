@@ -2,7 +2,6 @@ package dpas.server;
 
 import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
-import dpas.server.security.SecurityManager;
 import dpas.utils.link.PerfectStub;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
@@ -89,7 +88,7 @@ public class ServerDPAS {
 
     public static Server startServer(int port, String saveFile, PrivateKey privateKey, PublicKey pubKey, List<PerfectStub> stubs, int numFaults) {
         try {
-            final BindableService impl = new PersistenceManager(saveFile).load(new SecurityManager(), privateKey,
+            final BindableService impl = new PersistenceManager(saveFile).load(privateKey,
                     stubs, Base64.getEncoder().encodeToString(pubKey.getEncoded()), numFaults);
             final Server server = NettyServerBuilder.forPort(port).addService(impl).build();
             server.start();

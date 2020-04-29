@@ -10,7 +10,8 @@ import java.util.Set;
 
 public final class ByteUtils {
 
-    private ByteUtils() {}
+    private ByteUtils() {
+    }
 
     public static byte[] toByteArray(Contract.Announcement request) {
         byte[] seq = NumberUtils.longToBytes(request.getSeq());

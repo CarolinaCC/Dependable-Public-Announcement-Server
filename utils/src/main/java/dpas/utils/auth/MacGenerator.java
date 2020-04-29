@@ -1,7 +1,6 @@
 package dpas.utils.auth;
 
 import dpas.grpc.contract.Contract;
-import dpas.utils.Constants;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -10,11 +9,13 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static dpas.common.domain.utils.CryptographicConstants.*;
+import static dpas.common.domain.utils.CryptographicConstants.CIPHER_ALGORITHM;
+import static dpas.common.domain.utils.CryptographicConstants.DIGEST_ALGORITHM;
 
 public final class MacGenerator {
 
-    private MacGenerator() {}
+    private MacGenerator() {
+    }
 
     public static byte[] generateMac(PublicKey pubKey, PrivateKey privKey) throws GeneralSecurityException {
         return generateMac(pubKey.getEncoded(), privKey);

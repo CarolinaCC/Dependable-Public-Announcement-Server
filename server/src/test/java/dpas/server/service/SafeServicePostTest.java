@@ -4,7 +4,6 @@ import com.google.protobuf.ByteString;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.CipherUtils;
 import dpas.utils.auth.ErrorGenerator;
@@ -123,9 +122,7 @@ public class SafeServicePostTest {
     public void setup() throws GeneralSecurityException,
             IOException, CommonDomainException {
 
-        SecurityManager _securityManager = new SecurityManager();
-
-        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 
@@ -149,7 +146,7 @@ public class SafeServicePostTest {
     public void validPost() throws GeneralSecurityException, IOException {
         var reply = _stub.post(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
     }
 
     @Test
@@ -217,17 +214,17 @@ public class SafeServicePostTest {
     public void validLongPost() throws GeneralSecurityException, IOException {
         var reply = _stub.post(_longRequest);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _longRequest));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
     }
 
     @Test
     public void nonFreshPost() throws GeneralSecurityException {
         var reply = _stub.post(_request);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
         reply = _stub.post(_request2);
         assertTrue(MacVerifier.verifyMac(_serverPKey, reply, _request2));
-        assertEquals(_impl._announcements.size(), 1);
+        assertEquals(_impl.announcements.size(), 1);
     }
 
     @Test

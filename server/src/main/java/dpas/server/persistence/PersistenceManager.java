@@ -1,7 +1,6 @@
 package dpas.server.persistence;
 
 import dpas.common.domain.exception.CommonDomainException;
-import dpas.server.security.SecurityManager;
 import dpas.server.service.ServiceDPASPersistentImpl;
 import dpas.server.service.ServiceDPASReliableImpl;
 import dpas.server.service.ServiceDPASSafeImpl;
@@ -29,9 +28,9 @@ public class PersistenceManager {
 
     public static final String ROOT_KEY = "Operations";
 
-    private final String _path;
-    private final File _swapFile;
-    private final File _file;
+    private final String path;
+    private final File swapFile;
+    private final File file;
 
 
     public PersistenceManager(String path) throws IOException {
@@ -42,15 +41,15 @@ public class PersistenceManager {
             throw new RuntimeException();
         }
 
-        _file = new File(path);
-        if (!_file.exists()) {
+        this.file = new File(path);
+        if (!this.file.exists()) {
             //File does not exist, start a new save file
-            _file.createNewFile();
+            this.file.createNewFile();
             clearSaveFile();
         }
-        _path = path;
-        _swapFile = new File(_file.getPath() + ".swap");
-        _swapFile.createNewFile();
+        this.path = path;
+        this.swapFile = new File(file.getPath() + ".swap");
+        this.swapFile.createNewFile();
     }
 
     public synchronized void save(JsonValue operation) throws IOException {
@@ -63,10 +62,10 @@ public class PersistenceManager {
         final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
         objectBuilder.add(ROOT_KEY, arrayBuilder.build());
 
-        try (JsonWriter jsonWriter = Json.createWriter(new BufferedWriter(new FileWriter(_swapFile, false)))) {
+        try (JsonWriter jsonWriter = Json.createWriter(new BufferedWriter(new FileWriter(this.swapFile, false)))) {
             jsonWriter.writeObject(objectBuilder.build());
         }
-        Files.move(Paths.get(_swapFile.getPath()), Paths.get(_path), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        Files.move(Paths.get(this.swapFile.getPath()), Paths.get(this.path), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Deprecated
@@ -78,16 +77,16 @@ public class PersistenceManager {
     }
 
     @Deprecated
-    public synchronized ServiceDPASSafeImpl load(SecurityManager manager, PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
+    public synchronized ServiceDPASSafeImpl load(PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
-        ServiceDPASSafeImpl service = new ServiceDPASSafeImpl(this, privateKey, manager);
+        ServiceDPASSafeImpl service = new ServiceDPASSafeImpl(this, privateKey);
         parseJsonArray(jsonArray, service);
         return service;
     }
 
-    public synchronized ServiceDPASReliableImpl load(SecurityManager manager, PrivateKey privateKey, List<PerfectStub> stubs, String serverId, int numFaults) throws GeneralSecurityException, CommonDomainException, IOException {
+    public synchronized ServiceDPASReliableImpl load(PrivateKey privateKey, List<PerfectStub> stubs, String serverId, int numFaults) throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
-        var service = new ServiceDPASReliableImpl(this, privateKey, manager, stubs, serverId, numFaults);
+        var service = new ServiceDPASReliableImpl(this, privateKey, stubs, serverId, numFaults);
         parseJsonArray(jsonArray, service);
         return service;
     }
@@ -132,12 +131,12 @@ public class PersistenceManager {
     }
 
     public JsonArray readSaveFile() throws FileNotFoundException {
-        try (JsonReader reader = Json.createReader(new BufferedInputStream(new FileInputStream(_file)))) {
+        try (JsonReader reader = Json.createReader(new BufferedInputStream(new FileInputStream(this.file)))) {
             return reader.readObject().getJsonArray(ROOT_KEY);
         }
     }
 
     public void clearSaveFile() throws IOException {
-        FileUtils.write(_file, "{ \"" + ROOT_KEY +"\" : [] }", StandardCharsets.UTF_8, false);
+        FileUtils.write(file, "{ \"" + ROOT_KEY + "\" : [] }", StandardCharsets.UTF_8, false);
     }
 }

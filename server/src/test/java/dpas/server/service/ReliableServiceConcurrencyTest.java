@@ -2,7 +2,6 @@ package dpas.server.service;
 
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
 import dpas.utils.link.RegisterStub;
@@ -87,8 +86,6 @@ public class ReliableServiceConcurrencyTest {
     @Before
     public void setup() throws GeneralSecurityException, IOException, InterruptedException {
 
-        SecurityManager manager = new SecurityManager();
-
         _stubs = new PerfectStub[4];
         _impls = new ServiceDPASReliableImpl[4];
         _servers = new Server[4];
@@ -110,7 +107,7 @@ public class ReliableServiceConcurrencyTest {
             _executors[i] = executor;
         }
         for (int i = 0; i < 4; i++) {
-            var impl = new ServiceDPASReliableImpl(_serverPrivKey[i], manager, Arrays.asList(_stubs),
+            var impl = new ServiceDPASReliableImpl(_serverPrivKey[i], Arrays.asList(_stubs),
                     Base64.getEncoder().encodeToString(_serverPubKey[i].getEncoded()), 1);
             _servers[i] = NettyServerBuilder.forPort(port + i).addService(impl).build();
             _servers[i].start();

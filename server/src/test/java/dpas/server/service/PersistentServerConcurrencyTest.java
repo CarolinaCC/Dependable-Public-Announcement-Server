@@ -37,9 +37,6 @@ public class PersistentServerConcurrencyTest {
     private ServiceDPASGrpc.ServiceDPASBlockingStub _stub;
     private Server _server;
 
-    private static PublicKey _serverPubKey;
-    private static PrivateKey _serverPrivKey;
-
     private static KeyPair[] _users;
 
     private ManagedChannel _channel;
@@ -67,10 +64,6 @@ public class PersistentServerConcurrencyTest {
         // Keys
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
         keygen.initialize(4096);
-
-        KeyPair keyPair = keygen.generateKeyPair();
-        _serverPubKey = keyPair.getPublic();
-        _serverPrivKey = keyPair.getPrivate();
 
         _users = new KeyPair[NUMBER_THREADS + 1];
         for (int i = 0; i < NUMBER_THREADS + 1; ++i) {
@@ -106,7 +99,7 @@ public class PersistentServerConcurrencyTest {
     }
 
 
-    private void postRun(int id) throws GeneralSecurityException, IOException, CommonDomainException {
+    private void postRun(int id) throws CommonDomainException {
         long seq = 1;
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
@@ -119,7 +112,7 @@ public class PersistentServerConcurrencyTest {
         }
     }
 
-    private void postGeneralRun(int id) throws GeneralSecurityException, IOException, CommonDomainException {
+    private void postGeneralRun(int id) throws CommonDomainException {
         long seq = 1;
         PublicKey pub = _users[id].getPublic();
         PrivateKey priv = _users[id].getPrivate();
@@ -139,7 +132,7 @@ public class PersistentServerConcurrencyTest {
             threads[id] = new Thread(() -> {
                 try {
                     postRun(id);
-                } catch (CommonDomainException | IOException | GeneralSecurityException e) {
+                } catch (CommonDomainException e) {
                     fail();
                 }
             });
@@ -192,7 +185,7 @@ public class PersistentServerConcurrencyTest {
             threads[i] = new Thread(() -> {
                 try {
                     postGeneralRun(id);
-                } catch (CommonDomainException | IOException | GeneralSecurityException e) {
+                } catch (CommonDomainException e) {
                     fail();
                 }
             });

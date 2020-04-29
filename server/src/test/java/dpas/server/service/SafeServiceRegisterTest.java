@@ -3,7 +3,6 @@ package dpas.server.service;
 import com.google.protobuf.ByteString;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.auth.ErrorGenerator;
 import dpas.utils.auth.MacGenerator;
@@ -64,9 +63,7 @@ public class SafeServiceRegisterTest {
 
     @Before
     public void setup() throws IOException {
-        SecurityManager _securityManager = new SecurityManager();
-
-        _impl = new ServiceDPASSafeImpl(_serverPrivKey, _securityManager);
+        _impl = new ServiceDPASSafeImpl(_serverPrivKey);
         _server = NettyServerBuilder.forPort(port).addService(_impl).build();
         _server.start();
 

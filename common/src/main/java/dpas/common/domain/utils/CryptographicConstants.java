@@ -7,5 +7,6 @@ public final class CryptographicConstants {
     public static final String ASYMMETRIC_KEY_ALGORITHM = "RSA";
     public static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
 
-    private CryptographicConstants() {}
+    private CryptographicConstants() {
+    }
 }

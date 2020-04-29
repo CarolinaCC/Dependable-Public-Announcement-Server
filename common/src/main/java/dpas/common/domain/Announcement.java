@@ -18,28 +18,30 @@ import java.util.stream.Stream;
 
 public class Announcement {
 
-    private final byte[] _signature;
-    private final User _user;
-    private final String _message;
-    private final Set<Announcement> _references; // Can be null
-    private final AnnouncementBoard _board;
-    private final long _seq;
-    private final String _identifier;
-    private final Map<String, String> _broadcastProof;
+    public static final int MAX_MESSAGE_SIZE = 255;
+
+    private final byte[] signature;
+    private final User user;
+    private final String message;
+    private final Set<Announcement> references; // Can be null
+    private final AnnouncementBoard board;
+    private final long seq;
+    private final String identifier;
+    private final Map<String, String> broadcastProof;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq) throws CommonDomainException {
 
         checkArguments(signature, user, message, references, board);
         checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
-        _message = message;
-        _signature = signature;
-        _user = user;
-        _references = references;
-        _board = board;
-        _seq = seq;
-        _identifier = generateIdentifier();
-        _broadcastProof = new HashMap<>();
+        this.message = message;
+        this.signature = signature;
+        this.user = user;
+        this.references = references;
+        this.board = board;
+        this.seq = seq;
+        this.identifier = generateIdentifier();
+        this.broadcastProof = new HashMap<>();
     }
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
@@ -47,14 +49,14 @@ public class Announcement {
 
         checkArguments(signature, user, message, references, board);
         checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
-        _message = message;
-        _signature = signature;
-        _user = user;
-        _references = references;
-        _board = board;
-        _seq = seq;
-        _identifier = generateIdentifier();
-        _broadcastProof = broadcast;
+        this.message = message;
+        this.signature = signature;
+        this.user = user;
+        this.references = references;
+        this.board = board;
+        this.seq = seq;
+        this.identifier = generateIdentifier();
+        this.broadcastProof = broadcast;
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
@@ -77,7 +79,7 @@ public class Announcement {
         if (message == null) {
             throw new NullMessageException("Invalid Message Provided: null");
         }
-        if (message.length() > 255) {
+        if (message.length() > MAX_MESSAGE_SIZE) {
             throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
         }
         if (board == null) {
@@ -110,72 +112,72 @@ public class Announcement {
     }
 
     public String getMessage() {
-        return _message;
+        return this.message;
     }
 
     public byte[] getSignature() {
-        return _signature;
+        return this.signature;
     }
 
     public Set<Announcement> getReferences() {
-        return _references;
+        return this.references;
     }
 
     public User getUser() {
-        return _user;
+        return this.user;
     }
 
     public String getIdentifier() {
-        return _identifier;
+        return this.identifier;
     }
 
     public AnnouncementBoard getBoard() {
-        return _board;
+        return this.board;
     }
 
     public long getSeq() {
-        return _seq;
+        return this.seq;
     }
 
-    public void addProof(String serverId, String sign) {
-        _broadcastProof.put(serverId, sign);
+    public void addProof(String serverId, String proof) {
+        this.broadcastProof.put(serverId, proof);
     }
 
     public Contract.Announcement toContract() {
 
-        var references = getReferenceStrings(_references);
+        var referenceStrings = getReferenceStrings(this.references);
 
         return Contract.Announcement.newBuilder()
-                .setMessage(_message)
-                .addAllReferences(references)
-                .setPublicKey(ByteString.copyFrom(_user.getPublicKey().getEncoded()))
-                .setSignature(ByteString.copyFrom(_signature))
-                .setSeq(_seq)
-                .setIdentifier(_identifier)
-                .putAllReadyProof(_broadcastProof)
+                .setMessage(this.message)
+                .addAllReferences(referenceStrings)
+                .setPublicKey(ByteString.copyFrom(this.user.getPublicKey().getEncoded()))
+                .setSignature(ByteString.copyFrom(this.signature))
+                .setSeq(this.seq)
+                .setIdentifier(this.identifier)
+                .putAllReadyProof(this.broadcastProof)
                 .build();
     }
 
     public JsonObject toJson(String type) {
         var jsonBuilder = Json.createObjectBuilder();
 
-        String pubKey = Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded());
-        String sign = Base64.getEncoder().encodeToString(_signature);
+        String pubKey = Base64.getEncoder().encodeToString(this.user.getPublicKey().getEncoded());
+        String sign = Base64.getEncoder().encodeToString(this.signature);
 
         final var arrayBuilder = Json.createArrayBuilder();
-        getReferenceStrings(_references).forEach(arrayBuilder::add);
+        getReferenceStrings(this.references).forEach(arrayBuilder::add);
 
         var mapBuilder = Json.createObjectBuilder();
-        for (Map.Entry<String, String> entry : _broadcastProof.entrySet()) {
+        for (Map.Entry<String, String> entry : this.broadcastProof.entrySet()) {
             mapBuilder.add(entry.getKey(), entry.getValue());
         }
 
         //final var mapBuilder = Json.createArrayBuilder()
         jsonBuilder.add(JsonConstants.OPERATION_TYPE_KEY, type);
         jsonBuilder.add(JsonConstants.PUBLIC_KEY, pubKey);
-        jsonBuilder.add(JsonConstants.MESSAGE_KEY, _message);
+        jsonBuilder.add(JsonConstants.MESSAGE_KEY, this.message);
         jsonBuilder.add(JsonConstants.SIGNATURE_KEY, sign);
-        jsonBuilder.add(JsonConstants.SEQUENCER_KEY, _seq);
+        jsonBuilder.add(JsonConstants.SEQUENCER_KEY, this.seq);
         jsonBuilder.add(JsonConstants.REFERENCES_KEY, arrayBuilder.build());
         jsonBuilder.add(JsonConstants.BROADCAST_PROOF_KEY, mapBuilder);
 
@@ -185,9 +187,9 @@ public class Announcement {
     private String generateIdentifier() throws CommonDomainException {
         try {
             var builder = new StringBuilder()
-                    .append(_seq)
-                    .append(_board.getIdentifier())
-                    .append(Base64.getEncoder().encodeToString(_user.getPublicKey().getEncoded()));
+                    .append(this.seq)
+                    .append(this.board.getIdentifier())
+                    .append(Base64.getEncoder().encodeToString(this.user.getPublicKey().getEncoded()));
 
             MessageDigest digest = MessageDigest.getInstance(CryptographicConstants.DIGEST_ALGORITHM);
             byte[] hash = digest.digest(builder.toString().getBytes());

@@ -12,25 +12,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 public class QuorumStub {
-    private final List<PerfectStub> _stubs;
-    private final int _numFaults;
-    private final int _quorumSize;
-    private final Map<String, PublicKey> _serverKeys;
+    private final List<PerfectStub> stubs;
+    private final int quorumSize;
+    private final Map<String, PublicKey> serverKeys;
 
     public QuorumStub(List<PerfectStub> stubs, int numFaults) {
-        _stubs = stubs;
-        _numFaults = numFaults;
-        _quorumSize = 2 * _numFaults + 1;
-        _serverKeys = new HashMap<>();
+        this.stubs = stubs;
+        this.quorumSize = 2 * numFaults + 1;
+        this.serverKeys = new HashMap<>();
         for (var stub : stubs) {
-            _serverKeys.put(stub.getServerId(), stub.getServerKey());
+            this.serverKeys.put(stub.getServerId(), stub.getServerKey());
         }
     }
 
 
     public void register(Contract.RegisterRequest request) throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(_quorumSize);
-        for (PerfectStub stub : _stubs) {
+        final CountDownLatch latch = new CountDownLatch(quorumSize);
+        for (PerfectStub stub : stubs) {
             stub.register(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.MacReply value) {
@@ -55,8 +53,8 @@ public class QuorumStub {
     }
 
     public void post(Announcement announcement) throws GeneralSecurityException, InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(_quorumSize);
-        for (PerfectStub stub : _stubs) {
+        final CountDownLatch latch = new CountDownLatch(quorumSize);
+        for (PerfectStub stub : stubs) {
             Announcement a = announcement
                     .toBuilder()
                     .setMessage(CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey()))
@@ -85,8 +83,8 @@ public class QuorumStub {
     }
 
     public void postGeneral(Announcement announcement) throws GeneralSecurityException, InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(_quorumSize);
-        for (PerfectStub stub : _stubs) {
+        final CountDownLatch latch = new CountDownLatch(quorumSize);
+        for (PerfectStub stub : stubs) {
             Announcement a = announcement
                     .toBuilder()
                     .setMessage(CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey()))
@@ -117,11 +115,11 @@ public class QuorumStub {
     @Deprecated
     public Contract.ReadReply read(Contract.ReadRequest request) throws InterruptedException {
 
-        final CountDownLatch latch = new CountDownLatch(_quorumSize);
+        final CountDownLatch latch = new CountDownLatch(quorumSize);
 
         final List<Contract.ReadReply> replies = new ArrayList<>();
 
-        for (PerfectStub stub : _stubs) {
+        for (PerfectStub stub : stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -154,11 +152,11 @@ public class QuorumStub {
 
     public Contract.ReadReply readReliable(Contract.ReadRequest request) throws InterruptedException {
 
-        final CountDownLatch latch = new CountDownLatch(_quorumSize);
+        final CountDownLatch latch = new CountDownLatch(quorumSize);
 
         final List<Contract.ReadReply> replies = new ArrayList<>();
 
-        for (PerfectStub stub : _stubs) {
+        for (PerfectStub stub : stubs) {
             stub.read(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -178,7 +176,7 @@ public class QuorumStub {
                 @Override
                 public void onCompleted() {
                 }
-            }, _serverKeys, _quorumSize);
+            }, serverKeys, quorumSize);
         }
         latch.await();
 
@@ -193,11 +191,11 @@ public class QuorumStub {
     @Deprecated
     public Contract.ReadReply readGeneral(Contract.ReadRequest request) throws InterruptedException {
 
-        final CountDownLatch latch = new CountDownLatch(_quorumSize);
+        final CountDownLatch latch = new CountDownLatch(quorumSize);
 
         final List<Contract.ReadReply> replies = new ArrayList<>();
 
-        for (PerfectStub stub : _stubs) {
+        for (PerfectStub stub : stubs) {
             stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -230,11 +228,11 @@ public class QuorumStub {
 
     public Contract.ReadReply readGeneralReliable(Contract.ReadRequest request) throws InterruptedException {
 
-        final CountDownLatch latch = new CountDownLatch(_quorumSize);
+        final CountDownLatch latch = new CountDownLatch(quorumSize);
 
         final List<Contract.ReadReply> replies = new ArrayList<>();
 
-        for (PerfectStub stub : _stubs) {
+        for (PerfectStub stub : stubs) {
             stub.readGeneral(request, new StreamObserver<>() {
                 @Override
                 public void onNext(Contract.ReadReply value) {
@@ -254,7 +252,7 @@ public class QuorumStub {
                 @Override
                 public void onCompleted() {
                 }
-            }, _serverKeys, _quorumSize);
+            }, serverKeys, quorumSize);
         }
         latch.await();
         return replies
@@ -271,8 +269,8 @@ public class QuorumStub {
         Map<String, Integer> replyCount = new ConcurrentHashMap<>();
         Optional<String> res;
         do {
-            CountDownLatch latch = new CountDownLatch(_quorumSize);
-            for (PerfectStub stub : _stubs) {
+            CountDownLatch latch = new CountDownLatch(quorumSize);
+            for (PerfectStub stub : stubs) {
                 Announcement a = announcement
                         .toBuilder()
                         .setMessage(CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey()))
@@ -304,7 +302,7 @@ public class QuorumStub {
             latch.await();
             res = replyCount.entrySet()
                     .stream()
-                    .filter(e -> e.getValue() >= _quorumSize)
+                    .filter(e -> e.getValue() >= quorumSize)
                     .map(Map.Entry::getKey)
                     .findFirst();
 
@@ -321,8 +319,8 @@ public class QuorumStub {
         Map<String, Integer> replyCount = new ConcurrentHashMap<>();
         Optional<String> res;
         do {
-            CountDownLatch latch = new CountDownLatch(_quorumSize);
-            for (PerfectStub stub : _stubs) {
+            CountDownLatch latch = new CountDownLatch(quorumSize);
+            for (PerfectStub stub : stubs) {
                 Announcement a = announcement
                         .toBuilder()
                         .setMessage(CipherUtils.cipherAndEncode(announcement.getMessage().getBytes(), stub.getServerKey()))
@@ -354,7 +352,7 @@ public class QuorumStub {
             latch.await();
             res = replyCount.entrySet()
                     .stream()
-                    .filter(e -> e.getValue() >= _quorumSize)
+                    .filter(e -> e.getValue() >= quorumSize)
                     .map(Map.Entry::getKey)
                     .findFirst();
 
@@ -372,8 +370,8 @@ public class QuorumStub {
         Optional<String> res;
         final List<Contract.ReadReply> readReplies = new ArrayList<>();
         do {
-            CountDownLatch latch = new CountDownLatch(_quorumSize);
-            for (PerfectStub stub : _stubs) {
+            CountDownLatch latch = new CountDownLatch(quorumSize);
+            for (PerfectStub stub : stubs) {
                 stub.readWithException(request, new StreamObserver<>() {
                     @Override
                     public synchronized void onNext(Contract.ReadReply value) {
@@ -405,7 +403,7 @@ public class QuorumStub {
             latch.await();
             res = replyCount.entrySet()
                     .stream()
-                    .filter(e -> e.getValue() >= _quorumSize)
+                    .filter(e -> e.getValue() >= quorumSize)
                     .map(Map.Entry::getKey)
                     .findFirst();
 
@@ -430,8 +428,8 @@ public class QuorumStub {
         Optional<String> res;
         final List<Contract.ReadReply> readReplies = new ArrayList<>();
         do {
-            CountDownLatch latch = new CountDownLatch(_quorumSize);
-            for (PerfectStub stub : _stubs) {
+            CountDownLatch latch = new CountDownLatch(quorumSize);
+            for (PerfectStub stub : stubs) {
                 stub.readGeneralWithException(request, new StreamObserver<>() {
                     @Override
                     public synchronized void onNext(Contract.ReadReply value) {
@@ -463,7 +461,7 @@ public class QuorumStub {
             latch.await();
             res = replyCount.entrySet()
                     .stream()
-                    .filter(e -> e.getValue() >= _quorumSize)
+                    .filter(e -> e.getValue() >= quorumSize)
                     .map(Map.Entry::getKey)
                     .findFirst();
 

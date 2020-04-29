@@ -6,5 +6,6 @@ public final class Constants {
     public static final String REQ_KEY = "REQ-bin";
     public static final String MAC_KEY = "MAC-bin";
 
-    private Constants() {}
+    private Constants() {
+    }
 }

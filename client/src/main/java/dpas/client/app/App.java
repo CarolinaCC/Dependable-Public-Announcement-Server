@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 public class App {
 
-    private static KeyStore _keystore;
+    private static KeyStore keystore;
 
     public static void main(String[] args) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
 
@@ -40,14 +40,14 @@ public class App {
 
         char[] jksPassword = args[3].toCharArray();
         String alias = args[4];
-        _keystore = KeyStore.getInstance("JKS");
+        keystore = KeyStore.getInstance("JKS");
 
         int numFaults = Integer.parseInt(args[5]);
         PublicKey[] publicKeys = new PublicKey[numFaults * 3 + 1];
         for (int i = 0; i < numFaults * 3 + 1; i++) {
             try (FileInputStream fis = new FileInputStream(jksFile)) {
-                _keystore.load(fis, jksPassword);
-                publicKeys[i] = _keystore.getCertificate(alias + "-" + (1 + i)).getPublicKey();
+                keystore.load(fis, jksPassword);
+                publicKeys[i] = keystore.getCertificate(alias + "-" + (1 + i)).getPublicKey();
             }
         }
         Library lib = new Library(serverAddr, port, publicKeys, numFaults);
@@ -236,7 +236,7 @@ public class App {
         String alias = System.console().readLine("Insert Certificate Alias: ");
 
         PublicKey pubKey;
-        pubKey = _keystore.getCertificate(alias).getPublicKey();
+        pubKey = keystore.getCertificate(alias).getPublicKey();
 
         return pubKey;
     }
@@ -247,8 +247,8 @@ public class App {
 
         PublicKey pubKey;
         PrivateKey privKey;
-        pubKey = _keystore.getCertificate(alias).getPublicKey();
-        privKey = (PrivateKey) _keystore.getKey(alias, keyPassword);
+        pubKey = keystore.getCertificate(alias).getPublicKey();
+        privKey = (PrivateKey) keystore.getKey(alias, keyPassword);
 
         return new KeyPair(pubKey, privKey);
     }

@@ -21,11 +21,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static dpas.common.domain.utils.CryptographicConstants.DIGEST_ALGORITHM;
-import static dpas.utils.Constants.*;
+import static dpas.utils.Constants.ECHO;
+import static dpas.utils.Constants.READY;
 
 public final class ContractGenerator {
 
-    private ContractGenerator() {}
+    private ContractGenerator() {
+    }
 
     public static Contract.Announcement generateAnnouncement(PublicKey pubKey, PrivateKey privKey, String message, long seq,
                                                              String boardIdentifier, Announcement[] a)

@@ -5,7 +5,6 @@ import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.ServiceDPASGrpc;
-import dpas.server.security.SecurityManager;
 import dpas.utils.ContractGenerator;
 import dpas.utils.link.PerfectStub;
 import dpas.utils.link.QuorumStub;
@@ -88,8 +87,6 @@ public class QuorumConcurrencyTest {
     @Before
     public void setup() throws GeneralSecurityException, IOException, InterruptedException {
 
-        SecurityManager manager = new SecurityManager();
-
         PerfectStub[] stubs = new PerfectStub[4];
         _servers = new Server[4];
         _channels = new ManagedChannel[4];
@@ -97,7 +94,7 @@ public class QuorumConcurrencyTest {
         for (int i = 0; i < 4; i++) {
             var executor = Executors.newSingleThreadExecutor();
             var eventGroup = new NioEventLoopGroup(1); //One thread for each channel
-            var impl = new ServiceDPASSafeImpl(_serverPrivKey[i], manager);
+            var impl = new ServiceDPASSafeImpl(_serverPrivKey[i]);
             _servers[i] = NettyServerBuilder.forPort(port + i).addService(impl).build();
             _servers[i].start();
             _channels[i] = NettyChannelBuilder

@@ -13,5 +13,6 @@ public final class JsonConstants {
     public static final String POST_OP_TYPE = "Post";
     public static final String POST_GENERAL_OP_TYPE = "PostGeneral";
 
-    private JsonConstants() {}
+    private JsonConstants() {
+    }
 }

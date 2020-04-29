@@ -15,7 +15,8 @@ public final class ErrorGenerator {
     public static final Metadata.Key<byte[]> contentKey = Metadata.Key.of(Constants.REQ_KEY, Metadata.BINARY_BYTE_MARSHALLER);
     public static final Metadata.Key<byte[]> macKey = Metadata.Key.of(Constants.MAC_KEY, Metadata.BINARY_BYTE_MARSHALLER);
 
-    private ErrorGenerator() {}
+    private ErrorGenerator() {
+    }
 
     public static StatusRuntimeException generate(Status status, String message, Contract.RegisterRequest request, PrivateKey privKey) {
         var statusException = status.withDescription(message).asRuntimeException(new Metadata());

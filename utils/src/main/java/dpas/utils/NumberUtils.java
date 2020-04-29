@@ -4,7 +4,8 @@ import java.nio.ByteBuffer;
 
 public final class NumberUtils {
 
-    private NumberUtils() {}
+    private NumberUtils() {
+    }
 
     public static byte[] longToBytes(long x) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
