@@ -111,7 +111,10 @@ public class GeneralBoardTest {
     public void validReadSubset() throws NullAnnouncementException, InvalidNumberOfPostsException {
         _generalBoard.post(_announcement);
         _generalBoard.post(_announcement2);
-        assertEquals(_generalBoard.read(1).get(0), _announcement2);
+        _generalBoard.post(_announcement3);
+        assertEquals(_generalBoard.read(1).get(0), _announcement3);
+        assertEquals(_generalBoard.read(2).get(0), _announcement2);
+        assertEquals(_generalBoard.read(2).get(1), _announcement3);
     }
 
     @Test(expected = InvalidNumberOfPostsException.class)

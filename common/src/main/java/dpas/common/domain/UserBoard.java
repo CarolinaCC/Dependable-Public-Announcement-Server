@@ -7,12 +7,15 @@ import dpas.common.domain.exception.NullUserException;
 
 import java.security.PublicKey;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class UserBoard implements AnnouncementBoard {
-    private final User owner;
-    protected PublicKey publicKey;
 
-    private final SortedSet<Announcement> posts = Collections.synchronizedSortedSet(new TreeSet<>(Comparator.comparing(Announcement::getSeq)));
+    private static final Comparator<Announcement> USER_BOARD_COMPARATOR = Comparator.comparing(a -> -a.getSeq());
+
+    private final User owner;
+    protected final PublicKey publicKey;
+    private final SortedSet<Announcement> posts = Collections.synchronizedSortedSet(new TreeSet<>(USER_BOARD_COMPARATOR));
 
     public UserBoard(User user) throws NullUserException {
         if (user == null)
@@ -37,15 +40,16 @@ public class UserBoard implements AnnouncementBoard {
     }
 
     public List<Announcement> read(int number) throws InvalidNumberOfPostsException {
-        if (number < 0)
+        if (number < 0) {
             throw new InvalidNumberOfPostsException("Invalid number of posts to read: number cannot be negative");
-        List<Announcement> posts;
-        synchronized (this.posts) {
-            posts = new ArrayList<>(this.posts);
         }
-        if (number == 0 || number >= posts.size())
-            return posts;
-        return posts.subList(posts.size() - number, posts.size());
+        int size = number == 0 ? this.posts.size() : Math.min(this.posts.size(), number);
+        List<Announcement> announcements;
+        synchronized (posts) {
+            announcements = posts.stream().limit(size).collect(Collectors.toList());
+        }
+        Collections.reverse(announcements);
+        return announcements;
     }
 
     @Override
@@ -53,12 +57,11 @@ public class UserBoard implements AnnouncementBoard {
         if (this.posts.size() == 0) {
             return 0;
         }
-        return this.posts.last().getSeq();
+        return this.posts.first().getSeq();
     }
 
     @Override
     public String getIdentifier() {
-        return Base64.getEncoder().encodeToString(this.publicKey.getEncoded());
+        return Base64.getEncoder().encodeToString(publicKey.getEncoded());
     }
-
 }

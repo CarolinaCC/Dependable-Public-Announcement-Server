@@ -137,6 +137,8 @@ public class UserBoardTest {
         _userBoard.post(_announcementValid2);
         _userBoard.post(_announcementValid3);
         assertEquals(_userBoard.read(1).get(0), _announcementValid3);
+        assertEquals(_userBoard.read(2).get(0), _announcementValid2);
+        assertEquals(_userBoard.read(2).get(1), _announcementValid3);
     }
 
     @Test
