@@ -14,18 +14,13 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Library {
 
     private final RegisterStub stub;
-    private final List<ExecutorService> executors;
-    private final List<ManagedChannel> channels;
 
     public Library(String host, int port, PublicKey[] serverKey, int numFaults) {
-        channels = new ArrayList<>();
-        executors = new ArrayList<>();
         List<PerfectStub> stubs = new ArrayList<>();
         for (int i = 0; i < 3 * numFaults + 1; i++) {
             //One thread for each channel
@@ -38,15 +33,13 @@ public class Library {
                     .eventLoopGroup(eventGroup)
                     .executor(executor)
                     .build();
-            channels.add(channel);
-            executors.add(executor);
             var stub = ServiceDPASGrpc.newStub(channel);
             PerfectStub pStub = new PerfectStub(stub, serverKey[i]);
             stubs.add(pStub);
         }
         stub = new RegisterStub(new QuorumStub(stubs, numFaults));
     }
-    
+
     public void register(PublicKey publicKey, PrivateKey privkey) {
         try {
             stub.register(publicKey, privkey);

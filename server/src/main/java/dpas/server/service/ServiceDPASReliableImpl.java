@@ -33,9 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
-import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
-import static dpas.common.domain.utils.JsonConstants.POST_GENERAL_OP_TYPE;
-import static dpas.common.domain.utils.JsonConstants.POST_OP_TYPE;
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.constants.JsonConstants.POST_GENERAL_OP_TYPE;
+import static dpas.common.domain.constants.JsonConstants.POST_OP_TYPE;
 import static io.grpc.Status.*;
 
 public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
@@ -51,7 +51,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
      */
     private final Map<String, Boolean> sentEchos = new ConcurrentHashMap<>();
     private final Map<String, Set<String>> echosCount = new ConcurrentHashMap<>();
-
 
     /**
      * Map of readies sent by current server
@@ -148,9 +147,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void post(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
-
             var announcement = generateAnnouncement(request, privateKey); //validate request
-
             brbAnnouncement(request, announcement);
 
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), privateKey));
@@ -173,7 +170,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     public void postGeneral(Contract.Announcement request, StreamObserver<MacReply> responseObserver) {
         try {
             var announcement = generateAnnouncement(request, generalBoard, privateKey);
-
             brbAnnouncementGeneral(request, announcement);
 
             responseObserver.onNext(ContractGenerator.generateMacReply(request.getSignature().toByteArray(), privateKey));
@@ -196,13 +192,11 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     public void echoRegister(Contract.EchoRegister request, StreamObserver<MacReply> responseObserver) {
         try {
             SecurityManager.validateRequest(request, serverKeys);
-
             var id = request.getRequest().getMac().toStringUtf8();
 
-            echosCount.putIfAbsent(id, new HashSet<>());
-            var echos = echosCount.get(id);
-            synchronized (echos) {
-                var notExisted = echos.add(request.getMac().toStringUtf8());
+            Set<String> echos;
+            synchronized (echos = echosCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+                boolean notExisted = echos.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //First time seeing this echo
                     if (echos.size() == quorumSize) {
@@ -224,12 +218,11 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         try {
             SecurityManager.validateRequest(request, serverKeys);
 
-            var id = request.getRequest().getMac().toStringUtf8();
+            String id = request.getRequest().getMac().toStringUtf8();
 
-            readyCount.putIfAbsent(id, new HashSet<>());
-            var countSet = readyCount.get(id);
-            synchronized (countSet) {
-                var notExisted = countSet.add(request.getMac().toStringUtf8());
+            Set<String> countSet;
+            synchronized (countSet = readyCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+                boolean notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     if (countSet.size() == numFaults + 1) {
                         //Amplification Step
@@ -261,12 +254,11 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
             var announcement = generateAnnouncement(request.getRequest(), privateKey);
 
-            var id = request.getRequest().getSignature().toStringUtf8();
+            String id = request.getRequest().getSignature().toStringUtf8();
 
-            echosCount.putIfAbsent(id, new HashSet<>());
-            var echos = echosCount.get(id);
-            synchronized (echos) {
-                var notExisted = echos.add(request.getMac().toStringUtf8());
+            Set<String> echos;
+            synchronized (echos = echosCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+                boolean notExisted = echos.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //First time seeing this echo
                     if (echos.size() == quorumSize) {
@@ -289,20 +281,15 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             SecurityManager.validateAnnouncement(request, serverKeys);
 
             var announcement = generateAnnouncement(request.getRequest(), privateKey);
+            String id = request.getRequest().getSignature().toStringUtf8();
 
-            var id = request.getRequest().getSignature().toStringUtf8();
-
-            readyCount.putIfAbsent(id, new HashSet<>());
-            var countSet = readyCount.get(id);
-            synchronized (countSet) {
-                var notExisted = countSet.add(request.getMac().toStringUtf8());
+            Set<String> countSet;
+            synchronized (countSet = readyCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+                boolean notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //New Proof
-                    announcementProofs.putIfAbsent(id, new HashSet<>());
-                    var proofs = announcementProofs.get(id);
-                    synchronized (proofs) {
-                        proofs.add(request);
-                    }
+                    announcementProofs.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>())).add(request);
+
                     if (countSet.size() == numFaults + 1) {
                         //Amplification Step
                         broadcastReadyAnnouncement(request.getRequest(), announcement);
@@ -332,13 +319,11 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             SecurityManager.validateAnnouncement(request, serverKeys);
 
             var announcement = generateAnnouncement(request.getRequest(), generalBoard, privateKey);
-
             var id = request.getRequest().getSignature().toStringUtf8();
 
-            echosCount.putIfAbsent(id, new HashSet<>());
-            var echos = echosCount.get(id);
-            synchronized (echos) {
-                var notExisted = echos.add(request.getMac().toStringUtf8());
+            Set<String> echos;
+            synchronized (echos = echosCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+                boolean notExisted = echos.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //First time seeing this echo
                     if (echos.size() == quorumSize) {
@@ -361,20 +346,14 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             SecurityManager.validateAnnouncement(request, serverKeys);
 
             var announcement = generateAnnouncement(request.getRequest(), generalBoard, privateKey);
-
             var id = request.getRequest().getSignature().toStringUtf8();
 
-            readyCount.putIfAbsent(id, new HashSet<>());
-            var countSet = readyCount.get(id);
-            synchronized (countSet) {
+            Set<String> countSet;
+            synchronized (countSet = readyCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
                 var notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //New Proof
-                    announcementProofs.putIfAbsent(id, new HashSet<>());
-                    var proofs = announcementProofs.get(id);
-                    synchronized (proofs) {
-                        proofs.add(request);
-                    }
+                    announcementProofs.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>())).add(request);
                     if (countSet.size() == numFaults + 1) {
                         //Amplification Step
                         broadcastReadyAnnouncementGeneral(request.getRequest(), announcement);
@@ -446,22 +425,19 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 var echo = ContractGenerator.generateEchoAnnouncement(request, privateKey, serverId);
                 //If we don't do this we get an error because we can't send RPCs from an RPC
                 Context ctx = Context.current().fork();
-                ctx.run(() -> {
+                ctx.run(() -> stub.echoAnnouncement(echo, new StreamObserver<>() {
+                    @Override
+                    public void onNext(MacReply value) {
+                    }
 
-                    stub.echoAnnouncement(echo, new StreamObserver<>() {
-                        @Override
-                        public void onNext(MacReply value) {
-                        }
+                    @Override
+                    public void onError(Throwable t) {
+                    }
 
-                        @Override
-                        public void onError(Throwable t) {
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                        }
-                    });
-                });
+                    @Override
+                    public void onCompleted() {
+                    }
+                }));
             }
         }
     }
@@ -477,22 +453,19 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 var echo = ContractGenerator.generateEchoAnnouncement(request, privateKey, serverId);
                 //If we don't do this we get an error because we can't send RPCs from an RPC
                 Context ctx = Context.current().fork();
-                ctx.run(() -> {
+                ctx.run(() -> stub.echoAnnouncementGeneral(echo, new StreamObserver<>() {
+                    @Override
+                    public void onNext(MacReply value) {
+                    }
 
-                    stub.echoAnnouncementGeneral(echo, new StreamObserver<>() {
-                        @Override
-                        public void onNext(MacReply value) {
-                        }
+                    @Override
+                    public void onError(Throwable t) {
+                    }
 
-                        @Override
-                        public void onError(Throwable t) {
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                        }
-                    });
-                });
+                    @Override
+                    public void onCompleted() {
+                    }
+                }));
             }
         }
     }
@@ -537,22 +510,19 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 var echo = ContractGenerator.generateReadyAnnouncement(request, privateKey, serverId);
                 //If we don't do this we get an error because we can't send RPCs from an RPC
                 Context ctx = Context.current().fork();
-                ctx.run(() -> {
+                ctx.run(() -> stub.readyAnnouncement(echo, new StreamObserver<>() {
+                    @Override
+                    public void onNext(MacReply value) {
+                    }
 
-                    stub.readyAnnouncement(echo, new StreamObserver<>() {
-                        @Override
-                        public void onNext(MacReply value) {
-                        }
+                    @Override
+                    public void onError(Throwable t) {
+                    }
 
-                        @Override
-                        public void onError(Throwable t) {
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                        }
-                    });
-                });
+                    @Override
+                    public void onCompleted() {
+                    }
+                }));
             }
         }
     }
@@ -569,22 +539,19 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
                 var echo = ContractGenerator.generateReadyAnnouncement(request, privateKey, serverId);
                 //If we don't do this we get an error because we can't send RPCs from an RPC
                 Context ctx = Context.current().fork();
-                ctx.run(() -> {
+                ctx.run(() -> stub.readyAnnouncementGeneral(echo, new StreamObserver<>() {
+                    @Override
+                    public void onNext(MacReply value) {
+                    }
 
-                    stub.readyAnnouncementGeneral(echo, new StreamObserver<>() {
-                        @Override
-                        public void onNext(MacReply value) {
-                        }
+                    @Override
+                    public void onError(Throwable t) {
+                    }
 
-                        @Override
-                        public void onError(Throwable t) {
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                        }
-                    });
-                });
+                    @Override
+                    public void onCompleted() {
+                    }
+                }));
             }
         }
     }
@@ -603,40 +570,34 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     private void deliverAnnouncement(Contract.Announcement request) throws CommonDomainException, GeneralSecurityException, IOException {
         //Is called only one time
         var announcement = generateAnnouncement(request, privateKey);
-        var proofs = announcementProofs.get(request.getSignature().toStringUtf8());
-        synchronized (proofs) {
-            for (var proof : proofs) {
-                announcement.addProof(proof.getServerKey(), Base64.getEncoder().encodeToString(proof.getMac().toByteArray()));
-            }
+        Set<Contract.ReadyAnnouncement> proofs;
+        synchronized (proofs = announcementProofs.get(request.getSignature().toStringUtf8())) {
+            proofs.forEach(proof -> announcement.addProof(proof.getServerKey(), Base64.getEncoder().encodeToString(proof.getMac().toByteArray())));
         }
         announcements.putIfAbsent(request.getIdentifier(), announcement);
         save(announcement.toJson(POST_OP_TYPE));
         announcement.getUser().getUserBoard().post(announcement);
-        deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
-        deliveredMessages.get(request.getIdentifier()).countDown();
+        deliveredMessages.computeIfAbsent(request.getIdentifier(), key -> new CountDownLatch(1)).countDown();
 
     }
 
     private void deliverAnnouncementGeneral(Contract.Announcement request) throws GeneralSecurityException, CommonDomainException, IOException {
         //Is called only one time
         var announcement = generateAnnouncement(request, generalBoard, privateKey);
-        var proofs = announcementProofs.get(request.getSignature().toStringUtf8());
-        synchronized (proofs) {
-            for (var proof : proofs) {
-                announcement.addProof(proof.getServerKey(), Base64.getEncoder().encodeToString(proof.getMac().toByteArray()));
-            }
+        Set<Contract.ReadyAnnouncement> proofs;
+        synchronized (proofs = announcementProofs.get(request.getSignature().toStringUtf8())) {
+            proofs.forEach(proof -> announcement.addProof(proof.getServerKey(), Base64.getEncoder().encodeToString(proof.getMac().toByteArray())));
         }
         announcements.putIfAbsent(request.getIdentifier(), announcement);
         save(announcement.toJson(POST_GENERAL_OP_TYPE));
         generalBoard.post(announcement);
-        deliveredMessages.putIfAbsent(request.getIdentifier(), new CountDownLatch(1));
-        deliveredMessages.get(request.getIdentifier()).countDown();
+        deliveredMessages.computeIfAbsent(request.getIdentifier(), key -> new CountDownLatch(1)).countDown();
     }
 
 
     private void brbRegister(Contract.RegisterRequest request) throws GeneralSecurityException, InterruptedException {
         broadcastEchoRegister(request); //Received Message start RBR Echo
-        deliveredMessages.putIfAbsent(request.getMac().toStringUtf8(), new CountDownLatch(1));
+        deliveredMessages.computeIfAbsent(request.getMac().toStringUtf8(), key -> new CountDownLatch(1)).await();
         deliveredMessages.get(request.getMac().toStringUtf8()).await();
     }
 

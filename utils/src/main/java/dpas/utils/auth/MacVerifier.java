@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static dpas.common.domain.utils.CryptographicConstants.*;
+import static dpas.common.domain.constants.CryptographicConstants.*;
 import static dpas.utils.auth.CipherUtils.keyFromBytes;
 
 public final class MacVerifier {
@@ -126,11 +126,9 @@ public final class MacVerifier {
     public static boolean verifySeq(long seq, byte[] authorKey, String boardIdentifier, String identifier) {
 
         try {
-            var content = new StringBuilder()
-                    .append(seq)
-                    .append(boardIdentifier)
-                    .append(Base64.getEncoder().encodeToString(authorKey))
-                    .toString();
+            var content = seq +
+                    boardIdentifier +
+                    Base64.getEncoder().encodeToString(authorKey);
 
             MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
             byte[] hash = digest.digest(content.getBytes());

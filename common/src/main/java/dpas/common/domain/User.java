@@ -1,9 +1,9 @@
 package dpas.common.domain;
 
+import dpas.common.domain.constants.JsonConstants;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.NullPublicKeyException;
 import dpas.common.domain.exception.NullUserException;
-import dpas.common.domain.utils.JsonConstants;
 import dpas.grpc.contract.Contract;
 
 import javax.json.Json;
@@ -17,9 +17,9 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 
-import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
-import static dpas.common.domain.utils.JsonConstants.OPERATION_TYPE_KEY;
-import static dpas.common.domain.utils.JsonConstants.PUBLIC_KEY;
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.constants.JsonConstants.OPERATION_TYPE_KEY;
+import static dpas.common.domain.constants.JsonConstants.PUBLIC_KEY;
 
 public class User {
 

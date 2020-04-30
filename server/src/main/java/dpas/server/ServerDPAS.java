@@ -23,9 +23,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
 
 public class ServerDPAS {
+
+    public static final String SERVER_ALIAS_PREFIX = "server-";
+    public static final int BASE_PORT = 9000;
 
     public static void main(String[] args) throws Exception {
         System.out.println(ServerDPAS.class.getSimpleName());
@@ -68,11 +71,11 @@ public class ServerDPAS {
             System.exit(-1);
         }
         if (!privKey.getAlgorithm().equals(ASYMMETRIC_KEY_ALGORITHM)) {
-            System.out.println("Error: Server private key must be an RSA key");
+            System.out.println("Error: Private Key algorithm not suported");
             System.exit(-1);
         }
         if (!pubKey.getAlgorithm().equals(ASYMMETRIC_KEY_ALGORITHM)) {
-            System.out.println("Error: Server public key must be an RSA key");
+            System.out.println("Error: Public Key algorithm not suported");
             System.exit(-1);
         }
 
@@ -105,9 +108,9 @@ public class ServerDPAS {
         var stubs = new ArrayList<PerfectStub>();
         int numServers = 3 * maxFaults + 1;
         for (int i = 1; i <= numServers; ++i) {
-            var alias = "server-" + i;
+            var alias = SERVER_ALIAS_PREFIX + i;
             var pubKey = ks.getCertificate(alias).getPublicKey();
-            int port = 9000 + i;
+            int port = BASE_PORT + i;
             var executor = Executors.newSingleThreadExecutor(); //One thread for each stub
             var eventGroup = new NioEventLoopGroup(1); //One thread for each channel
             ManagedChannel channel = NettyChannelBuilder

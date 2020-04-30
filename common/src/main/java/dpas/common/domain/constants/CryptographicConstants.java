@@ -1,4 +1,4 @@
-package dpas.common.domain.utils;
+package dpas.common.domain.constants;
 
 public final class CryptographicConstants {
 

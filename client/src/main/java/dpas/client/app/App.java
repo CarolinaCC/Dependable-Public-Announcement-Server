@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.stream.Stream;
 
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+
 public class App {
 
     private static KeyStore keystore;
@@ -95,13 +97,13 @@ public class App {
             PublicKey pubKey = keyPair.getPublic();
             PrivateKey privKey = keyPair.getPrivate();
 
-            if (!pubKey.getAlgorithm().equals("RSA")) {
-                System.out.println("Error: Client key must be an RSA key");
+            if (!pubKey.getAlgorithm().equals(ASYMMETRIC_KEY_ALGORITHM)) {
+                System.out.println("Error: Public Key algorithm not supported");
                 return;
             }
 
-            if (!privKey.getAlgorithm().equals("RSA")) {
-                System.out.println("Error: Client private key must be an RSA key");
+            if (!privKey.getAlgorithm().equals(ASYMMETRIC_KEY_ALGORITHM)) {
+                System.out.println("Error: Private Key algorithm not supported");
                 return;
             }
 
@@ -166,7 +168,6 @@ public class App {
         System.out.println("Signature:\t" + Base64.getEncoder().encodeToString(announcement.getSignature().toByteArray()));
         System.out.println("Author:\t" + Base64.getEncoder().encodeToString(announcement.getPublicKey().toByteArray()));
         System.out.println();
-
     }
 
     public static void printHelp() {
@@ -228,23 +229,16 @@ public class App {
     }
 
     private static PublicKey loadPublicKey() throws KeyStoreException, NullPointerException {
-
         String alias = System.console().readLine("Insert Certificate Alias: ");
-
-        PublicKey pubKey;
-        pubKey = keystore.getCertificate(alias).getPublicKey();
-
-        return pubKey;
+        return keystore.getCertificate(alias).getPublicKey();
     }
 
     private static KeyPair loadKeyPair() throws KeyStoreException, NoSuchAlgorithmException, NullPointerException, UnrecoverableKeyException {
         String alias = System.console().readLine("Insert Certificate Alias: ");
         char[] keyPassword = System.console().readPassword("Insert Private Key password: ");
 
-        PublicKey pubKey;
-        PrivateKey privKey;
-        pubKey = keystore.getCertificate(alias).getPublicKey();
-        privKey = (PrivateKey) keystore.getKey(alias, keyPassword);
+        PublicKey pubKey = keystore.getCertificate(alias).getPublicKey();
+        PrivateKey privKey = (PrivateKey) keystore.getKey(alias, keyPassword);
 
         return new KeyPair(pubKey, privKey);
     }

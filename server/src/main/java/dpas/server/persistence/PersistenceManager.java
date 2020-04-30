@@ -20,8 +20,8 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 
-import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
-import static dpas.common.domain.utils.JsonConstants.*;
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.constants.JsonConstants.*;
 
 
 public class PersistenceManager {

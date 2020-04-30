@@ -9,8 +9,8 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static dpas.common.domain.utils.CryptographicConstants.CIPHER_ALGORITHM;
-import static dpas.common.domain.utils.CryptographicConstants.DIGEST_ALGORITHM;
+import static dpas.common.domain.constants.CryptographicConstants.CIPHER_ALGORITHM;
+import static dpas.common.domain.constants.CryptographicConstants.DIGEST_ALGORITHM;
 
 public final class MacGenerator {
 

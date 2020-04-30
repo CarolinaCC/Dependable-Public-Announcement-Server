@@ -1,9 +1,9 @@
 package dpas.common.domain;
 
 import com.google.protobuf.ByteString;
+import dpas.common.domain.constants.CryptographicConstants;
+import dpas.common.domain.constants.JsonConstants;
 import dpas.common.domain.exception.*;
-import dpas.common.domain.utils.CryptographicConstants;
-import dpas.common.domain.utils.JsonConstants;
 import dpas.grpc.contract.Contract;
 
 import javax.json.Json;
@@ -27,28 +27,17 @@ public class Announcement {
     private final AnnouncementBoard board;
     private final long seq;
     private final String identifier;
-    private final Map<String, String> broadcastProof;
+    private final Map<String, String> broadcastProofs;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
                         AnnouncementBoard board, long seq) throws CommonDomainException {
-
-        checkArguments(signature, user, message, references, board);
-        checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
-        this.message = message;
-        this.signature = signature;
-        this.user = user;
-        this.references = references;
-        this.board = board;
-        this.seq = seq;
-        this.identifier = generateIdentifier();
-        this.broadcastProof = new HashMap<>();
+        this(signature, user, message, references, board, seq, new HashMap<>());
     }
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
-                        AnnouncementBoard board, long seq, Map<String, String> broadcast) throws CommonDomainException {
+                        AnnouncementBoard board, long seq, Map<String, String> broadcastProofs) throws CommonDomainException {
 
-        checkArguments(signature, user, message, references, board);
-        checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
+        validateAnnouncement(signature, user, message, references, board, seq);
         this.message = message;
         this.signature = signature;
         this.user = user;
@@ -56,7 +45,7 @@ public class Announcement {
         this.board = board;
         this.seq = seq;
         this.identifier = generateIdentifier();
-        this.broadcastProof = broadcast;
+        this.broadcastProofs = broadcastProofs;
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
@@ -66,50 +55,6 @@ public class Announcement {
                 user, message, references, board, seq);
     }
 
-
-    public void checkArguments(byte[] signature, User user, String message,
-                               Set<Announcement> references, AnnouncementBoard board) throws CommonDomainException {
-
-        if (signature == null) {
-            throw new NullSignatureException("Invalid Signature provided: null");
-        }
-        if (user == null) {
-            throw new NullUserException("Invalid User provided: Does Not Exist");
-        }
-        if (message == null) {
-            throw new NullMessageException("Invalid Message Provided: null");
-        }
-        if (message.length() > MAX_MESSAGE_SIZE) {
-            throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
-        }
-        if (board == null) {
-            throw new InvalidBoardException("Invalid Board Provided: can't be null");
-        }
-        if (references != null) {
-            if (references.contains(null)) {
-                throw new NullAnnouncementException("Invalid Reference: A reference cannot be null");
-            }
-        }
-    }
-
-    public void checkSignature(byte[] signature, User user, String message,
-                               Set<String> references, String boardIdentifier, long seq) throws CommonDomainException {
-        try {
-
-            byte[] messageBytes = generateMessageBytes(message, references, boardIdentifier, seq);
-            PublicKey publicKey = user.getPublicKey();
-
-            Signature sign = Signature.getInstance(CryptographicConstants.SIGNATURE_ALGORITHM);
-            sign.initVerify(publicKey);
-            sign.update(messageBytes);
-
-            if (!sign.verify(signature))
-                throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
-
-        } catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-            throw new InvalidSignatureException("Invalid Signature: Invalid Security Values Provided");
-        }
-    }
 
     public String getMessage() {
         return this.message;
@@ -140,7 +85,7 @@ public class Announcement {
     }
 
     public void addProof(String serverId, String proof) {
-        this.broadcastProof.put(serverId, proof);
+        this.broadcastProofs.put(serverId, proof);
     }
 
     public Contract.Announcement toContract() {
@@ -154,7 +99,7 @@ public class Announcement {
                 .setSignature(ByteString.copyFrom(this.signature))
                 .setSeq(this.seq)
                 .setIdentifier(this.identifier)
-                .putAllReadyProof(this.broadcastProof)
+                .putAllReadyProof(this.broadcastProofs)
                 .build();
     }
 
@@ -168,11 +113,10 @@ public class Announcement {
         getReferenceStrings(this.references).forEach(arrayBuilder::add);
 
         var mapBuilder = Json.createObjectBuilder();
-        for (Map.Entry<String, String> entry : this.broadcastProof.entrySet()) {
+        for (Map.Entry<String, String> entry : this.broadcastProofs.entrySet()) {
             mapBuilder.add(entry.getKey(), entry.getValue());
         }
 
-        //final var mapBuilder = Json.createArrayBuilder()
         jsonBuilder.add(JsonConstants.OPERATION_TYPE_KEY, type);
         jsonBuilder.add(JsonConstants.PUBLIC_KEY, pubKey);
         jsonBuilder.add(JsonConstants.MESSAGE_KEY, this.message);
@@ -186,13 +130,13 @@ public class Announcement {
 
     private String generateIdentifier() throws CommonDomainException {
         try {
-            var builder = new StringBuilder()
-                    .append(this.seq)
-                    .append(this.board.getIdentifier())
-                    .append(Base64.getEncoder().encodeToString(this.user.getPublicKey().getEncoded()));
 
             MessageDigest digest = MessageDigest.getInstance(CryptographicConstants.DIGEST_ALGORITHM);
-            byte[] hash = digest.digest(builder.toString().getBytes());
+
+            String identifier = this.seq + this.board.getIdentifier() +
+                    Base64.getEncoder().encodeToString(this.user.getPublicKey().getEncoded());
+
+            byte[] hash = digest.digest(identifier.getBytes());
             return Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
             //Should never happen
@@ -236,5 +180,56 @@ public class Announcement {
         builder.append(boardIdentifier);
         builder.append(seq);
         return builder.toString().getBytes();
+    }
+
+
+    public static void validateAnnouncement(byte[] signature, User user, String message, Set<Announcement> references,
+                                            AnnouncementBoard board, long seq) throws CommonDomainException {
+        checkArguments(signature, user, message, references, board);
+        checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
+    }
+
+    public static void checkArguments(byte[] signature, User user, String message,
+                                      Set<Announcement> references, AnnouncementBoard board) throws CommonDomainException {
+
+        if (signature == null) {
+            throw new NullSignatureException("Invalid Signature provided: null");
+        }
+        if (user == null) {
+            throw new NullUserException("Invalid User provided: Does Not Exist");
+        }
+        if (message == null) {
+            throw new NullMessageException("Invalid Message Provided: null");
+        }
+        if (message.length() > MAX_MESSAGE_SIZE) {
+            throw new InvalidMessageSizeException("Invalid Message Length provided: over 255 characters");
+        }
+        if (board == null) {
+            throw new InvalidBoardException("Invalid Board Provided: can't be null");
+        }
+        if (references != null) {
+            if (references.contains(null)) {
+                throw new NullAnnouncementException("Invalid Reference: A reference cannot be null");
+            }
+        }
+    }
+
+    public static void checkSignature(byte[] signature, User user, String message,
+                                      Set<String> references, String boardIdentifier, long seq) throws CommonDomainException {
+        try {
+
+            byte[] messageBytes = generateMessageBytes(message, references, boardIdentifier, seq);
+            PublicKey publicKey = user.getPublicKey();
+
+            Signature sign = Signature.getInstance(CryptographicConstants.SIGNATURE_ALGORITHM);
+            sign.initVerify(publicKey);
+            sign.update(messageBytes);
+
+            if (!sign.verify(signature))
+                throw new InvalidSignatureException("Invalid Signature: Signature Could not be verified");
+
+        } catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
+            throw new InvalidSignatureException("Invalid Signature: Invalid Security Values Provided");
+        }
     }
 }

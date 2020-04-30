@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
-import static dpas.common.domain.utils.JsonConstants.POST_GENERAL_OP_TYPE;
-import static dpas.common.domain.utils.JsonConstants.POST_OP_TYPE;
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.constants.JsonConstants.POST_GENERAL_OP_TYPE;
+import static dpas.common.domain.constants.JsonConstants.POST_OP_TYPE;
 
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     protected PersistenceManager manager;

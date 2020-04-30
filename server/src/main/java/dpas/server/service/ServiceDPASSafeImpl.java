@@ -29,11 +29,14 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.stream.Collectors;
 
-import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
-import static dpas.common.domain.utils.JsonConstants.POST_GENERAL_OP_TYPE;
-import static dpas.common.domain.utils.JsonConstants.POST_OP_TYPE;
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.constants.JsonConstants.POST_GENERAL_OP_TYPE;
+import static dpas.common.domain.constants.JsonConstants.POST_OP_TYPE;
 import static io.grpc.Status.*;
 
+/**
+ * (Using ReliableImpl for the second delivery instead), maintained so we don't have to generate READY messages when testing
+ */
 @Deprecated
 public class ServiceDPASSafeImpl extends ServiceDPASPersistentImpl {
     private final PrivateKey privateKey;

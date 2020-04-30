@@ -23,10 +23,7 @@ public final class ByteUtils {
             stream.writeBytes(pubKey);
             stream.writeBytes(message);
             stream.writeBytes(signature);
-            request.getReferencesList().stream()
-                    .map(String::getBytes)
-                    .forEach(stream::writeBytes);
-
+            request.getReferencesList().stream().map(String::getBytes).forEach(stream::writeBytes);
             return stream.toByteArray();
         } catch (IOException e) {
             return new byte[0];

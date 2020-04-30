@@ -34,7 +34,6 @@ public class RegisterStub {
                 .build();
         var reply = stub.readReliable(request);
 
-        //Write-Back
         writeBack(reply);
 
         seqs.put(Base64.getEncoder().encodeToString(key.getEncoded()), QuorumStub.getSeq(reply.getAnnouncementsList()));
@@ -43,8 +42,7 @@ public class RegisterStub {
 
     public void writeBack(Contract.ReadReply reply) throws GeneralSecurityException, InterruptedException {
         if (reply.getAnnouncementsCount() != 0) {
-            var announcement = reply.getAnnouncements(reply.getAnnouncementsCount() - 1);
-            stub.post(announcement);
+            stub.post(reply.getAnnouncements(reply.getAnnouncementsCount() - 1));
         }
     }
 

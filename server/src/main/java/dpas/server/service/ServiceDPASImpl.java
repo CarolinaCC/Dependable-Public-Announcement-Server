@@ -26,11 +26,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static dpas.common.domain.utils.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
+import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
 import static io.grpc.Status.INVALID_ARGUMENT;
 
 
-@Deprecated
 public class ServiceDPASImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
 
     protected ConcurrentHashMap<String, Announcement> announcements;

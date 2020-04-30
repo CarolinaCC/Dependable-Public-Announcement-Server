@@ -1,7 +1,7 @@
 package dpas.common.domain.exception;
 
 public class InvalidSeqException extends CommonDomainException {
-    public InvalidSeqException(String description) {
-        super(description);
+    public InvalidSeqException(String message) {
+        super(message);
     }
 }

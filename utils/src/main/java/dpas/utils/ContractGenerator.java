@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static dpas.common.domain.utils.CryptographicConstants.DIGEST_ALGORITHM;
+import static dpas.common.domain.constants.CryptographicConstants.DIGEST_ALGORITHM;
 import static dpas.utils.Constants.ECHO;
 import static dpas.utils.Constants.READY;
 
@@ -75,11 +75,9 @@ public final class ContractGenerator {
 
     private static String generateIdentifier(PublicKey authorKey, long seq, String boardIdentifier) {
         try {
-            var content = new StringBuilder()
-                    .append(seq)
-                    .append(boardIdentifier)
-                    .append(Base64.getEncoder().encodeToString(authorKey.getEncoded()))
-                    .toString();
+            var content = seq +
+                    boardIdentifier +
+                    Base64.getEncoder().encodeToString(authorKey.getEncoded());
 
             MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
             byte[] hash = digest.digest(content.getBytes());
