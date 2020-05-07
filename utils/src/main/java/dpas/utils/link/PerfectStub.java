@@ -11,6 +11,7 @@ import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.util.Base64;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Implementation of authenticated perfect point to point link
@@ -86,21 +87,24 @@ public class PerfectStub {
 
     public void readReliable(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver,
                              Map<String, PublicKey> serverKeys, int quorumSize) {
-        stub.read(request, new StreamObserver<>() {
+        Contract.ReadRequest req = request.toBuilder()
+                .setNonce(UUID.randomUUID().toString())
+                .build();
+        stub.read(req, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
                 try {
-                    if (!ReplyValidator.validateReadReply(request, value, serverKey,
-                            CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()), serverKeys, quorumSize)) {
-                        readReliable(request, replyObserver, serverKeys, quorumSize);
+                    if (!ReplyValidator.validateReadReply(req, value, serverKey,
+                            CipherUtils.keyFromBytes(req.getPublicKey().toByteArray()), serverKeys, quorumSize)) {
+                        readReliable(req, replyObserver, serverKeys, quorumSize);
                     } else {
                         replyObserver.onNext(value);
                     }
                 } catch (GeneralSecurityException e) {
-                    readReliable(request, replyObserver, serverKeys, quorumSize);
+                    readReliable(req, replyObserver, serverKeys, quorumSize);
                 }
             }
 
@@ -110,7 +114,7 @@ public class PerfectStub {
                 //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                readReliable(request, replyObserver, serverKeys, quorumSize);
+                readReliable(req, replyObserver, serverKeys, quorumSize);
             }
 
             @Override
@@ -122,14 +126,17 @@ public class PerfectStub {
 
     public void readGeneralReliable(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver,
                                     Map<String, PublicKey> serverKeys, int quorumSize) {
-        stub.readGeneral(request, new StreamObserver<>() {
+        Contract.ReadRequest req = request.toBuilder()
+                .setNonce(UUID.randomUUID().toString())
+                .build();
+        stub.readGeneral(req, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!ReplyValidator.validateReadGeneralReply(request, value, serverKey, serverKeys, quorumSize)) {
-                    readGeneralReliable(request, replyObserver, serverKeys, quorumSize);
+                if (!ReplyValidator.validateReadGeneralReply(req, value, serverKey, serverKeys, quorumSize)) {
+                    readGeneralReliable(req, replyObserver, serverKeys, quorumSize);
                 } else {
                     replyObserver.onNext(value);
                 }
@@ -141,7 +148,7 @@ public class PerfectStub {
                 //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                readGeneralReliable(request, replyObserver, serverKeys, quorumSize);
+                readGeneralReliable(req, replyObserver, serverKeys, quorumSize);
             }
 
             @Override
@@ -372,20 +379,24 @@ public class PerfectStub {
 
     @Deprecated
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        stub.read(request, new StreamObserver<>() {
+        Contract.ReadRequest req = request.toBuilder()
+                .setNonce(UUID.randomUUID().toString())
+                .build();
+
+        stub.read(req, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
                 try {
-                    if (!ReplyValidator.validateReadReply(request, value, serverKey, CipherUtils.keyFromBytes(request.getPublicKey().toByteArray()))) {
-                        read(request, replyObserver);
+                    if (!ReplyValidator.validateReadReply(req, value, serverKey, CipherUtils.keyFromBytes(req.getPublicKey().toByteArray()))) {
+                        read(req, replyObserver);
                     } else {
                         replyObserver.onNext(value);
                     }
                 } catch (GeneralSecurityException e) {
-                    read(request, replyObserver);
+                    read(req, replyObserver);
                 }
             }
 
@@ -395,7 +406,7 @@ public class PerfectStub {
                 //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                read(request, replyObserver);
+                read(req, replyObserver);
             }
 
             @Override
@@ -407,14 +418,17 @@ public class PerfectStub {
 
     @Deprecated
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
-        stub.readGeneral(request, new StreamObserver<>() {
+        Contract.ReadRequest req = request.toBuilder()
+                .setNonce(UUID.randomUUID().toString())
+                .build();
+        stub.readGeneral(req, new StreamObserver<>() {
             @Override
             public void onNext(Contract.ReadReply value) {
                 //If we can't verify the response then either the attacker changed it (must retry until he stops)
                 //Or the server is byzantine (since we can't know must keep trying)
                 //Since the operation is idempotent resending to a correct server has no impact
-                if (!ReplyValidator.validateReadGeneralReply(request, value, serverKey)) {
-                    readGeneral(request, replyObserver);
+                if (!ReplyValidator.validateReadGeneralReply(req, value, serverKey)) {
+                    readGeneral(req, replyObserver);
                 } else {
                     replyObserver.onNext(value);
                 }
@@ -426,7 +440,7 @@ public class PerfectStub {
                 //The attacker changed the integrity parameters (we must keep trying until the attacker gives up)
                 //A byzantine server (since we can't know, we must retry still)
                 //Some previous post this depends on or a register hasn't reached the server, we must also retry until it does
-                readGeneral(request, replyObserver);
+                readGeneral(req, replyObserver);
             }
 
             @Override

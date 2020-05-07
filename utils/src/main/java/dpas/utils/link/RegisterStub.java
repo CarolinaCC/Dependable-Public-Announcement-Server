@@ -30,7 +30,6 @@ public class RegisterStub {
         var request = Contract.ReadRequest.newBuilder()
                 .setPublicKey(ByteString.copyFrom(key.getEncoded()))
                 .setNumber(number)
-                .setNonce(UUID.randomUUID().toString())
                 .build();
         var reply = stub.readReliable(request);
 
@@ -49,7 +48,6 @@ public class RegisterStub {
     public Contract.Announcement[] readGeneral(int number) throws InterruptedException {
         var request = Contract.ReadRequest.newBuilder()
                 .setNumber(number)
-                .setNonce(UUID.randomUUID().toString())
                 .build();
         var reply = stub.readGeneralReliable(request);
 

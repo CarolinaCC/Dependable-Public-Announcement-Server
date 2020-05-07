@@ -102,6 +102,8 @@ public class PersistenceManager {
             if (operation.getString(OPERATION_TYPE_KEY).equals(REGISTER_OP_TYPE)) {
                 service.addUser(key);
                 userSeqs.put(key, 0L);
+            } else if (operation.getString(OPERATION_TYPE_KEY).equals(READ_JSON_KEY)) {
+                service.addNonce(operation.getString(NONCE_KEY));
             } else {
                 byte[] signature = Base64.getDecoder().decode(operation.getString(SIGNATURE_KEY));
                 JsonArray jsonReferences = operation.getJsonArray(REFERENCES_KEY);

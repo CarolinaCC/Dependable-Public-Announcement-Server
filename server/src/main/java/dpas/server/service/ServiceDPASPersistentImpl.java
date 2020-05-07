@@ -18,8 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
@@ -28,6 +27,7 @@ import static dpas.common.domain.constants.JsonConstants.POST_OP_TYPE;
 
 public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
     protected PersistenceManager manager;
+    protected final Set<String> nonces = Collections.synchronizedSet(new HashSet<>());
 
     public ServiceDPASPersistentImpl(PersistenceManager manager) {
         super();
@@ -145,6 +145,14 @@ public class ServiceDPASPersistentImpl extends ServiceDPASImpl {
 
     public ConcurrentHashMap<String, Announcement> getAnnouncements() {
         return this.announcements;
+    }
+
+    public void addNonce(String nonce) {
+        nonces.add(nonce);
+    }
+
+    public boolean isReadRepeated(String nonce) {
+        return nonces.contains(nonce);
     }
 
 }

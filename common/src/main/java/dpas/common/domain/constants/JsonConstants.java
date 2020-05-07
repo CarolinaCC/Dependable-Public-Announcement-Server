@@ -12,6 +12,8 @@ public final class JsonConstants {
     public static final String REGISTER_OP_TYPE = "Register";
     public static final String POST_OP_TYPE = "Post";
     public static final String POST_GENERAL_OP_TYPE = "PostGeneral";
+    public static final String READ_JSON_KEY = "Read";
+    public static final String NONCE_KEY = "nonce";
 
     private JsonConstants() {
     }

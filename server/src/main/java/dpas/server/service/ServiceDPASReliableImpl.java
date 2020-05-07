@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
 import dpas.common.domain.User;
+import dpas.common.domain.constants.JsonConstants;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidSeqException;
 import dpas.common.domain.exception.InvalidUserException;
@@ -21,6 +22,7 @@ import dpas.utils.link.PerfectStub;
 import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 
+import javax.json.Json;
 import javax.json.JsonObject;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -34,8 +36,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY_ALGORITHM;
-import static dpas.common.domain.constants.JsonConstants.POST_GENERAL_OP_TYPE;
-import static dpas.common.domain.constants.JsonConstants.POST_OP_TYPE;
+import static dpas.common.domain.constants.JsonConstants.*;
 import static io.grpc.Status.*;
 
 public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
@@ -64,7 +65,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
      */
     private final Map<String, CountDownLatch> deliveredMessages = new ConcurrentHashMap<>();
 
-
     public ServiceDPASReliableImpl(PersistenceManager manager, PrivateKey privKey, List<PerfectStub> servers, String serverId, int numFaults) {
         super(manager);
         this.privateKey = privKey;
@@ -86,6 +86,14 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     @Override
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
         try {
+            String nonce = request.getNonce();
+            if (isReadRepeated(nonce)) {
+                responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, "Nonce is repeated", request, privateKey));
+                return;
+            }
+            addNonce(nonce);
+            save(readObject(nonce));
+
             PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(request.getPublicKey().toByteArray()));
 
             if (!(users.containsKey(key))) {
@@ -108,8 +116,15 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
     @Override
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> responseObserver) {
-
         try {
+            String nonce = request.getNonce();
+            if (isReadRepeated(nonce)) {
+                responseObserver.onError(ErrorGenerator.generate(UNAUTHENTICATED, "Nonce is repeated", request, privateKey));
+                return;
+            }
+            addNonce(nonce);
+            save(readObject(nonce));
+
             var announcements = generalBoard.read(request.getNumber());
             var announcementsGRPC = announcements.stream().map(Announcement::toContract).collect(Collectors.toList());
 
@@ -656,5 +671,12 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         }
 
         return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());
+    }
+
+    private static JsonObject readObject(String nonce) {
+        var jsonBuilder = Json.createObjectBuilder();
+        jsonBuilder.add(JsonConstants.OPERATION_TYPE_KEY, READ_JSON_KEY);
+        jsonBuilder.add(NONCE_KEY, nonce);
+        return jsonBuilder.build();
     }
 }
