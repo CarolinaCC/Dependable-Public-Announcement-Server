@@ -18,34 +18,23 @@ From the project root directory:\
 `$ mvn clean install`
 This installs all the dependencies and runs the tests
 
-From the server directory:\
-`$mvn compile exec:java`\
-This starts the server on port 9000 with the keystore currently present.
+From the scripts directory:\
+`$./start.sh f` where f is the number of faults to tolerate\
+This starts the 3*f+1 servers, starting on port 9000. It also generates client and server keystores and places them in the appropriate directories\
+You can also run `$./start-fault.sh f`, which starts 2*f+1 servers, thus displaying the systems fault tolerance\
+Start a client with `./client.sh f`. Stop the client with Ctrl+c
 
-You can also generate a key store with the script `keygen.sh` present in the `scripts` directory.\
-The Keys present in the client keystore are as follow:\
-alias: client-1 password: client-1-password\
-alias: client-1 password: client-1-password\
-alias: client-1 password: client-1-password\
-alias: server
+Since servers are started in the background, to stop the system we recommend using `killall java`.
 
-The Keys present in the client keystore are as follow:\
-alias: server password: server-password
-
-The server is pre populated with posts and users to remove them just remove the file `server/src/main/resources/save/save.json`.\
 The `library` module has the client-front end, which is used by the client application in the `client` module.\
 You can use the client application to test the functioning of the system. It's only limitation is that posts, references and files may not include spaces.\
 Alternatively, you can have a look at our test suite, which can be found in two modules:\
 The `common` module tests that the domain of the application is correct and that the correct exceptions are always thrown.
 
-The `server` module test that the server performs all the operations correctly. 
-It also tests that the server recovers correctly from a crash (PersistentManagerTest) 
-And finally it tests that the server can handle concurrent requests and maintain a consistent state.
+The `utils` module tests implements the algorithms for authenticated perfect links and byzantine tolerant shared memory and testes them
 
-There are three versions of the server that were developed sequentially on top of each other. 
-The ServiceDPASImpl is the base server without dependability guarantees.
-The ServiceDPASPersistentImpl builds on the previous by guaranteeing persistence in the presence of faults
-The ServiceDPASSafeImpl builds on the previous by ensuring the freshness of the requests received.
+The `server` module test that the server performs all the operations correctly, that the system can handle concurrent requests and maintain a consistent state, and the properties fault tolerance properties of the system.
+
 
 You can find the report in the docs folder
 
