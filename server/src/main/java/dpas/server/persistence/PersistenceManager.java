@@ -96,15 +96,18 @@ public class PersistenceManager {
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
 
-            byte[] keyBytes = Base64.getDecoder().decode(operation.getString(PUBLIC_KEY));
-            PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(keyBytes));
 
             if (operation.getString(OPERATION_TYPE_KEY).equals(REGISTER_OP_TYPE)) {
+                byte[] keyBytes = Base64.getDecoder().decode(operation.getString(PUBLIC_KEY));
+                PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(keyBytes));
                 service.addUser(key);
                 userSeqs.put(key, 0L);
             } else if (operation.getString(OPERATION_TYPE_KEY).equals(READ_JSON_KEY)) {
                 service.addNonce(operation.getString(NONCE_KEY));
             } else {
+                byte[] keyBytes = Base64.getDecoder().decode(operation.getString(PUBLIC_KEY));
+                PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(keyBytes));
+
                 byte[] signature = Base64.getDecoder().decode(operation.getString(SIGNATURE_KEY));
                 JsonArray jsonReferences = operation.getJsonArray(REFERENCES_KEY);
 
