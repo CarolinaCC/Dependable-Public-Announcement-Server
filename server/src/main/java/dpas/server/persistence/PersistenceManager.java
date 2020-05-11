@@ -1,9 +1,7 @@
 package dpas.server.persistence;
 
 import dpas.common.domain.exception.CommonDomainException;
-import dpas.server.service.ServiceDPASPersistentImpl;
 import dpas.server.service.ServiceDPASReliableImpl;
-import dpas.server.service.ServiceDPASSafeImpl;
 import dpas.utils.link.PerfectStub;
 import org.apache.commons.io.FileUtils;
 
@@ -68,21 +66,6 @@ public class PersistenceManager {
         Files.move(Paths.get(this.swapFile.getPath()), Paths.get(this.path), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    @Deprecated
-    public synchronized ServiceDPASPersistentImpl load() throws GeneralSecurityException, CommonDomainException, IOException {
-        JsonArray jsonArray = readSaveFile();
-        ServiceDPASPersistentImpl service = new ServiceDPASPersistentImpl(this);
-        parseJsonArray(jsonArray, service);
-        return service;
-    }
-
-    @Deprecated
-    public synchronized ServiceDPASSafeImpl load(PrivateKey privateKey) throws GeneralSecurityException, CommonDomainException, IOException {
-        JsonArray jsonArray = readSaveFile();
-        ServiceDPASSafeImpl service = new ServiceDPASSafeImpl(this, privateKey);
-        parseJsonArray(jsonArray, service);
-        return service;
-    }
 
     public synchronized ServiceDPASReliableImpl load(PrivateKey privateKey, List<PerfectStub> stubs, String serverId, int numFaults) throws GeneralSecurityException, CommonDomainException, IOException {
         JsonArray jsonArray = readSaveFile();
@@ -91,7 +74,7 @@ public class PersistenceManager {
         return service;
     }
 
-    private void parseJsonArray(JsonArray jsonArray, ServiceDPASPersistentImpl service) throws GeneralSecurityException, CommonDomainException {
+    private void parseJsonArray(JsonArray jsonArray, ServiceDPASReliableImpl service) throws GeneralSecurityException, CommonDomainException {
         Map<PublicKey, Long> userSeqs = new HashMap<>();
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);

@@ -111,7 +111,7 @@ public class QuorumStub {
         latch.await();
     }
 
-    @Deprecated
+    //Used so that we don't have to generate ready messages for the tests
     public Contract.ReadReply read(Contract.ReadRequest request) throws InterruptedException {
 
         final CountDownLatch latch = new CountDownLatch(quorumSize);
@@ -187,7 +187,7 @@ public class QuorumStub {
     }
 
 
-    @Deprecated
+    //Used so that we don't have to generate ready messages for the tests
     public Contract.ReadReply readGeneral(Contract.ReadRequest request) throws InterruptedException {
 
         final CountDownLatch latch = new CountDownLatch(quorumSize);

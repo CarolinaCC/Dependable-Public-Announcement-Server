@@ -21,16 +21,8 @@ public final class MacGenerator {
         return generateMac(pubKey.getEncoded(), privKey);
     }
 
-    public static byte[] generateMac(String nonce, long seq, PublicKey pubKey, PrivateKey privKey) throws IOException, GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(nonce, seq, pubKey), privKey);
-    }
-
     public static byte[] generateMac(Contract.ReadRequest request, int announcementCount, PrivateKey privKey) throws GeneralSecurityException, IOException {
         return generateMac(ByteUtils.toByteArray(request, announcementCount), privKey);
-    }
-
-    public static byte[] generateMac(Contract.Announcement request, PrivateKey privKey) throws GeneralSecurityException {
-        return generateMac(ByteUtils.toByteArray(request), privKey);
     }
 
     public static byte[] generateMac(byte[] content, PrivateKey privKey) throws GeneralSecurityException {

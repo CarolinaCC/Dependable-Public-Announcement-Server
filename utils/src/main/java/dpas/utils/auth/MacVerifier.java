@@ -3,9 +3,6 @@ package dpas.utils.auth;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.GeneralBoard;
 import dpas.grpc.contract.Contract;
-import io.grpc.Metadata;
-import io.grpc.StatusRuntimeException;
-import org.apache.commons.lang3.ArrayUtils;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -76,13 +73,6 @@ public final class MacVerifier {
 
     public static boolean verifyMac(Contract.ReadyAnnouncement request, Contract.MacReply reply, PublicKey serverKey) {
         return verifyMac(serverKey, request.getMac().toByteArray(), reply.getMac().toByteArray());
-    }
-
-    public static boolean verifyMac(PublicKey key, StatusRuntimeException e) {
-        Metadata data = e.getTrailers();
-        byte[] content = ArrayUtils.addAll(data.get(ErrorGenerator.contentKey), e.getMessage().getBytes());
-        byte[] mac = data.get(ErrorGenerator.macKey);
-        return MacVerifier.verifyMac(key, content, mac);
     }
 
     public static boolean verifyMac(PublicKey pubKey, Contract.MacReply reply, Contract.Announcement request) {

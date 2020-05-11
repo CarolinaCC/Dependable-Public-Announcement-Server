@@ -39,7 +39,7 @@ public class GeneralBoard implements AnnouncementBoard {
             announcements = this.posts.stream().limit(size).collect(Collectors.toList());
         }
         Collections.reverse(announcements);
-        return  announcements;
+        return announcements;
     }
 
     @Override

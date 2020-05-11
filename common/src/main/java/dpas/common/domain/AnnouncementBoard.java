@@ -5,7 +5,6 @@ import dpas.common.domain.exception.InvalidUserException;
 import dpas.common.domain.exception.NullAnnouncementException;
 import dpas.common.domain.exception.NullUserException;
 
-import java.util.Comparator;
 import java.util.List;
 
 public interface AnnouncementBoard {

@@ -377,7 +377,7 @@ public class PerfectStub {
         return Base64.getEncoder().encodeToString(serverKey.getEncoded());
     }
 
-    @Deprecated
+    //Used so that we don't have to generate ready messages for the tests
     public void read(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
         Contract.ReadRequest req = request.toBuilder()
                 .setNonce(UUID.randomUUID().toString())
@@ -416,7 +416,7 @@ public class PerfectStub {
         });
     }
 
-    @Deprecated
+    //Used so that we don't have to generate ready messages for the tests
     public void readGeneral(Contract.ReadRequest request, StreamObserver<Contract.ReadReply> replyObserver) {
         Contract.ReadRequest req = request.toBuilder()
                 .setNonce(UUID.randomUUID().toString())

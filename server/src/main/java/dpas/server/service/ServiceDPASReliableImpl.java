@@ -3,13 +3,13 @@ package dpas.server.service;
 import com.google.protobuf.ByteString;
 import dpas.common.domain.Announcement;
 import dpas.common.domain.AnnouncementBoard;
+import dpas.common.domain.GeneralBoard;
 import dpas.common.domain.User;
 import dpas.common.domain.constants.JsonConstants;
-import dpas.common.domain.exception.CommonDomainException;
-import dpas.common.domain.exception.InvalidSeqException;
-import dpas.common.domain.exception.InvalidUserException;
+import dpas.common.domain.exception.*;
 import dpas.grpc.contract.Contract;
 import dpas.grpc.contract.Contract.MacReply;
+import dpas.grpc.contract.ServiceDPASGrpc;
 import dpas.server.persistence.PersistenceManager;
 import dpas.server.security.SecurityManager;
 import dpas.server.security.exception.IllegalMacException;
@@ -39,46 +39,39 @@ import static dpas.common.domain.constants.CryptographicConstants.ASYMMETRIC_KEY
 import static dpas.common.domain.constants.JsonConstants.*;
 import static io.grpc.Status.*;
 
-public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
+public class ServiceDPASReliableImpl extends ServiceDPASGrpc.ServiceDPASImplBase {
     private final int quorumSize;
     private final int numFaults;
     private final String serverId;
     private final PrivateKey privateKey;
     private final List<PerfectStub> servers;
     private final Map<String, PublicKey> serverKeys;
-
-    /**
-     * Map of echoes sent by current server
-     */
-    private final Map<String, Boolean> sentEchos = new ConcurrentHashMap<>();
-    private final Map<String, Set<String>> echosCount = new ConcurrentHashMap<>();
-
-    /**
-     * Map of readies sent by current server
-     */
-    private final Map<String, Boolean> sentReadies = new ConcurrentHashMap<>();
-    private final Map<String, Set<String>> readyCount = new ConcurrentHashMap<>();
+    private final PersistenceManager manager;
+    private final ConcurrentHashMap<String, Announcement> announcements;
+    private final ConcurrentHashMap<PublicKey, User> users;
+    private final GeneralBoard generalBoard;
+    private final Set<String> nonces = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, Boolean> echoesSent = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> echosSeen = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> readiesSent = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> readiesSeen = new ConcurrentHashMap<>();
     private final Map<String, Set<Contract.ReadyAnnouncement>> announcementProofs = new ConcurrentHashMap<>();
-
-    /**
-     * Map of messages delivered
-     */
     private final Map<String, CountDownLatch> deliveredMessages = new ConcurrentHashMap<>();
 
     public ServiceDPASReliableImpl(PersistenceManager manager, PrivateKey privKey, List<PerfectStub> servers, String serverId, int numFaults) {
-        super(manager);
+        this.announcements = new ConcurrentHashMap<>();
+        this.users = new ConcurrentHashMap<>();
+        this.generalBoard = new GeneralBoard();
+        this.manager = manager;
         this.privateKey = privKey;
         this.serverId = serverId;
         this.servers = servers;
         this.serverKeys = new HashMap<>();
-        for (var stub : servers) {
-            this.serverKeys.put(stub.getServerId(), stub.getServerKey());
-        }
+        this.servers.forEach(server -> serverKeys.put(server.getServerId(), server.getServerKey()));
         this.quorumSize = 2 * numFaults + 1;
         this.numFaults = numFaults;
     }
 
-    //Use with tests only
     public ServiceDPASReliableImpl(PrivateKey privKey, List<PerfectStub> servers, String serverId, int numFaults) {
         this(null, privKey, servers, serverId, numFaults);
     }
@@ -210,7 +203,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             var id = request.getRequest().getMac().toStringUtf8();
 
             Set<String> echos;
-            synchronized (echos = echosCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+            synchronized (echos = echosSeen.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
                 boolean notExisted = echos.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //First time seeing this echo
@@ -236,7 +229,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             String id = request.getRequest().getMac().toStringUtf8();
 
             Set<String> countSet;
-            synchronized (countSet = readyCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+            synchronized (countSet = readiesSeen.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
                 boolean notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     if (countSet.size() == numFaults + 1) {
@@ -272,7 +265,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             String id = request.getRequest().getSignature().toStringUtf8();
 
             Set<String> echos;
-            synchronized (echos = echosCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+            synchronized (echos = echosSeen.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
                 boolean notExisted = echos.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //First time seeing this echo
@@ -299,7 +292,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             String id = request.getRequest().getSignature().toStringUtf8();
 
             Set<String> countSet;
-            synchronized (countSet = readyCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+            synchronized (countSet = readiesSeen.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
                 boolean notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //New Proof
@@ -337,7 +330,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             var id = request.getRequest().getSignature().toStringUtf8();
 
             Set<String> echos;
-            synchronized (echos = echosCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+            synchronized (echos = echosSeen.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
                 boolean notExisted = echos.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //First time seeing this echo
@@ -364,7 +357,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
             var id = request.getRequest().getSignature().toStringUtf8();
 
             Set<String> countSet;
-            synchronized (countSet = readyCount.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
+            synchronized (countSet = readiesSeen.computeIfAbsent(id, key -> Collections.synchronizedSet(new HashSet<>()))) {
                 var notExisted = countSet.add(request.getMac().toStringUtf8());
                 if (notExisted) {
                     //New Proof
@@ -392,16 +385,8 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         }
     }
 
-
-    //Don't want to save when testing
-    private void save(JsonObject object) throws IOException {
-        if (manager != null) {
-            manager.save(object);
-        }
-    }
-
     private void broadcastEchoRegister(Contract.RegisterRequest request) throws GeneralSecurityException {
-        var curr = sentEchos.putIfAbsent(request.getMac().toStringUtf8(), true);
+        var curr = echoesSent.putIfAbsent(request.getMac().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
             var echo = ContractGenerator.generateEchoRegister(request, privateKey, serverId);
@@ -429,7 +414,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void broadcastEchoAnnouncement(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
-        var curr = sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
+        var curr = echoesSent.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
 
@@ -458,7 +443,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void broadcastEchoAnnouncementGeneral(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
-        var curr = sentEchos.putIfAbsent(request.getSignature().toStringUtf8(), true);
+        var curr = echoesSent.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
 
@@ -487,7 +472,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
 
 
     private void broadcastReadyRegister(Contract.RegisterRequest request) throws GeneralSecurityException {
-        var curr = sentReadies.putIfAbsent(request.getMac().toStringUtf8(), true);
+        var curr = readiesSent.putIfAbsent(request.getMac().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
             var ready = ContractGenerator.generateReadyRegister(request, privateKey, serverId);
@@ -514,7 +499,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void broadcastReadyAnnouncement(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
-        var curr = sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
+        var curr = readiesSent.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
 
@@ -543,7 +528,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
     }
 
     private void broadcastReadyAnnouncementGeneral(Contract.Announcement request, Announcement announcement) throws GeneralSecurityException {
-        var curr = sentReadies.putIfAbsent(request.getSignature().toStringUtf8(), true);
+        var curr = readiesSent.putIfAbsent(request.getSignature().toStringUtf8(), true);
         if (curr == null) {
             //First time broadcasting
 
@@ -609,7 +594,6 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         deliveredMessages.computeIfAbsent(request.getIdentifier(), key -> new CountDownLatch(1)).countDown();
     }
 
-
     private void brbRegister(Contract.RegisterRequest request) throws GeneralSecurityException, InterruptedException {
         broadcastEchoRegister(request); //Received Message start RBR Echo
         deliveredMessages.computeIfAbsent(request.getMac().toStringUtf8(), key -> new CountDownLatch(1)).await();
@@ -671,6 +655,68 @@ public class ServiceDPASReliableImpl extends ServiceDPASPersistentImpl {
         }
 
         return new Announcement(signature, user, message, getReferences(request.getReferencesList()), user.getUserBoard(), request.getSeq());
+    }
+
+
+    private Set<Announcement> getReferences(List<String> referenceIDs) throws InvalidReferenceException {
+        // add all references to lists of references
+        var references = new HashSet<Announcement>();
+        for (var reference : referenceIDs) {
+            var announcement = this.announcements.get(reference);
+            if (announcement == null) {
+                throw new InvalidReferenceException("Invalid Reference: reference provided does not exist");
+            }
+            if (!references.add(announcement)) {
+                //Repeated reference
+                throw new InvalidReferenceException("Invalid Reference: Reference is repeated");
+            }
+        }
+        return references;
+    }
+
+    //For the persistence manager
+    public void addUser(PublicKey key) throws NullUserException, NullPublicKeyException {
+        User user = new User(key);
+        users.put(key, user);
+    }
+
+    public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
+            throws CommonDomainException {
+
+        var refs = getReferences(references);
+        var user = users.get(key);
+        var board = user.getUserBoard();
+
+        var announcement = new Announcement(signature, user, message, refs, board, seq, broadcastProof);
+        board.post(announcement);
+        announcements.put(announcement.getIdentifier(), announcement);
+    }
+
+    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
+            throws CommonDomainException {
+
+        var refs = getReferences(references);
+        var user = users.get(key);
+
+        var announcement = new Announcement(signature, user, message, refs, generalBoard, seq, broadcastProof);
+        generalBoard.post(announcement);
+        announcements.put(announcement.getIdentifier(), announcement);
+    }
+
+
+    //Don't want to save when testing
+    private void save(JsonObject object) throws IOException {
+        if (manager != null) {
+            manager.save(object);
+        }
+    }
+
+    public void addNonce(String nonce) {
+        nonces.add(nonce);
+    }
+
+    public boolean isReadRepeated(String nonce) {
+        return nonces.contains(nonce);
     }
 
     private static JsonObject readObject(String nonce) {
