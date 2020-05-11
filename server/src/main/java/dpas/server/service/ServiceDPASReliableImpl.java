@@ -725,4 +725,16 @@ public class ServiceDPASReliableImpl extends ServiceDPASGrpc.ServiceDPASImplBase
         jsonBuilder.add(NONCE_KEY, nonce);
         return jsonBuilder.build();
     }
+
+    public ConcurrentHashMap<String, Announcement> getAnnouncements() {
+        return announcements;
+    }
+
+    public ConcurrentHashMap<PublicKey, User> getUsers() {
+        return users;
+    }
+
+    public GeneralBoard getGeneralBoard() {
+        return generalBoard;
+    }
 }
