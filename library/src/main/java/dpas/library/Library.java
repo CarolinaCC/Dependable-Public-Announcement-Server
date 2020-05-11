@@ -33,6 +33,7 @@ public class Library {
                     .eventLoopGroup(eventGroup)
                     .executor(executor)
                     .build();
+            channel.resetConnectBackoff(); //Try to reconnect immediately after crash
             var stub = ServiceDPASGrpc.newStub(channel);
             PerfectStub pStub = new PerfectStub(stub, serverKey[i]);
             stubs.add(pStub);

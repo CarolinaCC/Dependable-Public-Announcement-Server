@@ -12,7 +12,7 @@
 
     <properties>
         <mainclass>dpas.server.ServerDPAS</mainclass>
-        <server.port>9000</server.port>
+        <server.port>9001</server.port>
         <server.persistenceFile>src/main/resources/save/save-1.json</server.persistenceFile>
         <server.keyStoreFile>src/main/resources/server.jks</server.keyStoreFile>
         <server.publicKeyAlias>server-1</server.publicKeyAlias>
