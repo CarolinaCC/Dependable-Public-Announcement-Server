@@ -25,17 +25,17 @@ public class Announcement {
     private final String message;
     private final Set<Announcement> references; // Can be null
     private final AnnouncementBoard board;
-    private final long seq;
+    private final int seq;
     private final String identifier;
     private final Map<String, String> broadcastProofs;
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
-                        AnnouncementBoard board, long seq) throws CommonDomainException {
+                        AnnouncementBoard board, int seq) throws CommonDomainException {
         this(signature, user, message, references, board, seq, new HashMap<>());
     }
 
     public Announcement(byte[] signature, User user, String message, Set<Announcement> references,
-                        AnnouncementBoard board, long seq, Map<String, String> broadcastProofs) throws CommonDomainException {
+                        AnnouncementBoard board, int seq, Map<String, String> broadcastProofs) throws CommonDomainException {
 
         validateAnnouncement(signature, user, message, references, board, seq);
         this.message = message;
@@ -49,7 +49,7 @@ public class Announcement {
     }
 
     public Announcement(PrivateKey signatureKey, User user, String message, Set<Announcement> references,
-                        AnnouncementBoard board, long seq) throws CommonDomainException {
+                        AnnouncementBoard board, int seq) throws CommonDomainException {
 
         this(generateSignature(signatureKey, message, getReferenceStrings(references), board, seq),
                 user, message, references, board, seq);
@@ -80,7 +80,7 @@ public class Announcement {
         return this.board;
     }
 
-    public long getSeq() {
+    public int getSeq() {
         return this.seq;
     }
 
@@ -146,7 +146,7 @@ public class Announcement {
 
 
     public static byte[] generateSignature(PrivateKey privKey, String message,
-                                           Set<String> references, String boadIdentifier, long seq) throws CommonDomainException {
+                                           Set<String> references, String boadIdentifier, int seq) throws CommonDomainException {
         try {
             var messageBytes = generateMessageBytes(message, references, boadIdentifier, seq);
             var sign = Signature.getInstance(CryptographicConstants.SIGNATURE_ALGORITHM);
@@ -159,7 +159,7 @@ public class Announcement {
     }
 
     public static byte[] generateSignature(PrivateKey privKey, String message,
-                                           Set<String> references, AnnouncementBoard board, long seq) throws CommonDomainException {
+                                           Set<String> references, AnnouncementBoard board, int seq) throws CommonDomainException {
         return generateSignature(privKey, message, references, board.getIdentifier(), seq);
     }
 
@@ -170,7 +170,7 @@ public class Announcement {
                 .collect(Collectors.toSet());
     }
 
-    public static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier, long seq) {
+    public static byte[] generateMessageBytes(String message, Set<String> references, String boardIdentifier, int seq) {
         var builder = new StringBuilder();
         builder.append(message);
         Stream.ofNullable(references)
@@ -184,7 +184,7 @@ public class Announcement {
 
 
     public static void validateAnnouncement(byte[] signature, User user, String message, Set<Announcement> references,
-                                            AnnouncementBoard board, long seq) throws CommonDomainException {
+                                            AnnouncementBoard board, int seq) throws CommonDomainException {
         checkArguments(signature, user, message, references, board);
         checkSignature(signature, user, message, getReferenceStrings(references), board.getIdentifier(), seq);
     }
@@ -215,7 +215,7 @@ public class Announcement {
     }
 
     public static void checkSignature(byte[] signature, User user, String message,
-                                      Set<String> references, String boardIdentifier, long seq) throws CommonDomainException {
+                                      Set<String> references, String boardIdentifier, int seq) throws CommonDomainException {
         try {
 
             byte[] messageBytes = generateMessageBytes(message, references, boardIdentifier, seq);

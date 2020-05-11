@@ -18,8 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RegisterStub {
 
     private final QuorumStub stub;
-
-    private final Map<String, Long> seqs;
+    private final Map<String, Integer> seqs;
 
     public RegisterStub(QuorumStub stub) {
         this.stub = stub;
@@ -78,7 +77,7 @@ public class RegisterStub {
         stub.register(req);
     }
 
-    public long getSeq(PublicKey userKey) throws InterruptedException {
+    public int getSeq(PublicKey userKey) throws InterruptedException {
         var userId = Base64.getEncoder().encodeToString(userKey.getEncoded());
         if (seqs.containsKey(userId)) {
             //Don't need read, already know seq from previous read

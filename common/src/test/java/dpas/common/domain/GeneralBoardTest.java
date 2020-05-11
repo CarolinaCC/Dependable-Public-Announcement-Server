@@ -3,6 +3,7 @@ package dpas.common.domain;
 import dpas.common.domain.exception.CommonDomainException;
 import dpas.common.domain.exception.InvalidNumberOfPostsException;
 import dpas.common.domain.exception.NullAnnouncementException;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,8 +11,7 @@ import org.junit.Test;
 import java.security.*;
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class GeneralBoardTest {
 
@@ -19,7 +19,7 @@ public class GeneralBoardTest {
     private Announcement _announcement2;
     private Announcement _announcement3;
     private GeneralBoard _generalBoard;
-    private long _seq;
+    private int _seq;
 
     @Before
     public void setup() throws CommonDomainException, NoSuchAlgorithmException {
@@ -112,9 +112,9 @@ public class GeneralBoardTest {
         _generalBoard.post(_announcement);
         _generalBoard.post(_announcement2);
         _generalBoard.post(_announcement3);
-        assertEquals(_generalBoard.read(1).get(0), _announcement3);
-        assertEquals(_generalBoard.read(2).get(0), _announcement2);
-        assertEquals(_generalBoard.read(2).get(1), _announcement3);
+        assertThat(_generalBoard.read(1).get(0), CoreMatchers.anyOf(CoreMatchers.is(_announcement3), CoreMatchers.is(_announcement2)));
+        assertThat(_generalBoard.read(2).get(0), CoreMatchers.anyOf(CoreMatchers.is(_announcement3), CoreMatchers.is(_announcement2)));
+        assertThat(_generalBoard.read(2).get(1), CoreMatchers.anyOf(CoreMatchers.is(_announcement3), CoreMatchers.is(_announcement2)));
     }
 
     @Test(expected = InvalidNumberOfPostsException.class)

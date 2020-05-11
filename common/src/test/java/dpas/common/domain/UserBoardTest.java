@@ -27,7 +27,7 @@ public class UserBoardTest {
     private Announcement _announcementInvalid;
     private UserBoard _userBoard;
 
-    private long _seq;
+    private int _seq;
 
 
     private static final String FIRST_MESSAGE = "Message";

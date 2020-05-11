@@ -59,7 +59,7 @@ public class ReliableCrashServerPostGeneralTest {
 
     private static Contract.Announcement[] _requests;
 
-    private static long _seq = 0;
+    private static int _seq = 0;
 
     private static final String MESSAGE = "MESSAGE";
     private static final String MESSAGE1 = "MESSAGE1";

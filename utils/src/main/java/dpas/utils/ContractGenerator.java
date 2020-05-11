@@ -29,7 +29,7 @@ public final class ContractGenerator {
     private ContractGenerator() {
     }
 
-    public static Contract.Announcement generateAnnouncement(PublicKey pubKey, PrivateKey privKey, String message, long seq,
+    public static Contract.Announcement generateAnnouncement(PublicKey pubKey, PrivateKey privKey, String message, int seq,
                                                              String boardIdentifier, Announcement[] a)
             throws CommonDomainException {
 
@@ -51,7 +51,7 @@ public final class ContractGenerator {
     }
 
     public static Announcement generateAnnouncement(PublicKey serverKey, PublicKey pubKey, PrivateKey privKey,
-                                                    String message, long seq, String boardIdentifier, Announcement[] a)
+                                                    String message, int seq, String boardIdentifier, Announcement[] a)
             throws GeneralSecurityException, CommonDomainException {
 
         String encodedMessage = CipherUtils.cipherAndEncode(message.getBytes(), serverKey);

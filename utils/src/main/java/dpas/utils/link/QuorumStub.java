@@ -263,7 +263,7 @@ public class QuorumStub {
     }
 
 
-    public static long getSeq(List<Announcement> a) {
+    public static int getSeq(List<Announcement> a) {
         if (a.size() == 0) {
             return 0;
         } else {

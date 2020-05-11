@@ -10,7 +10,7 @@ public class GeneralBoard implements AnnouncementBoard {
     private static final Comparator<Announcement> GENERAL_BOARD_COMPARATOR = (a, b) ->
     {
         if (a.getSeq() != b.getSeq())
-            return (int) (b.getSeq() - a.getSeq());
+            return  b.getSeq() - a.getSeq();
         else {
             return Base64.getEncoder().encodeToString(b.getUser().getPublicKey().getEncoded())
                     .compareTo(Base64.getEncoder().encodeToString(a.getUser().getPublicKey().getEncoded()));

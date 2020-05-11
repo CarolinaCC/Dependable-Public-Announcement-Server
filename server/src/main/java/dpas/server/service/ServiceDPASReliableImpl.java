@@ -680,7 +680,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASGrpc.ServiceDPASImplBase
         users.put(key, user);
     }
 
-    public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
+    public void addAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int seq, Map<String, String> broadcastProof)
             throws CommonDomainException {
 
         var refs = getReferences(references);
@@ -692,7 +692,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASGrpc.ServiceDPASImplBase
         announcements.put(announcement.getIdentifier(), announcement);
     }
 
-    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, long seq, Map<String, String> broadcastProof)
+    public void addGeneralAnnouncement(String message, PublicKey key, byte[] signature, ArrayList<String> references, int seq, Map<String, String> broadcastProof)
             throws CommonDomainException {
 
         var refs = getReferences(references);
@@ -726,15 +726,7 @@ public class ServiceDPASReliableImpl extends ServiceDPASGrpc.ServiceDPASImplBase
         return jsonBuilder.build();
     }
 
-    public ConcurrentHashMap<String, Announcement> getAnnouncements() {
-        return announcements;
-    }
-
     public ConcurrentHashMap<PublicKey, User> getUsers() {
         return users;
-    }
-
-    public GeneralBoard getGeneralBoard() {
-        return generalBoard;
     }
 }

@@ -23,7 +23,7 @@ public class AnnouncementTest {
     private Set<Announcement> _references = new HashSet<>();
     private byte[] _signature;
 
-    private long _seq;
+    private int _seq;
 
     private User _user;
 

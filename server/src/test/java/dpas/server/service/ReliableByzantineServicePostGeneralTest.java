@@ -65,7 +65,7 @@ public class ReliableByzantineServicePostGeneralTest {
 
     private static Contract.Announcement[] _requests;
 
-    private static long _seq = 0;
+    private static int _seq = 0;
 
     private static final String MESSAGE = "MESSAGE";
 

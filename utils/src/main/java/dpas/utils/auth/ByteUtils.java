@@ -14,7 +14,7 @@ public final class ByteUtils {
     }
 
     public static byte[] toByteArray(Contract.Announcement request) {
-        byte[] seq = NumberUtils.longToBytes(request.getSeq());
+        byte[] seq = NumberUtils.intToBytes(request.getSeq());
         byte[] pubKey = request.getPublicKey().toByteArray();
         byte[] message = request.getMessage().getBytes();
         byte[] signature = request.getSignature().toByteArray();
@@ -59,9 +59,9 @@ public final class ByteUtils {
         }
     }
 
-    public static byte[] toByteArray(long seq, PublicKey pubKey, String message, byte[] signature, Set<String> references) throws IOException {
+    public static byte[] toByteArray(int seq, PublicKey pubKey, String message, byte[] signature, Set<String> references) throws IOException {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            stream.writeBytes(NumberUtils.longToBytes(seq));
+            stream.writeBytes(NumberUtils.intToBytes(seq));
             stream.writeBytes(pubKey.getEncoded());
             stream.writeBytes(message.getBytes());
             stream.writeBytes(signature);

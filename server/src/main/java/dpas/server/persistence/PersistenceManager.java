@@ -75,7 +75,6 @@ public class PersistenceManager {
     }
 
     private void parseJsonArray(JsonArray jsonArray, ServiceDPASReliableImpl service) throws GeneralSecurityException, CommonDomainException {
-        Map<PublicKey, Long> userSeqs = new HashMap<>();
         for (int i = 0; i < jsonArray.size(); i++) {
             JsonObject operation = jsonArray.getJsonObject(i);
 
@@ -84,7 +83,6 @@ public class PersistenceManager {
                 byte[] keyBytes = Base64.getDecoder().decode(operation.getString(PUBLIC_KEY));
                 PublicKey key = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM).generatePublic(new X509EncodedKeySpec(keyBytes));
                 service.addUser(key);
-                userSeqs.put(key, 0L);
             } else if (operation.getString(OPERATION_TYPE_KEY).equals(READ_JSON_KEY)) {
                 service.addNonce(operation.getString(NONCE_KEY));
             } else {
@@ -107,13 +105,14 @@ public class PersistenceManager {
                     broadcastproof.put(mapKey, jsonBroadCastProof.getString(mapKey));
                 }
 
-                long seq = operation.getInt(SEQUENCER_KEY);
+                int seq = operation.getInt(SEQUENCER_KEY);
 
-                if (operation.getString(OPERATION_TYPE_KEY).equals(POST_OP_TYPE))
+                if (operation.getString(OPERATION_TYPE_KEY).equals(POST_OP_TYPE)) {
                     service.addAnnouncement(operation.getString(MESSAGE_KEY), key, signature, references, seq, broadcastproof);
-                else
+                }
+                else {
                     service.addGeneralAnnouncement(operation.getString(MESSAGE_KEY), key, signature, references, seq, broadcastproof);
-                userSeqs.put(key, userSeqs.get(key) + 1);
+                }
             }
         }
     }
